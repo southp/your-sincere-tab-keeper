@@ -1,0 +1,29 @@
+{
+  "name": "your-sincere-tab-keeper",
+  "version": "1.0.0",
+  "description": "A Chrome extension that limits open tabs with playful maze games",
+  "main": "src/background.js",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build && node scripts/build.js",
+    "build:clean": "rm -rf dist && npm run build",
+    "preview": "vite preview",
+    "zip": "cd dist && zip -r ../extension.zip . -x '*.DS_Store' '*.git*'",
+    "validate": "node scripts/validate.js"
+  },
+  "keywords": [
+    "chrome-extension",
+    "tab-management",
+    "productivity",
+    "maze-game"
+  ],
+  "author": "Your Sincere Tab Keeper Team",
+  "license": "MIT",
+  "devDependencies": {
+    "vite": "^5.0.0",
+    "@crxjs/vite-plugin": "^2.0.0"
+  },
+  "dependencies": {}
+}
+

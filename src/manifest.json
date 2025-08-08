@@ -1,0 +1,36 @@
+{
+  "manifest_version": 3,
+  "name": "Your Sincere Tab Keeper",
+  "version": "1.0.0",
+  "description": "A Chrome extension that limits open tabs with playful maze games - helping you live your best tab life, one maze at a time.",
+  
+  "permissions": [
+    "tabs",
+    "storage",
+    "activeTab",
+    "scripting",
+    "notifications"
+  ],
+  
+  "host_permissions": [
+    "<all_urls>"
+  ],
+  
+  "background": {
+    "service_worker": "background.js"
+  },
+  
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Your Sincere Tab Keeper"
+  },
+  
+  "options_page": "options.html",
+  
+  "incognito": "spanning",
+  
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self'"
+  }
+}
+

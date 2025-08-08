@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Your Sincere Tab Keeper - Maze Challenge</title>
+  <link rel="stylesheet" href="maze.css">
+</head>
+<body>
+  <div class="maze-container">
+    <header class="maze-header">
+      <div class="logo">
+        <div class="tab-icon">📑</div>
+        <h1>Your Sincere Tab Keeper</h1>
+      </div>
+      <div class="challenge-text">
+        <h2>🧩 Maze Challenge</h2>
+        <p id="challengeMessage">Solve this maze to open your new tab!</p>
+      </div>
+    </header>
+
+    <main class="maze-content">
+      <div class="maze-info">
+        <div class="info-item">
+          <span class="info-label">Difficulty:</span>
+          <span class="info-value" id="difficultyLevel">Beginner</span>
+        </div>
+        <div class="info-item">
+          <span class="info-label">Size:</span>
+          <span class="info-value" id="mazeSize">15x15</span>
+        </div>
+        <div class="info-item">
+          <span class="info-label">Timer:</span>
+          <span class="info-value" id="timer">00:00</span>
+        </div>
+      </div>
+
+      <div class="maze-wrapper">
+        <canvas id="mazeCanvas" width="600" height="600"></canvas>
+        <div class="maze-overlay" id="mazeOverlay" style="display: none;">
+          <div class="overlay-content">
+            <div class="success-icon">🎉</div>
+            <h3>Congratulations!</h3>
+            <p>You solved the maze! Loading your requested page...</p>
+            <div class="loading-spinner"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="controls">
+        <div class="control-instructions">
+          <h3>🎮 Controls</h3>
+          <div class="key-instructions">
+            <div class="key-group">
+              <div class="key">↑</div>
+              <div class="key">←</div>
+              <div class="key">↓</div>
+              <div class="key">→</div>
+              <span>or</span>
+              <div class="key">W</div>
+              <div class="key">A</div>
+              <div class="key">S</div>
+              <div class="key">D</div>
+            </div>
+            <p>Use arrow keys or WASD to move</p>
+          </div>
+        </div>
+
+        <div class="maze-actions">
+          <button id="resetMazeBtn" class="secondary-btn">
+            <span class="btn-icon">🔄</span>
+            New Maze
+          </button>
+          <button id="giveUpBtn" class="danger-btn">
+            <span class="btn-icon">❌</span>
+            Give Up
+          </button>
+        </div>
+      </div>
+    </main>
+
+    <footer class="maze-footer">
+      <div class="motivation-text">
+        <p id="motivationMessage">Every maze solved is a step toward more mindful browsing! 🌟</p>
+      </div>
+      <div class="stats-preview">
+        <div class="stat">
+          <span class="stat-number" id="sessionMazes">0</span>
+          <span class="stat-label">This Session</span>
+        </div>
+        <div class="stat">
+          <span class="stat-number" id="totalMazes">0</span>
+          <span class="stat-label">Total Solved</span>
+        </div>
+      </div>
+    </footer>
+  </div>
+
+  <!-- Update Limit Modal (shown when action=updateLimit) -->
+  <div id="updateLimitModal" class="modal" style="display: none;">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>🎯 Update Your Tab Limit</h2>
+        <p>Great job solving the maze! Now choose your new tab limit:</p>
+      </div>
+      
+      <div class="limit-selector">
+        <div class="limit-options">
+          <button class="limit-btn" data-limit="1">1</button>
+          <button class="limit-btn" data-limit="2">2</button>
+          <button class="limit-btn" data-limit="3">3</button>
+          <button class="limit-btn" data-limit="4">4</button>
+          <button class="limit-btn selected" data-limit="5">5</button>
+          <button class="limit-btn" data-limit="6">6</button>
+          <button class="limit-btn" data-limit="7">7</button>
+          <button class="limit-btn" data-limit="8">8</button>
+          <button class="limit-btn" data-limit="9">9</button>
+          <button class="limit-btn" data-limit="10">10</button>
+        </div>
+        <div class="limit-description">
+          <p id="modalLimitDescription">Recommended for balanced browsing</p>
+        </div>
+      </div>
+
+      <div class="modal-actions">
+        <button id="confirmLimitBtn" class="primary-btn">
+          Set New Limit & Restart Browser
+        </button>
+        <button id="cancelLimitBtn" class="secondary-btn">
+          Keep Current Limit
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="maze.js"></script>
+</body>
+</html>
+
