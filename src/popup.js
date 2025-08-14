@@ -3,7 +3,10 @@
  * Handles popup UI interactions and displays current stats
  */
 
-import { logger } from './debug.js';
+import { Logger } from './debug.js';
+
+// Create scoped logger for popup functionality
+const popupLogger = new Logger('POPUP');
 
 // DOM elements
 const currentLimitEl = document.getElementById('currentLimit');
@@ -49,11 +52,11 @@ async function loadStats() {
       mazesCompletedEl.textContent = response.mazesCompleted;
       blockedAttemptsEl.textContent = response.blockedAttempts;
     } else {
-      logger.error('Failed to load stats:', response?.error);
+      popupLogger.error('Failed to load stats:', response?.error);
       showError('Failed to load statistics');
     }
   } catch (error) {
-    logger.error('Error loading stats:', error);
+    popupLogger.error('Error loading stats:', error);
     showError('Failed to connect to extension');
   }
 }
@@ -87,7 +90,7 @@ async function checkCurrentTabs() {
     }
     
   } catch (error) {
-    logger.error('Error checking tabs:', error);
+    popupLogger.error('Error checking tabs:', error);
     tabCountEl.textContent = '?';
   }
 }
@@ -109,7 +112,7 @@ async function checkForActiveMaze() {
           await chrome.tabs.update(mazeTabs[0].id, { active: true });
           window.close(); // Close popup after focusing maze
         } catch (error) {
-          logger.error('Failed to focus maze tab:', error);
+          popupLogger.error('Failed to focus maze tab:', error);
         }
       });
       
@@ -118,7 +121,7 @@ async function checkForActiveMaze() {
       mazeStatusEl.style.display = 'none';
     }
   } catch (error) {
-    logger.error('Error checking for maze tabs:', error);
+    popupLogger.error('Error checking for maze tabs:', error);
   }
 }
 
@@ -160,7 +163,7 @@ async function handleUpdateLimit() {
     window.close();
     
   } catch (error) {
-    logger.error('Error creating maze tab for limit update:', error);
+    popupLogger.error('Error creating maze tab for limit update:', error);
     showError('Failed to start limit update process');
   } finally {
     updateLimitBtn.classList.remove('loading');
@@ -183,7 +186,7 @@ async function handleViewStats() {
     window.close();
     
   } catch (error) {
-    logger.error('Error opening options page:', error);
+    popupLogger.error('Error opening options page:', error);
     showError('Failed to open statistics page');
   } finally {
     viewStatsBtn.classList.remove('loading');
@@ -240,7 +243,7 @@ async function checkForMazeAlert() {
       }
     }
   } catch (error) {
-    logger.error('Error checking for maze alert:', error);
+    popupLogger.error('Error checking for maze alert:', error);
   }
 }
 

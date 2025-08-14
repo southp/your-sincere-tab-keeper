@@ -5,7 +5,9 @@
 
 import { TAB_LIMITS, LIMIT_DESCRIPTIONS } from './constants.js';
 import { renderLimitButtons, setupLimitButtonListeners, updateLimitDescription } from './ui-utils.js';
-import { logger } from './debug.js';
+import { Logger } from './debug.js';
+
+const optionsLogger = new Logger('OPTIONS');
 
 // DOM elements
 const onboardingSection = document.getElementById('onboardingSection');
@@ -107,10 +109,10 @@ async function loadCurrentSettings() {
     if (response && !response.error) {
       currentTabLimitEl.textContent = response.tabLimit;
     } else {
-      logger.error('Failed to load settings:', response?.error);
+      optionsLogger.error('Failed to load settings:', response?.error);
     }
   } catch (error) {
-    logger.error('Error loading settings:', error);
+    optionsLogger.error('Error loading settings:', error);
   }
 }
 
@@ -132,10 +134,10 @@ async function loadStatistics() {
       daysActiveEl.textContent = Math.max(1, daysActive);
       
     } else {
-      logger.error('Failed to load statistics:', response?.error);
+      optionsLogger.error('Failed to load statistics:', response?.error);
     }
   } catch (error) {
-    logger.error('Error loading statistics:', error);
+    optionsLogger.error('Error loading statistics:', error);
   }
 }
 
@@ -236,7 +238,7 @@ async function generateInsights() {
     });
     
   } catch (error) {
-    logger.error('Error generating insights:', error);
+    optionsLogger.error('Error generating insights:', error);
   }
 }
 
@@ -303,7 +305,7 @@ async function handleCompleteOnboarding() {
     showNotification('Tab limit set successfully! Your journey begins now.', 'success');
     
   } catch (error) {
-    logger.error('Error completing onboarding:', error);
+    optionsLogger.error('Error completing onboarding:', error);
     showNotification('Failed to save settings. Please try again.', 'error');
   } finally {
     completeOnboardingBtn.classList.remove('loading');
@@ -332,7 +334,7 @@ async function handleChangeLimit() {
     showNotification('Solve the maze to update your tab limit!', 'info');
     
   } catch (error) {
-    logger.error('Error starting limit change:', error);
+    optionsLogger.error('Error starting limit change:', error);
     showNotification('Failed to start limit update process.', 'error');
   } finally {
     changeLimitBtn.classList.remove('loading');
@@ -364,7 +366,7 @@ async function handleResetStats() {
     showNotification('Statistics reset successfully!', 'success');
     
   } catch (error) {
-    logger.error('Error resetting statistics:', error);
+    optionsLogger.error('Error resetting statistics:', error);
     showNotification('Failed to reset statistics.', 'error');
   } finally {
     resetStatsBtn.classList.remove('loading');
@@ -408,7 +410,7 @@ async function handleExportStats() {
     }
     
   } catch (error) {
-    logger.error('Error exporting statistics:', error);
+    optionsLogger.error('Error exporting statistics:', error);
     showNotification('Failed to export statistics.', 'error');
   } finally {
     exportStatsBtn.classList.remove('loading');

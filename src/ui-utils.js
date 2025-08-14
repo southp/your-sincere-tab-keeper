@@ -4,7 +4,9 @@
  */
 
 import { TAB_LIMITS, LIMIT_DESCRIPTIONS } from './constants.js';
-import { logger } from './debug.js';
+import { Logger } from './debug.js';
+
+const uiLogger = new Logger('UI-UTILS');
 
 /**
  * Generate limit buttons HTML dynamically
@@ -32,7 +34,7 @@ export function generateLimitButtonsHTML(selectedLimit = TAB_LIMITS.DEFAULT, cur
 export function renderLimitButtons(containerId, selectedLimit = TAB_LIMITS.DEFAULT, currentLimit = null) {
   const container = document.getElementById(containerId);
   if (!container) {
-    logger.error(`Container with ID "${containerId}" not found`);
+    uiLogger.error(`Container with ID "${containerId}" not found`);
     return;
   }
   

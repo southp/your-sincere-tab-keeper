@@ -2,7 +2,9 @@
  * Blob page script - handles countdown and interactions
  */
 
-import { logger } from './debug.js';
+import { Logger } from './debug.js';
+
+const blobLogger = new Logger('BLOB');
 
 // Countdown and auto-close
 let timeLeft = 6;
@@ -22,7 +24,7 @@ const countdown = setInterval(() => {
             // Method 1: Use chrome.tabs API through background script
             chrome.runtime.sendMessage({ type: 'CLOSE_BLOB_TAB' });
         } catch (error) {
-            logger.log('Chrome API close failed, trying window.close()');
+            blobLogger.log('Chrome API close failed, trying window.close()');
             // Method 2: Standard window.close()
             window.close();
         }
