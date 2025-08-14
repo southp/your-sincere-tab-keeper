@@ -5,6 +5,7 @@
 
 import { TAB_LIMITS, LIMIT_DESCRIPTIONS } from './constants.js';
 import { renderLimitButtons, setupLimitButtonListeners, updateLimitDescription } from './ui-utils.js';
+import { logger } from './debug.js';
 
 // Game state
 let maze = [];
@@ -437,7 +438,7 @@ async function sendMazeCompletionMessage() {
   
   while (retryCount < maxRetries) {
     try {
-      console.log(`Sending maze completion message (attempt ${retryCount + 1})...`);
+      logger.log(`Sending maze completion message (attempt ${retryCount + 1})...`);
       
       // Check if chrome runtime is available before sending
       if (!chrome?.runtime) {
@@ -454,7 +455,7 @@ async function sendMazeCompletionMessage() {
         }
       });
       
-      console.log('Maze completion message sent successfully');
+      logger.log('Maze completion message sent successfully');
       
       // Handle different completion types
       if (action === 'updateLimit') {
@@ -464,17 +465,17 @@ async function sendMazeCompletionMessage() {
             mazeOverlay.style.display = 'none';
             await showUpdateLimitModal();
           } catch (error) {
-            console.error('Error showing update limit modal:', error);
+            logger.error('Error showing update limit modal:', error);
           }
         }, 2000);
       } else {
         // Normal maze completion - background will handle URL loading
-        console.log('Normal maze completion - waiting for background script redirect');
+        logger.log('Normal maze completion - waiting for background script redirect');
         
         // Set a timeout to prevent infinite waiting if background fails
         setTimeout(() => {
           if (isGameComplete && document.visibilityState === 'visible') {
-            console.warn('Background script may have failed, attempting self-close');
+            logger.warn('Background script may have failed, attempting self-close');
             window.close();
           }
         }, 10000); // 10 second timeout
@@ -484,10 +485,10 @@ async function sendMazeCompletionMessage() {
       
     } catch (error) {
       retryCount++;
-      console.error(`Error sending maze completion message (attempt ${retryCount}):`, error);
+      logger.error(`Error sending maze completion message (attempt ${retryCount}):`, error);
       
       if (retryCount >= maxRetries) {
-        console.error('All retry attempts failed, using fallback');
+        logger.error('All retry attempts failed, using fallback');
         await handleCompletionFallback();
         return;
       }
@@ -503,7 +504,7 @@ async function sendMazeCompletionMessage() {
  */
 async function handleCompletionFallback() {
   try {
-    console.log('Attempting fallback maze completion handling...');
+    logger.log('Attempting fallback maze completion handling...');
     
     // Try different approaches to handle the completion
     if (typeof chrome !== 'undefined' && chrome.runtime) {
@@ -512,7 +513,7 @@ async function handleCompletionFallback() {
         await chrome.runtime.sendMessage({ type: 'CLOSE_BLOB_TAB' });
         return;
       } catch (e) {
-        console.log('Close message failed, trying window.close');
+        logger.log('Close message failed, trying window.close');
       }
     }
     
@@ -522,7 +523,7 @@ async function handleCompletionFallback() {
     }, 1000);
     
   } catch (fallbackError) {
-    console.error('All fallback methods failed:', fallbackError);
+    logger.error('All fallback methods failed:', fallbackError);
     // Show user message as final fallback
     if (mazeOverlay) {
       mazeOverlay.innerHTML = `
@@ -552,7 +553,7 @@ async function handleCompletionFallback() {
 async function showUpdateLimitModal() {
   const modal = document.getElementById('updateLimitModal');
   if (!modal) {
-    console.error('Update limit modal not found');
+    logger.error('Update limit modal not found');
     return;
   }
   
@@ -573,7 +574,7 @@ async function setupLimitSelector() {
       currentLimit = response.tabLimit || TAB_LIMITS.DEFAULT;
     }
   } catch (error) {
-    console.error('Failed to get current tab limit:', error);
+    logger.error('Failed to get current tab limit:', error);
   }
   
   let selectedLimit = currentLimit;
@@ -587,7 +588,7 @@ async function setupLimitSelector() {
   const cancelBtn = document.getElementById('cancelLimitBtn');
   
   if (!modalLimitDesc || !confirmBtn || !cancelBtn) {
-    console.error('Modal elements not found');
+    logger.error('Modal elements not found');
     return;
   }
   
@@ -645,7 +646,7 @@ async function setupLimitSelector() {
       });
       
     } catch (error) {
-      console.error('Error updating tab limit:', error);
+      logger.error('Error updating tab limit:', error);
       alert('Failed to update tab limit. Please try again.');
     } finally {
       confirmBtn.classList.remove('loading');
@@ -693,7 +694,7 @@ async function loadStats() {
       totalMazesEl.textContent = response.mazesCompleted || 0;
     }
   } catch (error) {
-    console.error('Error loading stats:', error);
+    logger.error('Error loading stats:', error);
   }
 }
 
