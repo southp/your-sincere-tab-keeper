@@ -95,6 +95,56 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
 
 /**
+ * Update canvas size responsively based on container and screen size
+ */
+function updateCanvasSize() {
+  if (!canvas) return;
+  
+  const wrapper = document.querySelector('.maze-wrapper');
+  if (!wrapper) return;
+  
+  // Get the container dimensions minus padding
+  const wrapperStyle = getComputedStyle(wrapper);
+  const wrapperPadding = parseInt(wrapperStyle.paddingLeft) + parseInt(wrapperStyle.paddingRight);
+  const maxWidth = wrapper.clientWidth - wrapperPadding;
+  const maxHeight = window.innerHeight * 0.6; // Max 60% of viewport height
+  
+  // Calculate the optimal canvas size (square)
+  const maxCanvasSize = Math.min(maxWidth, maxHeight, 800); // Cap at 800px for very large screens
+  const minCanvasSize = 200; // Minimum size for usability
+  const canvasSize = Math.max(minCanvasSize, Math.min(maxCanvasSize, maxWidth));
+  
+  // Calculate cell size based on canvas size and maze size
+  cellSize = Math.max(4, Math.floor(canvasSize / mazeSize));
+  
+  // Adjust canvas size to be exact multiple of cell size for crisp rendering
+  const actualCanvasSize = mazeSize * cellSize;
+  
+  // Set canvas size (this automatically clears the canvas)
+  canvas.width = actualCanvasSize;
+  canvas.height = actualCanvasSize;
+  
+  // Set CSS size for proper scaling on high-DPI displays
+  canvas.style.width = actualCanvasSize + 'px';
+  canvas.style.height = actualCanvasSize + 'px';
+  
+  // Handle high-DPI displays for crisp rendering
+  const dpr = window.devicePixelRatio || 1;
+  if (dpr > 1) {
+    canvas.width = actualCanvasSize * dpr;
+    canvas.height = actualCanvasSize * dpr;
+    canvas.style.width = actualCanvasSize + 'px';
+    canvas.style.height = actualCanvasSize + 'px';
+    ctx.scale(dpr, dpr);
+  }
+  
+  // Re-render if maze exists
+  if (maze.length > 0) {
+    renderMaze();
+  }
+}
+
+/**
  * Initialize the maze game
  */
 async function initializeGame() {
@@ -106,12 +156,16 @@ async function initializeGame() {
   const difficultySettings = DIFFICULTY_SETTINGS[currentDifficulty];
   
   mazeSize = difficultySettings.size;
-  cellSize = Math.max(4, Math.min(30, Math.floor(580 / mazeSize))); // Adjust cell size based on maze size
   
-  // Update canvas size
-  const canvasSize = mazeSize * cellSize;
-  canvas.width = canvasSize;
-  canvas.height = canvasSize;
+  // Calculate responsive canvas size
+  updateCanvasSize();
+  
+  // Add debounced resize listener for responsive updates
+  let resizeTimeout;
+  window.addEventListener('resize', () => {
+    clearTimeout(resizeTimeout);
+    resizeTimeout = setTimeout(updateCanvasSize, 100);
+  });
   
   // Update UI
   difficultyLevelEl.textContent = difficultySettings.name;
