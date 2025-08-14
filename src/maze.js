@@ -418,7 +418,7 @@ async function sendMazeCompletionMessage() {
         setTimeout(async () => {
           try {
             mazeOverlay.style.display = 'none';
-            showUpdateLimitModal();
+            await showUpdateLimitModal();
           } catch (error) {
             console.error('Error showing update limit modal:', error);
           }
@@ -497,21 +497,64 @@ async function handleCompletionFallback() {
 /**
  * Show the update limit modal
  */
-function showUpdateLimitModal() {
-  updateLimitModal.style.display = 'flex';
-  setupLimitSelector();
+async function showUpdateLimitModal() {
+  const modal = document.getElementById('updateLimitModal');
+  if (!modal) {
+    console.error('Update limit modal not found');
+    return;
+  }
+  
+  // Set up the limit selector BEFORE showing the modal to prevent flash
+  await setupLimitSelector();
+  modal.style.display = 'flex';
 }
 
 /**
  * Setup limit selector in modal
  */
-function setupLimitSelector() {
-  let selectedLimit = 5;
+async function setupLimitSelector() {
+  // Get current tab limit from background script
+  let currentLimit = 5; // Default fallback
+  try {
+    const response = await chrome.runtime.sendMessage({ type: 'GET_STATS' });
+    if (response && !response.error) {
+      currentLimit = response.tabLimit || 5;
+    }
+  } catch (error) {
+    console.error('Failed to get current tab limit:', error);
+  }
   
-  limitButtons.forEach(button => {
+  let selectedLimit = currentLimit;
+  
+  // Query elements fresh from the modal
+  const modalLimitButtons = document.querySelectorAll('#updateLimitModal .limit-btn');
+  const modalLimitDesc = document.getElementById('modalLimitDescription');
+  const confirmBtn = document.getElementById('confirmLimitBtn');
+  const cancelBtn = document.getElementById('cancelLimitBtn');
+  
+  if (!modalLimitButtons.length || !modalLimitDesc || !confirmBtn || !cancelBtn) {
+    console.error('Modal elements not found:', {
+      buttons: modalLimitButtons.length,
+      desc: !!modalLimitDesc,
+      confirm: !!confirmBtn,
+      cancel: !!cancelBtn
+    });
+    return;
+  }
+  
+  // Set current limit as selected
+  modalLimitButtons.forEach(btn => {
+    btn.classList.remove('selected');
+    if (parseInt(btn.dataset.limit) === currentLimit) {
+      btn.classList.add('selected');
+    }
+  });
+  
+  // Set up button event listeners
+  modalLimitButtons.forEach(button => {
     button.addEventListener('click', () => {
       // Remove previous selection
-      limitButtons.forEach(btn => btn.classList.remove('selected'));
+      modalLimitButtons.forEach(btn => btn.classList.remove('selected'));
       
       // Add selection to clicked button
       button.classList.add('selected');
@@ -520,18 +563,18 @@ function setupLimitSelector() {
       selectedLimit = parseInt(button.dataset.limit);
       
       // Update description
-      modalLimitDescription.textContent = LIMIT_DESCRIPTIONS[selectedLimit];
+      modalLimitDesc.textContent = LIMIT_DESCRIPTIONS[selectedLimit];
     });
   });
   
   // Set initial description
-  modalLimitDescription.textContent = LIMIT_DESCRIPTIONS[selectedLimit];
+  modalLimitDesc.textContent = LIMIT_DESCRIPTIONS[selectedLimit];
   
   // Confirm button handler
-  confirmLimitBtn.addEventListener('click', async () => {
+  confirmBtn.addEventListener('click', async () => {
     try {
-      confirmLimitBtn.classList.add('loading');
-      confirmLimitBtn.disabled = true;
+      confirmBtn.classList.add('loading');
+      confirmBtn.disabled = true;
       
       // Send new limit to background
       await chrome.runtime.sendMessage({
@@ -539,33 +582,40 @@ function setupLimitSelector() {
         limit: selectedLimit
       });
       
-      // Show restart message
-      updateLimitModal.innerHTML = `
+      // Show success message
+      const modal = document.getElementById('updateLimitModal');
+      modal.innerHTML = `
         <div class="modal-content">
           <div class="modal-header">
             <h2>🎯 Tab Limit Updated!</h2>
             <p>Your new tab limit is set to ${selectedLimit}.</p>
-            <p style="margin-top: 16px;">Please restart your browser to complete the process.</p>
+            <p style="margin-top: 16px;">If you had more tabs open than your new limit, excess tabs have been automatically closed to keep your newest ones.</p>
           </div>
           <div class="modal-actions">
-            <button onclick="window.close()" class="primary-btn">
-              Close Tab
+            <button id="okBtn" class="primary-btn">
+              OK
             </button>
           </div>
         </div>
       `;
       
+      // Add event listener to the OK button
+      const okBtn = document.getElementById('okBtn');
+      okBtn.addEventListener('click', () => {
+        chrome.runtime.openOptionsPage();
+      });
+      
     } catch (error) {
       console.error('Error updating tab limit:', error);
       alert('Failed to update tab limit. Please try again.');
     } finally {
-      confirmLimitBtn.classList.remove('loading');
-      confirmLimitBtn.disabled = false;
+      confirmBtn.classList.remove('loading');
+      confirmBtn.disabled = false;
     }
   });
   
   // Cancel button handler
-  cancelLimitBtn.addEventListener('click', () => {
+  cancelBtn.addEventListener('click', () => {
     window.close();
   });
 }

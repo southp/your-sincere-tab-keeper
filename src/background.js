@@ -286,6 +286,9 @@ async function handleMazeCompleted(tabId, data) {
       return;
     }
     
+    // Check if this is an updateLimit maze by looking at the URL
+    const isUpdateLimitMaze = tab.url && tab.url.includes('action=updateLimit');
+    
     // Mark tab as being restored to prevent tab limiting logic from interfering
     restoringTabs.add(tabId);
     console.log('Marked tab as restoring:', tabId);
@@ -312,6 +315,12 @@ async function handleMazeCompleted(tabId, data) {
     let targetUrl = originalUrl;
     
     if (!originalUrl || originalUrl.trim() === '' || originalUrl === 'about:blank') {
+      if (isUpdateLimitMaze) {
+        // Update limit mazes handle their own completion flow via modal
+        restoringTabs.delete(tabId);
+        return;
+      }
+      
       console.log('No valid stored URL for tab', tabId, '- closing maze tab to allow fresh new tab');
       // For truly empty tabs, close the maze and let user start fresh
       setTimeout(async () => {
@@ -438,12 +447,16 @@ function cleanupTabReferences(tabId) {
  */
 async function handleTabLimitUpdate(newLimit) {
   if (newLimit >= 1 && newLimit <= 10) {
+    const oldLimit = tabLimit;
     tabLimit = newLimit;
     await chrome.storage.local.set({ tabLimit: newLimit });
-    console.log('Tab limit updated to:', newLimit);
+    console.log('Tab limit updated from', oldLimit, 'to:', newLimit);
     
-    // Trigger browser restart process (aggressive closure for limit updates)
-    await triggerBrowserRestart();
+    // If the new limit is lower, close excess tabs intelligently
+    if (newLimit < oldLimit) {
+      console.log('Limit lowered, performing smart tab closure');
+      await smartTabClosure(newLimit);
+    }
   }
 }
 
@@ -469,8 +482,8 @@ async function smartTabClosure(limit) {
     // Get all tabs
     const tabs = await chrome.tabs.query({});
     
-    // Filter out special tabs (extension pages, chrome pages)
-    const regularTabs = tabs.filter(tab => !isSpecialTab(tab));
+    // Filter out special tabs (extension pages, chrome pages) and maze tabs
+    const regularTabs = tabs.filter(tab => !isSpecialTab(tab) && !isMazeTab(tab));
     
     console.log(`Smart tab closure: ${regularTabs.length} regular tabs, limit: ${limit}`);
     

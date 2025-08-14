@@ -325,8 +325,14 @@ async function handleChangeLimit() {
     changeLimitBtn.classList.add('loading');
     changeLimitBtn.disabled = true;
     
+    // Get current session difficulty and ensure minimum Hard level for limit updates
+    const response = await chrome.runtime.sendMessage({ type: 'GET_STATS' });
+    const currentDifficulty = response?.sessionMazesCompleted || 0;
+    const minHardDifficulty = 3; // Hard level index
+    const updateLimitDifficulty = Math.max(currentDifficulty, minHardDifficulty);
+    
     // Create maze tab for limit update
-    const mazeUrl = chrome.runtime.getURL('maze.html?action=updateLimit');
+    const mazeUrl = chrome.runtime.getURL(`maze.html?action=updateLimit&difficulty=${updateLimitDifficulty}`);
     await chrome.tabs.create({ url: mazeUrl });
     
     showNotification('Solve the maze to update your tab limit!', 'info');
