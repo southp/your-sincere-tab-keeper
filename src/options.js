@@ -3,6 +3,9 @@
  * Handles settings, onboarding, and statistics display
  */
 
+import { TAB_LIMITS, LIMIT_DESCRIPTIONS } from './constants.js';
+import { renderLimitButtons, setupLimitButtonListeners, updateLimitDescription } from './ui-utils.js';
+
 // DOM elements
 const onboardingSection = document.getElementById('onboardingSection');
 const settingsSection = document.getElementById('settingsSection');
@@ -26,22 +29,8 @@ const insightsListEl = document.getElementById('insightsList');
 const resetStatsBtn = document.getElementById('resetStatsBtn');
 const exportStatsBtn = document.getElementById('exportStatsBtn');
 
-// Limit descriptions
-const limitDescriptions = {
-  1: "Ultra-focused mode - for deep work sessions",
-  2: "Minimalist approach - perfect for single-tasking",
-  3: "Focused browsing - ideal for research tasks",
-  4: "Controlled multitasking - balanced approach",
-  5: "Recommended for balanced browsing",
-  6: "Moderate flexibility - good for most users",
-  7: "Relaxed limits - still maintains awareness",
-  8: "Generous allowance - gentle guidance",
-  9: "Very flexible - minimal interference",
-  10: "Maximum freedom - just a safety net"
-};
-
 // Selected limit for onboarding
-let selectedLimit = 5;
+let selectedLimit = TAB_LIMITS.DEFAULT;
 
 // Initialize options page
 document.addEventListener('DOMContentLoaded', async () => {
@@ -83,24 +72,17 @@ async function checkOnboardingStatus() {
  * Setup limit selector for onboarding
  */
 function setupLimitSelector() {
-  limitButtons.forEach(button => {
-    button.addEventListener('click', () => {
-      // Remove previous selection
-      limitButtons.forEach(btn => btn.classList.remove('selected'));
-      
-      // Add selection to clicked button
-      button.classList.add('selected');
-      
-      // Update selected limit
-      selectedLimit = parseInt(button.dataset.limit);
-      
-      // Update description
-      limitDescriptionEl.textContent = limitDescriptions[selectedLimit];
-    });
+  // Generate buttons dynamically
+  renderLimitButtons('onboardingLimitOptions', TAB_LIMITS.DEFAULT);
+  
+  // Set up button event listeners using shared utility
+  setupLimitButtonListeners('#onboardingLimitOptions', (limit) => {
+    selectedLimit = limit;
+    updateLimitDescription('limitDescription', limit);
   });
   
   // Set initial description
-  limitDescriptionEl.textContent = limitDescriptions[selectedLimit];
+  updateLimitDescription('limitDescription', selectedLimit);
 }
 
 /**

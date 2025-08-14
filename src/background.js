@@ -3,8 +3,10 @@
  * Manages tab limits, maze redirects, and extension state
  */
 
+import { TAB_LIMITS } from './constants.js';
+
 // In-memory state (resets on browser restart)
-let tabLimit = 5; // Default limit, will be loaded from storage
+let tabLimit = TAB_LIMITS.DEFAULT; // Default limit, will be loaded from storage
 let blockedUrls = new Map(); // tabId -> original URL mapping
 let mazeTabId = null; // Track current maze tab
 let mazesCompleted = 0; // Session counter for difficulty scaling (resets on browser restart)
@@ -446,7 +448,7 @@ function cleanupTabReferences(tabId) {
  * Handle tab limit updates (from maze completion)
  */
 async function handleTabLimitUpdate(newLimit) {
-  if (newLimit >= 1 && newLimit <= 10) {
+  if (newLimit >= TAB_LIMITS.MIN && newLimit <= TAB_LIMITS.MAX) {
     const oldLimit = tabLimit;
     tabLimit = newLimit;
     await chrome.storage.local.set({ tabLimit: newLimit });
@@ -464,7 +466,7 @@ async function handleTabLimitUpdate(newLimit) {
  * Handle onboarding completion with smart tab management
  */
 async function handleCompleteOnboarding(newLimit) {
-  if (newLimit >= 1 && newLimit <= 10) {
+  if (newLimit >= TAB_LIMITS.MIN && newLimit <= TAB_LIMITS.MAX) {
     tabLimit = newLimit;
     await chrome.storage.local.set({ tabLimit: newLimit });
     console.log('Onboarding completed with tab limit:', newLimit);

@@ -3,6 +3,9 @@
  * A challenging maze game with Chrome Dino aesthetic
  */
 
+import { TAB_LIMITS, LIMIT_DESCRIPTIONS } from './constants.js';
+import { renderLimitButtons, setupLimitButtonListeners, updateLimitDescription } from './ui-utils.js';
+
 // Game state
 let maze = [];
 let mazeSize = 15;
@@ -78,19 +81,6 @@ const MOTIVATION_MESSAGES = [
   "Every step in the maze is a step toward awareness! 👣"
 ];
 
-// Limit descriptions for modal
-const LIMIT_DESCRIPTIONS = {
-  1: "Ultra-focused mode - for deep work sessions",
-  2: "Minimalist approach - perfect for single-tasking", 
-  3: "Focused browsing - ideal for research tasks",
-  4: "Controlled multitasking - balanced approach",
-  5: "Recommended for balanced browsing",
-  6: "Moderate flexibility - good for most users",
-  7: "Relaxed limits - still maintains awareness",
-  8: "Generous allowance - gentle guidance",
-  9: "Very flexible - minimal interference",
-  10: "Maximum freedom - just a safety net"
-};
 
 // Initialize game when DOM is loaded
 document.addEventListener('DOMContentLoaded', async () => {
@@ -485,11 +475,19 @@ async function handleCompletionFallback() {
         <div style="padding: 20px; text-align: center; background: white; border-radius: 10px;">
           <h3>Maze Complete!</h3>
           <p>Please manually close this tab or navigate to your desired page.</p>
-          <button onclick="window.close()" style="padding: 10px 20px; margin-top: 10px; background: #4ecdc4; color: white; border: none; border-radius: 5px; cursor: pointer;">
+          <button id="fallbackCloseBtn" style="padding: 10px 20px; margin-top: 10px; background: #4ecdc4; color: white; border: none; border-radius: 5px; cursor: pointer;">
             Close Tab
           </button>
         </div>
       `;
+      
+      // Add event listener to the close button
+      const fallbackCloseBtn = document.getElementById('fallbackCloseBtn');
+      if (fallbackCloseBtn) {
+        fallbackCloseBtn.addEventListener('click', () => {
+          window.close();
+        });
+      }
     }
   }
 }
@@ -514,11 +512,11 @@ async function showUpdateLimitModal() {
  */
 async function setupLimitSelector() {
   // Get current tab limit from background script
-  let currentLimit = 5; // Default fallback
+  let currentLimit = TAB_LIMITS.DEFAULT; // Default fallback
   try {
     const response = await chrome.runtime.sendMessage({ type: 'GET_STATS' });
     if (response && !response.error) {
-      currentLimit = response.tabLimit || 5;
+      currentLimit = response.tabLimit || TAB_LIMITS.DEFAULT;
     }
   } catch (error) {
     console.error('Failed to get current tab limit:', error);
@@ -526,49 +524,27 @@ async function setupLimitSelector() {
   
   let selectedLimit = currentLimit;
   
+  // Generate buttons dynamically with current limit selected
+  renderLimitButtons('limitOptions', currentLimit);
+  
   // Query elements fresh from the modal
-  const modalLimitButtons = document.querySelectorAll('#updateLimitModal .limit-btn');
   const modalLimitDesc = document.getElementById('modalLimitDescription');
   const confirmBtn = document.getElementById('confirmLimitBtn');
   const cancelBtn = document.getElementById('cancelLimitBtn');
   
-  if (!modalLimitButtons.length || !modalLimitDesc || !confirmBtn || !cancelBtn) {
-    console.error('Modal elements not found:', {
-      buttons: modalLimitButtons.length,
-      desc: !!modalLimitDesc,
-      confirm: !!confirmBtn,
-      cancel: !!cancelBtn
-    });
+  if (!modalLimitDesc || !confirmBtn || !cancelBtn) {
+    console.error('Modal elements not found');
     return;
   }
   
-  // Set current limit as selected
-  modalLimitButtons.forEach(btn => {
-    btn.classList.remove('selected');
-    if (parseInt(btn.dataset.limit) === currentLimit) {
-      btn.classList.add('selected');
-    }
-  });
-  
-  // Set up button event listeners
-  modalLimitButtons.forEach(button => {
-    button.addEventListener('click', () => {
-      // Remove previous selection
-      modalLimitButtons.forEach(btn => btn.classList.remove('selected'));
-      
-      // Add selection to clicked button
-      button.classList.add('selected');
-      
-      // Update selected limit
-      selectedLimit = parseInt(button.dataset.limit);
-      
-      // Update description
-      modalLimitDesc.textContent = LIMIT_DESCRIPTIONS[selectedLimit];
-    });
+  // Set up button event listeners using shared utility
+  setupLimitButtonListeners('#limitOptions', (limit) => {
+    selectedLimit = limit;
+    updateLimitDescription('modalLimitDescription', limit);
   });
   
   // Set initial description
-  modalLimitDesc.textContent = LIMIT_DESCRIPTIONS[selectedLimit];
+  updateLimitDescription('modalLimitDescription', selectedLimit);
   
   // Confirm button handler
   confirmBtn.addEventListener('click', async () => {
