@@ -34,12 +34,23 @@ let selectedLimit = TAB_LIMITS.DEFAULT;
 
 // Initialize options page
 document.addEventListener('DOMContentLoaded', async () => {
+  updateRangeText();
   await checkOnboardingStatus();
   await loadCurrentSettings();
   await loadStatistics();
   setupEventListeners();
   generateInsights();
 });
+
+/**
+ * Update range text elements dynamically
+ */
+function updateRangeText() {
+  const rangeElements = document.querySelectorAll('[data-range-text]');
+  rangeElements.forEach(element => {
+    element.textContent = element.textContent.replace('{{RANGE}}', TAB_LIMITS.RANGE_TEXT);
+  });
+}
 
 /**
  * Check if this is the first time opening options (onboarding)
