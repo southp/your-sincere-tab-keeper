@@ -8,13 +8,16 @@ import { TAB_LIMITS, LIMIT_DESCRIPTIONS } from './constants.js';
 /**
  * Generate limit buttons HTML dynamically
  * @param {number} selectedLimit - The limit to mark as selected
+ * @param {number} currentLimit - The current limit to highlight with special styling
  * @returns {string} HTML string for the buttons
  */
-export function generateLimitButtonsHTML(selectedLimit = TAB_LIMITS.DEFAULT) {
+export function generateLimitButtonsHTML(selectedLimit = TAB_LIMITS.DEFAULT, currentLimit = null) {
   const buttonsHTML = [];
   for (let limit = TAB_LIMITS.MIN; limit <= TAB_LIMITS.MAX; limit++) {
     const selected = limit === selectedLimit ? 'selected' : '';
-    buttonsHTML.push(`<button class="limit-btn ${selected}" data-limit="${limit}">${limit}</button>`);
+    const current = currentLimit && limit === currentLimit ? 'current' : '';
+    const classes = ['limit-btn', selected, current].filter(Boolean).join(' ');
+    buttonsHTML.push(`<button class="${classes}" data-limit="${limit}">${limit}</button>`);
   }
   return buttonsHTML.join('\n          ');
 }
@@ -23,15 +26,16 @@ export function generateLimitButtonsHTML(selectedLimit = TAB_LIMITS.DEFAULT) {
  * Render limit buttons into a container
  * @param {string} containerId - ID of the container element
  * @param {number} selectedLimit - The limit to mark as selected
+ * @param {number} currentLimit - The current limit to highlight with special styling
  */
-export function renderLimitButtons(containerId, selectedLimit = TAB_LIMITS.DEFAULT) {
+export function renderLimitButtons(containerId, selectedLimit = TAB_LIMITS.DEFAULT, currentLimit = null) {
   const container = document.getElementById(containerId);
   if (!container) {
     console.error(`Container with ID "${containerId}" not found`);
     return;
   }
   
-  container.innerHTML = generateLimitButtonsHTML(selectedLimit);
+  container.innerHTML = generateLimitButtonsHTML(selectedLimit, currentLimit);
 }
 
 /**

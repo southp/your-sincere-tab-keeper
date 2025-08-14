@@ -524,8 +524,8 @@ async function setupLimitSelector() {
   
   let selectedLimit = currentLimit;
   
-  // Generate buttons dynamically with current limit selected
-  renderLimitButtons('limitOptions', currentLimit);
+  // Generate buttons dynamically with current limit selected and highlighted
+  renderLimitButtons('limitOptions', currentLimit, currentLimit);
   
   // Query elements fresh from the modal
   const modalLimitDesc = document.getElementById('modalLimitDescription');
@@ -537,14 +537,23 @@ async function setupLimitSelector() {
     return;
   }
   
+  // Function to update confirm button state
+  const updateConfirmButton = (newSelectedLimit) => {
+    const isUnchanged = newSelectedLimit === currentLimit;
+    confirmBtn.disabled = isUnchanged;
+    confirmBtn.textContent = isUnchanged ? 'Current Limit Selected' : `Set Limit to ${newSelectedLimit}`;
+  };
+  
   // Set up button event listeners using shared utility
   setupLimitButtonListeners('#limitOptions', (limit) => {
     selectedLimit = limit;
     updateLimitDescription('modalLimitDescription', limit);
+    updateConfirmButton(limit);
   });
   
-  // Set initial description
+  // Set initial description and confirm button state
   updateLimitDescription('modalLimitDescription', selectedLimit);
+  updateConfirmButton(selectedLimit);
   
   // Confirm button handler
   confirmBtn.addEventListener('click', async () => {

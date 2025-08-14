@@ -263,6 +263,18 @@ body {
   box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
 }
 
+.primary-btn:disabled {
+  background: #666;
+  color: #999;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.primary-btn:disabled:hover {
+  transform: none;
+  box-shadow: none;
+}
+
 .secondary-btn {
   background: #555;
   color: white;
@@ -408,6 +420,27 @@ body {
 .limit-btn.selected {
   background: #667eea;
   border-color: #667eea;
+}
+
+.limit-btn.current {
+  border: 3px solid #4ecdc4;
+  box-shadow: 0 0 0 2px rgba(78, 205, 196, 0.2);
+  position: relative;
+}
+
+.limit-btn.current::after {
+  content: "Current";
+  position: absolute;
+  top: -25px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #4ecdc4;
+  color: white;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: bold;
+  white-space: nowrap;
 }
 
 .limit-description {
