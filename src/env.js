@@ -9,34 +9,47 @@ export const Environment = {
 
 let currentEnvironment = null;
 
-export function getEnvironment() {
+export async function getEnvironment() {
   if (currentEnvironment === null) {
-    currentEnvironment = detectEnvironment();
+    currentEnvironment = await detectEnvironment();
   }
   return currentEnvironment;
 }
 
-function detectEnvironment() {
+async function detectEnvironment() {
   try {
-    const manifest = chrome.runtime.getManifest();
+    // Use chrome.management.getSelf() for more robust detection
+    const extensionInfo = await chrome.management.getSelf();
     
-    // In production (web store), extensions have an update_url
-    // In development (unpacked), this property is not present
-    if (manifest.update_url) {
-      return Environment.PRODUCTION;
-    } else {
+    // installType directly tells us if it's development or production
+    if (extensionInfo.installType === 'development') {
       return Environment.DEVELOPMENT;
+    } else {
+      return Environment.PRODUCTION;
     }
   } catch (error) {
-    // Fallback to development if detection fails
-    return Environment.DEVELOPMENT;
+    // Fallback to manifest-based detection if management API fails
+    try {
+      const manifest = chrome.runtime.getManifest();
+      
+      // In production (web store), extensions have an update_url
+      // In development (unpacked), this property is not present
+      if (manifest.update_url) {
+        return Environment.PRODUCTION;
+      } else {
+        return Environment.DEVELOPMENT;
+      }
+    } catch (manifestError) {
+      // Final fallback to development if all detection fails
+      return Environment.DEVELOPMENT;
+    }
   }
 }
 
-export function isDevelopment() {
-  return getEnvironment() === Environment.DEVELOPMENT;
+export async function isDevelopment() {
+  return (await getEnvironment()) === Environment.DEVELOPMENT;
 }
 
-export function isProduction() {
-  return getEnvironment() === Environment.PRODUCTION;
+export async function isProduction() {
+  return (await getEnvironment()) === Environment.PRODUCTION;
 }

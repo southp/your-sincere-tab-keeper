@@ -12,8 +12,14 @@ const LogLevel = {
 
 class Logger {
   constructor(scope = '') {
-    this.isDev = isDevelopment();
     this.scope = scope;
+    this.isDev = null; // Will be lazy-loaded on first use
+  }
+
+  async _ensureEnvironment() {
+    if (this.isDev === null) {
+      this.isDev = await isDevelopment();
+    }
   }
 
   _formatMessage(...args) {
@@ -24,9 +30,15 @@ class Logger {
   }
 
   log(...args) {
-    if (this.isDev) {
+    // Use async IIFE to avoid making all log calls async
+    this._ensureEnvironment().then(() => {
+      if (this.isDev) {
+        console.log(...this._formatMessage(...args));
+      }
+    }).catch(() => {
+      // Fallback to always log if environment detection fails
       console.log(...this._formatMessage(...args));
-    }
+    });
   }
 
   warn(...args) {
@@ -38,15 +50,25 @@ class Logger {
   }
 
   info(...args) {
-    if (this.isDev) {
+    this._ensureEnvironment().then(() => {
+      if (this.isDev) {
+        console.info(...this._formatMessage(...args));
+      }
+    }).catch(() => {
+      // Fallback to always log if environment detection fails
       console.info(...this._formatMessage(...args));
-    }
+    });
   }
 
   debug(...args) {
-    if (this.isDev) {
+    this._ensureEnvironment().then(() => {
+      if (this.isDev) {
+        console.debug(...this._formatMessage(...args));
+      }
+    }).catch(() => {
+      // Fallback to always log if environment detection fails
       console.debug(...this._formatMessage(...args));
-    }
+    });
   }
 }
 
