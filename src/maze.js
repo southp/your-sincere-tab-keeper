@@ -64,13 +64,14 @@ const COLORS = {
 };
 
 // Difficulty settings - streamlined progression
+// Note: All sizes must be odd for proper maze generation algorithm
 const DIFFICULTY_SETTINGS = [
   { name: 'Beginner', size: 5, description: 'Perfect for getting started' },
-  { name: 'Easy', size: 8, description: 'A gentle challenge' },
-  { name: 'Medium', size: 12, description: 'Getting more interesting' },
+  { name: 'Easy', size: 9, description: 'A gentle challenge' },
+  { name: 'Medium', size: 13, description: 'Getting more interesting' },
   { name: 'Hard', size: 19, description: 'Now we\'re talking!' },
   { name: 'Expert', size: 25, description: 'For the determined' },
-  { name: 'Master', size: 30, description: 'Serious commitment required' }
+  { name: 'Master', size: 31, description: 'Serious commitment required' }
 ];
 
 // Motivational messages
@@ -159,7 +160,8 @@ async function initializeGame() {
   currentDifficulty = Math.min(difficulty, DIFFICULTY_SETTINGS.length - 1);
   const difficultySettings = DIFFICULTY_SETTINGS[currentDifficulty];
   
-  mazeSize = difficultySettings.size;
+  // Ensure maze size is always odd for proper generation algorithm
+  mazeSize = ensureOddSize(difficultySettings.size);
   
   // Calculate responsive canvas size
   updateCanvasSize();
@@ -188,6 +190,15 @@ async function initializeGame() {
   
   // Initial render
   renderMaze();
+}
+
+/**
+ * Ensure maze size is odd for proper maze generation algorithm
+ * The maze generation algorithm requires odd dimensions to work correctly
+ */
+function ensureOddSize(size) {
+  // If size is even, make it odd by adding 1
+  return size % 2 === 0 ? size + 1 : size;
 }
 
 /**
