@@ -5,6 +5,7 @@
 
 import { TAB_LIMITS } from './constants.js';
 import { Logger } from './debug.js';
+import { isSpecialTab, isMazeTab } from './utils.js';
 
 // Create scoped loggers for different areas of functionality
 const initLogger = new Logger('INIT');
@@ -192,23 +193,6 @@ async function getCurrentTabCount() {
     tabLogger.error('Failed to get tab count:', error);
     return 0;
   }
-}
-
-/**
- * Check if tab should be ignored (special pages, extensions, etc.)
- */
-function isSpecialTab(tab) {
-  if (!tab.url) return true;
-  
-  const specialProtocols = ['chrome:', 'chrome-extension:', 'edge:', 'about:', 'moz-extension:'];
-  return specialProtocols.some(protocol => tab.url.startsWith(protocol));
-}
-
-/**
- * Check if tab is a maze tab
- */
-function isMazeTab(tab) {
-  return tab.url && tab.url.includes('maze.html');
 }
 
 /**

@@ -4,6 +4,7 @@
  */
 
 import { Logger } from './debug.js';
+import { isSpecialTab, isMazeTab } from './utils.js';
 
 // Create scoped logger for popup functionality
 const popupLogger = new Logger('POPUP');
@@ -69,15 +70,7 @@ async function checkCurrentTabs() {
     const tabs = await chrome.tabs.query({});
     
     // Filter out special tabs and maze tabs
-    const regularTabs = tabs.filter(tab => {
-      if (!tab.url) return false;
-      
-      const specialProtocols = ['chrome:', 'chrome-extension:', 'edge:', 'about:', 'moz-extension:'];
-      const isSpecial = specialProtocols.some(protocol => tab.url.startsWith(protocol));
-      const isMaze = tab.url.includes('maze.html');
-      
-      return !isSpecial && !isMaze;
-    });
+    const regularTabs = tabs.filter(tab => !isSpecialTab(tab) && !isMazeTab(tab));
     
     tabCountEl.textContent = regularTabs.length;
     
