@@ -368,78 +368,20 @@ async function handleMazeCompleted(tabId, data) {
 }
 
 /**
- * Handle URL redirect with robust error handling
+ * Handle URL redirect
  */
 async function handleUrlRedirect(tabId, originalUrl) {
   try {
-    tabLogger.log('Preparing to redirect tab', tabId, 'to original URL:', originalUrl);
+    tabLogger.log('Redirecting tab', tabId, 'to:', originalUrl);
     
-    // Add a delay to let the maze completion UI show and prevent race conditions
-    setTimeout(async () => {
-      try {
-        // Double-check tab still exists before redirect
-        const tab = await chrome.tabs.get(tabId);
-        if (!tab) {
-          tabLogger.warn('Tab', tabId, 'was closed before redirect could complete');
-          restoringTabs.delete(tabId);
-          return;
-        }
-        
-        tabLogger.log('Redirecting tab', tabId, 'to:', originalUrl);
-        
-        // Handle special case for chrome://newtab/ - some browsers don't handle it well
-        let targetUrl = originalUrl;
-        if (originalUrl === 'chrome://newtab/' || originalUrl === 'about:blank') {
-          tabLogger.log('Detected new tab URL, using alternative approach for tab:', tabId);
-          // For new tab pages, try to reload instead of redirecting
-          try {
-            await chrome.tabs.reload(tabId);
-            tabLogger.log('Reloaded new tab page for tab:', tabId);
-            tabLogger.log('Restoring flag will be cleared when tab finishes loading');
-            return; // Exit early since we handled it with reload
-          } catch (reloadError) {
-            tabLogger.log('Reload failed, falling back to URL redirect:', reloadError);
-            targetUrl = 'chrome://newtab/';
-          }
-        }
-        
-        await chrome.tabs.update(tabId, { url: targetUrl });
-        tabLogger.log('Successfully initiated redirect for tab:', tabId, 'to:', targetUrl);
-        tabLogger.log('Restoring flag will be cleared when tab finishes loading');
-        
-        // Safety timeout in case tab never finishes loading
-        setTimeout(() => {
-          if (restoringTabs.has(tabId)) {
-            restoringTabs.delete(tabId);
-            tabLogger.log('Safety timeout: Removed restoring flag for tab:', tabId);
-          }
-        }, 10000); // 10 second safety timeout
-        
-      } catch (redirectError) {
-        tabLogger.error('Failed to redirect tab', tabId, 'to original URL:', redirectError);
-        
-        // Try alternative handling
-        try {
-          // If redirect fails, try navigating to a safe page
-          await chrome.tabs.update(tabId, { url: 'chrome://newtab/' });
-          tabLogger.log('Redirected to new tab page as fallback for tab:', tabId);
-        } catch (fallbackError) {
-          tabLogger.error('Fallback redirect also failed for tab:', tabId, fallbackError);
-          // Close the tab if all else fails
-          try {
-            await chrome.tabs.remove(tabId);
-            tabLogger.log('Closed problematic tab:', tabId);
-          } catch (closeError) {
-            tabLogger.error('Could not close problematic tab:', closeError);
-          }
-        }
-        
-        restoringTabs.delete(tabId);
-      }
-    }, 800); // Slightly longer delay for large mazes
+    await chrome.tabs.update(tabId, { url: originalUrl });
+    tabLogger.log('Successfully redirected tab:', tabId);
+    
+    // Don't delete restoringTabs flag immediately - let the tab loading event handle it
+    // This prevents the tab from getting another maze during the redirect process
     
   } catch (error) {
-    generalLogger.error('Error in handleUrlRedirect:', error);
+    tabLogger.error('Failed to redirect tab', tabId, 'to:', originalUrl, error);
     restoringTabs.delete(tabId);
   }
 }
