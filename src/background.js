@@ -240,8 +240,17 @@ async function handleTabLimitExceeded(tab) {
     tabLogger.log('No URL to store for tab', tab.id, '- will default to new tab page');
   }
   
+  // Store maze session data securely in Chrome storage
+  await chrome.storage.local.set({
+    currentMazeSession: {
+      tabId: tab.id,
+      difficulty: mazesCompleted,
+      timestamp: Date.now()
+    }
+  });
+  
   // Redirect to maze
-  const mazeUrl = chrome.runtime.getURL(`maze.html?tabId=${tab.id}&difficulty=${mazesCompleted}`);
+  const mazeUrl = chrome.runtime.getURL('maze.html');
   
   try {
     await chrome.tabs.update(tab.id, { url: mazeUrl });
@@ -281,8 +290,21 @@ async function handleMazeCompleted(tabId, data) {
       return;
     }
     
-    // Check if this is an updateLimit maze by looking at the URL
-    const isUpdateLimitMaze = tab.url && tab.url.includes('action=updateLimit');
+    // Check if this is an updateLimit maze by looking at message data or checking storage
+    let isUpdateLimitMaze = false;
+    
+    // First check if the action is included in the completion message data
+    if (data && data.action === 'updateLimit') {
+      isUpdateLimitMaze = true;
+    } else {
+      // Fallback: check current storage (in case message didn't include action)
+      try {
+        const result = await chrome.storage.local.get(['currentMazeSession']);
+        isUpdateLimitMaze = result.currentMazeSession && result.currentMazeSession.action === 'updateLimit';
+      } catch (error) {
+        mazeLogger.error('Failed to check maze session for updateLimit action:', error);
+      }
+    }
     
     // Mark tab as being restored to prevent tab limiting logic from interfering
     restoringTabs.add(tabId);

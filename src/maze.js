@@ -22,11 +22,10 @@ let timerInterval;
 let isGameComplete = false;
 let currentDifficulty = 0;
 
-// URL parameters
-const urlParams = new URLSearchParams(window.location.search);
-const tabId = urlParams.get('tabId');
-const action = urlParams.get('action');
-const difficulty = parseInt(urlParams.get('difficulty')) || 0;
+// Maze session data (will be loaded from storage)
+let tabId = null;
+let action = null;
+let difficulty = 0;
 
 // DOM elements
 const difficultyLevelEl = document.getElementById('difficultyLevel');
@@ -89,6 +88,9 @@ const MOTIVATION_MESSAGES = [
 
 // Initialize game when DOM is loaded
 document.addEventListener('DOMContentLoaded', async () => {
+  // Load maze session data from storage first
+  await loadMazeSessionData();
+  
   await initializeGame();
   setupEventListeners();
   await loadStats();
@@ -146,6 +148,45 @@ function updateCanvasSize() {
   // Re-render if maze exists
   if (maze.length > 0) {
     renderMaze();
+  }
+}
+
+/**
+ * Load maze session data from Chrome storage
+ */
+async function loadMazeSessionData() {
+  try {
+    // Generate a unique session key based on current tab
+    const sessionKey = `mazeSession_${Date.now()}`;
+    
+    // Try to get existing session data
+    const result = await chrome.storage.local.get(['currentMazeSession']);
+    const sessionData = result.currentMazeSession;
+    
+    if (sessionData) {
+      tabId = sessionData.tabId;
+      action = sessionData.action;
+      difficulty = sessionData.difficulty || 0;
+      
+      mazeLogger.log('Loaded maze session data:', { tabId, action, difficulty });
+      mazeLogger.log('Action loaded from storage:', action);
+      
+      // Clear the session data to prevent reuse
+      await chrome.storage.local.remove(['currentMazeSession']);
+    } else {
+      mazeLogger.warn('No maze session data found, using defaults');
+      mazeLogger.log('Setting action to null (default)');
+      // Set defaults
+      tabId = null;
+      action = null;
+      difficulty = 0;
+    }
+  } catch (error) {
+    mazeLogger.error('Error loading maze session data:', error);
+    // Use safe defaults
+    tabId = null;
+    action = null;
+    difficulty = 0;
   }
 }
 
@@ -465,11 +506,13 @@ async function sendMazeCompletionMessage() {
           difficulty: currentDifficulty,
           time: Date.now() - gameStartTime,
           size: mazeSize,
-          tabId: parseInt(tabId) || null
+          tabId: parseInt(tabId) || null,
+          action: action // Include the action so background script knows the maze type
         }
       });
       
       mazeLogger.log('Maze completion message sent successfully');
+      mazeLogger.log('Current action value:', action);
       
       // Handle different completion types
       if (action === 'updateLimit') {
