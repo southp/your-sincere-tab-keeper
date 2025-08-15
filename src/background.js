@@ -3,25 +3,17 @@
  * Manages tab limits, maze redirects, and extension state
  */
 
-import { TAB_LIMITS } from './constants.js';
 import { Logger } from './debug.js';
+import { TabManager } from './tab-manager.js';
 import { isSpecialTab, isMazeTab } from './utils.js';
 
-// Create scoped loggers for different areas of functionality
-const initLogger = new Logger('INIT');
-const tabLogger = new Logger('TAB');
-const mazeLogger = new Logger('MAZE');
-const storageLogger = new Logger('STORAGE');
+// Create scoped loggers for service worker functionality
+const initLogger = new Logger('SERVICE-WORKER-INIT');
 const notificationLogger = new Logger('NOTIFICATION');
-const generalLogger = new Logger('BACKGROUND');
+const generalLogger = new Logger('SERVICE-WORKER');
 
-// In-memory state (resets on browser restart)
-let tabLimit = TAB_LIMITS.DEFAULT; // Default limit, will be loaded from storage
-let blockedUrls = new Map(); // tabId -> original URL mapping
-let mazeTabId = null; // Track current maze tab
-let mazesCompleted = 0; // Session counter for difficulty scaling (resets on browser restart)
-let isInitialized = false;
-let restoringTabs = new Set(); // Track tabs currently being restored from maze completion
+// Initialize the tab manager (core application logic)
+const tabManager = new TabManager();
 
 // Initialize extension on startup
 chrome.runtime.onStartup.addListener(async () => {
@@ -44,19 +36,8 @@ chrome.runtime.onInstalled.addListener(async (details) => {
  */
 async function initializeExtension() {
   try {
-    // Load tab limit from storage
-    const result = await chrome.storage.local.get(['tabLimit']);
-    if (result.tabLimit) {
-      tabLimit = result.tabLimit;
-    }
-    
-    // Reset session counters
-    mazesCompleted = 0;
-    mazeTabId = null;
-    blockedUrls.clear();
-    
-    isInitialized = true;
-    initLogger.log('Your Sincere Tab Keeper initialized with limit:', tabLimit);
+    await tabManager.initialize();
+    initLogger.log('Service worker initialized successfully');
   } catch (error) {
     initLogger.error('Failed to initialize extension:', error);
   }
@@ -66,24 +47,37 @@ async function initializeExtension() {
  * Handle new tab creation - main tab limiting logic
  */
 chrome.tabs.onCreated.addListener(async (tab) => {
-  if (!isInitialized) {
+  if (!tabManager.isInitialized) {
     await initializeExtension();
   }
   
-  // Skip special pages and extension pages
-  if (isSpecialTab(tab)) {
-    return;
-  }
+  generalLogger.log('New tab created:', tab.id, tab.url);
   
-  tabLogger.log('New tab created:', tab.id, tab.url);
+  // Use TabManager to check how tab should be handled
+  const result = await tabManager.shouldAllowNewTab(tab);
   
-  // Count current non-maze tabs
-  const tabCount = await getCurrentTabCount();
-  tabLogger.log('Current tab count:', tabCount, 'Limit:', tabLimit);
-  
-  // Check limit for ANY new tab, including empty ones
-  if (tabCount > tabLimit) {
-    await handleTabLimitExceeded(tab);
+  switch (result.action) {
+    case 'allow':
+      // Tab is allowed, do nothing
+      break;
+    case 'redirect-to-maze':
+      await tabManager.handleTabLimitExceeded(tab);
+      break;
+    case 'show-notification':
+      // Show the playful blob page instead of closing the tab
+      try {
+        generalLogger.log('Showing playful blob for excess tab:', tab.id, '- maze already exists');
+        const blobUrl = chrome.runtime.getURL('blob.html');
+        await chrome.tabs.update(tab.id, { url: blobUrl });
+      } catch (error) {
+        generalLogger.error('Failed to show blob page, closing excess tab:', tab.id, error);
+        try {
+          await chrome.tabs.remove(tab.id);
+        } catch (closeError) {
+          generalLogger.error('Failed to close tab after blob error:', closeError);
+        }
+      }
+      break;
   }
 });
 
@@ -91,31 +85,43 @@ chrome.tabs.onCreated.addListener(async (tab) => {
  * Handle tab updates (URL changes, loading states)
  */
 chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
-  if (!isInitialized) return;
+  if (!tabManager.isInitialized) return;
   
-  // Check if this is a restoring tab that has finished loading
-  if (restoringTabs.has(tabId)) {
-    // If the tab has finished loading (status is complete), clear the restoring flag
-    if (changeInfo.status === 'complete') {
-      restoringTabs.delete(tabId);
-      tabLogger.log('Tab', tabId, 'finished loading after maze completion - cleared restoring flag');
-    } else {
-      tabLogger.log('Skipping tab limit check for restoring tab:', tabId, 'status:', changeInfo.status);
-    }
-    return;
+  // Handle tab loading completion
+  if (changeInfo.status === 'complete') {
+    tabManager.onTabLoadComplete(tabId);
   }
   
   // If a tab gets a real URL after being created empty, check limits again
   if (changeInfo.url && !isSpecialTab(tab) && !isMazeTab(tab)) {
-    tabLogger.log('Tab URL changed:', tabId, 'from empty to', changeInfo.url);
+    generalLogger.log('Tab URL changed:', tabId, 'from empty to', changeInfo.url);
     
-    const tabCount = await getCurrentTabCount();
-    tabLogger.log('Tab count during URL change:', tabCount, 'Limit:', tabLimit);
+    // Use TabManager to check how tab should be handled
+    const result = await tabManager.shouldAllowNewTab(tab);
     
-    // Apply the same strict limiting logic
-    if (tabCount > tabLimit) {
-      tabLogger.log('Tab limit exceeded during URL change, blocking navigation');
-      await handleTabLimitExceeded(tab);
+    switch (result.action) {
+      case 'allow':
+        // Tab is allowed, do nothing
+        break;
+      case 'redirect-to-maze':
+        generalLogger.log('Tab limit exceeded during URL change, blocking navigation');
+        await tabManager.handleTabLimitExceeded(tab);
+        break;
+      case 'show-notification':
+        // Show the playful blob page instead of closing the tab
+        try {
+          generalLogger.log('Showing playful blob for tab URL change:', tabId, '- maze already exists');
+          const blobUrl = chrome.runtime.getURL('blob.html');
+          await chrome.tabs.update(tabId, { url: blobUrl });
+        } catch (error) {
+          generalLogger.error('Failed to show blob page, closing tab:', tabId, error);
+          try {
+            await chrome.tabs.remove(tabId);
+          } catch (closeError) {
+            generalLogger.error('Failed to close tab after blob error:', closeError);
+          }
+        }
+        break;
     }
   }
 });
@@ -124,20 +130,7 @@ chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
  * Clean up when tabs are closed
  */
 chrome.tabs.onRemoved.addListener((tabId) => {
-  if (blockedUrls.has(tabId)) {
-    blockedUrls.delete(tabId);
-    tabLogger.log('Cleaned up blocked URL for closed tab:', tabId);
-  }
-  
-  if (mazeTabId === tabId) {
-    mazeTabId = null;
-    mazeLogger.log('Maze tab closed');
-  }
-  
-  if (restoringTabs.has(tabId)) {
-    restoringTabs.delete(tabId);
-    tabLogger.log('Cleaned up restoring tab flag for closed tab:', tabId);
-  }
+  tabManager.onTabRemoved(tabId);
 });
 
 /**
@@ -146,22 +139,23 @@ chrome.tabs.onRemoved.addListener((tabId) => {
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   switch (message.type) {
     case 'MAZE_COMPLETED':
-      handleMazeCompleted(sender.tab.id, message.data);
+      tabManager.handleMazeCompleted(sender.tab.id, message.data);
       break;
     case 'GET_BLOCKED_URL':
-      sendResponse({ url: blockedUrls.get(sender.tab.id) });
+      // This functionality is now handled internally by TabManager
+      sendResponse({ url: null });
       break;
     case 'UPDATE_TAB_LIMIT':
-      handleTabLimitUpdate(message.limit);
+      tabManager.handleTabLimitUpdate(message.limit);
       break;
     case 'COMPLETE_ONBOARDING':
-      handleCompleteOnboarding(message.limit);
+      tabManager.handleCompleteOnboarding(message.limit);
       break;
     case 'GET_STATS':
       handleGetStats(sendResponse);
       return true; // Keep message channel open for async response
     case 'FOCUS_MAZE_TAB':
-      handleFocusMazeTab();
+      tabManager.focusMazeTab();
       break;
     case 'CLOSE_BLOB_TAB':
       handleCloseBlobTab(sender.tab.id);
@@ -510,19 +504,8 @@ async function triggerBrowserRestart() {
  */
 async function handleGetStats(sendResponse) {
   try {
-    const stats = await chrome.storage.local.get([
-      'mazesCompleted',
-      'blockedAttempts',
-      'installDate'
-    ]);
-    
-    sendResponse({
-      mazesCompleted: stats.mazesCompleted || 0,
-      blockedAttempts: stats.blockedAttempts || 0,
-      tabLimit: tabLimit,
-      sessionMazesCompleted: mazesCompleted,
-      installDate: stats.installDate || Date.now()
-    });
+    const stats = await tabManager.getStats();
+    sendResponse(stats);
   } catch (error) {
     generalLogger.error('Failed to get stats:', error);
     sendResponse({ error: 'Failed to load statistics' });
