@@ -613,7 +613,8 @@ async function setupLimitSelector() {
       // Add event listener to the OK button
       const okBtn = document.getElementById('okBtn');
       okBtn.addEventListener('click', () => {
-        chrome.runtime.openOptionsPage();
+        // Navigate current tab to options page instead of opening new tab
+        window.location.href = chrome.runtime.getURL('options.html');
       });
       
     } catch (error) {
