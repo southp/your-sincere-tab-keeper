@@ -15,7 +15,7 @@ This document provides a step-by-step roadmap to build the Chrome extension desc
   * Add remote origin
 * [ ] **0.1.2** Initialize with basic directory structure \[depends on 0.1.1]
 
-  * Create folders: `/src`, `/assets`, `/public`, `/scripts`
+  * Create folders: `/src`, `/assets`, `/scripts`
   * Add placeholder README files in each
 * [ ] **0.1.3** Setup `.gitignore`, `README.md`, and MIT License \[depends on 0.1.1]
 
