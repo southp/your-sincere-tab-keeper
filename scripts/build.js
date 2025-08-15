@@ -30,6 +30,10 @@ async function build() {
     console.log('📦 Running Vite build...');
     await runCommand('vite build');
 
+    // Copy manifest from root
+    console.log('📋 Copying manifest...');
+    await copyManifest();
+
     // Optimize manifest for production
     console.log('⚙️ Optimizing manifest...');
     await optimizeManifest();
@@ -37,6 +41,10 @@ async function build() {
     // Copy assets to build
     console.log('📋 Copying assets...');
     await copyAssets();
+
+    // Flatten HTML files to root
+    console.log('📄 Flattening HTML files...');
+    await flattenHtmlFiles();
 
     // Remove development files
     console.log('🗑️ Removing development files...');
@@ -86,6 +94,22 @@ function runCommand(command) {
 }
 
 /**
+ * Copy manifest.json from root to dist
+ */
+async function copyManifest() {
+  const sourceManifest = join(rootDir, 'manifest.json');
+  const destManifest = join(rootDir, 'dist', 'manifest.json');
+  
+  try {
+    const manifestContent = await fs.readFile(sourceManifest, 'utf8');
+    await fs.writeFile(destManifest, manifestContent);
+    console.log('   ✓ Manifest copied from root');
+  } catch (error) {
+    throw new Error(`Failed to copy manifest: ${error.message}`);
+  }
+}
+
+/**
  * Optimize manifest for production
  */
 async function optimizeManifest() {
@@ -94,6 +118,17 @@ async function optimizeManifest() {
   try {
     const manifestContent = await fs.readFile(manifestPath, 'utf8');
     const manifest = JSON.parse(manifestContent);
+    
+    // Update paths for production build (HTML files will be moved to root)
+    if (manifest.action && manifest.action.default_popup) {
+      manifest.action.default_popup = manifest.action.default_popup.replace('src/', '');
+    }
+    if (manifest.options_page) {
+      manifest.options_page = manifest.options_page.replace('src/', '');
+    }
+    if (manifest.background && manifest.background.service_worker) {
+      manifest.background.service_worker = manifest.background.service_worker.replace('src/', '');
+    }
     
     // Remove development-specific fields if any
     // Add production optimizations
@@ -107,7 +142,7 @@ async function optimizeManifest() {
     }
     
     await fs.writeFile(manifestPath, JSON.stringify(manifest, null, 2));
-    console.log('   ✓ Manifest optimized');
+    console.log('   ✓ Manifest optimized for production');
   } catch (error) {
     throw new Error(`Failed to optimize manifest: ${error.message}`);
   }
@@ -133,6 +168,49 @@ async function copyAssets() {
       console.log('   ⚠ No assets directory found, skipping...');
     } else {
       throw new Error(`Failed to copy assets: ${error.message}`);
+    }
+  }
+}
+
+/**
+ * Move HTML files from dist/src/ to dist/ root
+ */
+async function flattenHtmlFiles() {
+  const distPath = join(rootDir, 'dist');
+  const srcPath = join(distPath, 'src');
+  
+  try {
+    // Check if src directory exists in dist
+    await fs.access(srcPath);
+    
+    // Get all HTML files in dist/src/
+    const files = await fs.readdir(srcPath);
+    const htmlFiles = files.filter(file => file.endsWith('.html'));
+    
+    // Move each HTML file to dist root
+    for (const file of htmlFiles) {
+      const srcFile = join(srcPath, file);
+      const destFile = join(distPath, file);
+      await fs.rename(srcFile, destFile);
+      console.log(`   ✓ Moved ${file} to root`);
+    }
+    
+    // Remove empty src directory if it's empty
+    try {
+      const remainingFiles = await fs.readdir(srcPath);
+      if (remainingFiles.length === 0) {
+        await fs.rmdir(srcPath);
+        console.log('   ✓ Removed empty src directory');
+      }
+    } catch (error) {
+      // Ignore if directory not empty or doesn't exist
+    }
+    
+  } catch (error) {
+    if (error.code === 'ENOENT') {
+      console.log('   ⚠ No src directory found in dist, skipping...');
+    } else {
+      throw new Error(`Failed to flatten HTML files: ${error.message}`);
     }
   }
 }
@@ -183,7 +261,9 @@ async function validateBuild() {
     'options.js',
     'maze.html',
     'maze.css',
-    'maze.js'
+    'maze.js',
+    'blob.html',
+    'blob.js'
   ];
   
   for (const file of requiredFiles) {
