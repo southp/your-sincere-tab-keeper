@@ -591,7 +591,6 @@ async function showMazeExistsNotification() {
     
     await chrome.notifications.create(notificationId, {
       type: 'basic',
-      iconUrl: 'icons/icon48.png',
       title: 'Your Sincere Tab Keeper',
       message: 'You already have a maze to solve! 🧩',
       contextMessage: 'Focus on the current maze before opening new tabs.',

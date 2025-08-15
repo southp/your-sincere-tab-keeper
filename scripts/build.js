@@ -34,6 +34,10 @@ async function build() {
     console.log('⚙️ Optimizing manifest...');
     await optimizeManifest();
 
+    // Copy assets to build
+    console.log('📋 Copying assets...');
+    await copyAssets();
+
     // Remove development files
     console.log('🗑️ Removing development files...');
     await cleanupDevFiles();
@@ -106,6 +110,30 @@ async function optimizeManifest() {
     console.log('   ✓ Manifest optimized');
   } catch (error) {
     throw new Error(`Failed to optimize manifest: ${error.message}`);
+  }
+}
+
+/**
+ * Copy assets from assets/ to dist/
+ */
+async function copyAssets() {
+  const assetsPath = join(rootDir, 'assets');
+  const distPath = join(rootDir, 'dist');
+  
+  try {
+    // Check if assets directory exists
+    await fs.access(assetsPath);
+    
+    // Copy entire assets directory to dist
+    await fs.cp(assetsPath, join(distPath, 'assets'), { recursive: true });
+    
+    console.log('   ✓ Assets copied to dist/assets/');
+  } catch (error) {
+    if (error.code === 'ENOENT') {
+      console.log('   ⚠ No assets directory found, skipping...');
+    } else {
+      throw new Error(`Failed to copy assets: ${error.message}`);
+    }
   }
 }
 
