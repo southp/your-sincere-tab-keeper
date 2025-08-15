@@ -10,17 +10,199 @@ import { Logger } from './debug.js';
 // Create scoped logger for maze functionality
 const mazeLogger = new Logger('MAZE-GAME');
 
+// Maze generation constants
+const WALL = 1;
+const PATH = 0;
+const PLAYER = 2;
+const GOAL = 3;
+
+
+/**
+ * MazeModel - Encapsulates all maze data and logic
+ */
+class MazeModel {
+  constructor() {
+    this.grid = [];
+    this.size = 15;
+    this.playerPos = { x: 1, y: 1 };
+    this.goalPos = { x: 0, y: 0 };
+    this.difficulty = 0;
+    this.isComplete = false;
+    this.startTime = null;
+  }
+
+  /**
+   * Initialize maze with given difficulty settings
+   */
+  initialize(difficultySettings) {
+    this.size = this.ensureOddSize(difficultySettings.size);
+    this.difficulty = difficultySettings;
+    this.isComplete = false;
+    this.startTime = Date.now();
+    this.generate();
+  }
+
+  /**
+   * Ensure maze size is odd for proper maze generation algorithm
+   */
+  ensureOddSize(size) {
+    return size % 2 === 0 ? size + 1 : size;
+  }
+
+  /**
+   * Generate maze using recursive backtracking algorithm
+   */
+  generate() {
+    // Initialize maze with walls
+    this.grid = Array(this.size).fill().map(() => Array(this.size).fill(WALL));
+    
+    // Starting position (always odd coordinates for proper maze generation)
+    const startX = 1;
+    const startY = 1;
+    this.grid[startY][startX] = PATH;
+    
+    // Stack for backtracking
+    const stack = [{ x: startX, y: startY }];
+    
+    while (stack.length > 0) {
+      const current = stack[stack.length - 1];
+      const neighbors = this.getUnvisitedNeighbors(current.x, current.y);
+      
+      if (neighbors.length > 0) {
+        // Choose random neighbor
+        const next = neighbors[Math.floor(Math.random() * neighbors.length)];
+        
+        // Remove wall between current and next
+        const wallX = current.x + (next.x - current.x) / 2;
+        const wallY = current.y + (next.y - current.y) / 2;
+        this.grid[wallY][wallX] = PATH;
+        this.grid[next.y][next.x] = PATH;
+        
+        stack.push(next);
+      } else {
+        stack.pop();
+      }
+    }
+    
+    // Set player and goal positions
+    this.playerPos = { x: startX, y: startY };
+    this.goalPos = this.findFarthestPosition(startX, startY);
+    this.grid[this.goalPos.y][this.goalPos.x] = GOAL;
+  }
+
+  /**
+   * Get unvisited neighbors for maze generation
+   */
+  getUnvisitedNeighbors(x, y) {
+    const neighbors = [];
+    const directions = [
+      { x: 0, y: -2 }, // Up
+      { x: 2, y: 0 },  // Right
+      { x: 0, y: 2 },  // Down
+      { x: -2, y: 0 }  // Left
+    ];
+    
+    for (const dir of directions) {
+      const newX = x + dir.x;
+      const newY = y + dir.y;
+      
+      if (newX > 0 && newX < this.size - 1 && 
+          newY > 0 && newY < this.size - 1 && 
+          this.grid[newY][newX] === WALL) {
+        neighbors.push({ x: newX, y: newY });
+      }
+    }
+    
+    return neighbors;
+  }
+
+  /**
+   * Find the farthest reachable position from start using BFS
+   */
+  findFarthestPosition(startX, startY) {
+    const visited = Array(this.size).fill().map(() => Array(this.size).fill(false));
+    const queue = [{ x: startX, y: startY, distance: 0 }];
+    visited[startY][startX] = true;
+    
+    let farthest = { x: startX, y: startY };
+    let maxDistance = 0;
+    
+    while (queue.length > 0) {
+      const current = queue.shift();
+      
+      if (current.distance > maxDistance) {
+        maxDistance = current.distance;
+        farthest = { x: current.x, y: current.y };
+      }
+      
+      // Check all 4 directions
+      const directions = [
+        { x: 0, y: -1 }, { x: 1, y: 0 }, { x: 0, y: 1 }, { x: -1, y: 0 }
+      ];
+      
+      for (const dir of directions) {
+        const newX = current.x + dir.x;
+        const newY = current.y + dir.y;
+        
+        if (newX >= 0 && newX < this.size && 
+            newY >= 0 && newY < this.size && 
+            !visited[newY][newX] && 
+            this.grid[newY][newX] === PATH) {
+          visited[newY][newX] = true;
+          queue.push({ x: newX, y: newY, distance: current.distance + 1 });
+        }
+      }
+    }
+    
+    return farthest;
+  }
+
+  /**
+   * Attempt to move player in given direction
+   * @param {number} dx - X direction (-1, 0, 1)
+   * @param {number} dy - Y direction (-1, 0, 1)
+   * @returns {boolean} - True if move was successful and goal reached
+   */
+  movePlayer(dx, dy) {
+    if (this.isComplete) return false;
+    
+    const newX = this.playerPos.x + dx;
+    const newY = this.playerPos.y + dy;
+    
+    // Check bounds and walls
+    if (newX >= 0 && newX < this.size && 
+        newY >= 0 && newY < this.size && 
+        this.grid[newY][newX] !== WALL) {
+      
+      this.playerPos.x = newX;
+      this.playerPos.y = newY;
+      
+      // Check if goal reached
+      if (newX === this.goalPos.x && newY === this.goalPos.y) {
+        this.isComplete = true;
+        return true;
+      }
+    }
+    
+    return false;
+  }
+
+  /**
+   * Get elapsed time in milliseconds
+   */
+  getElapsedTime() {
+    return this.startTime ? Date.now() - this.startTime : 0;
+  }
+}
+
 // Game state
-let maze = [];
-let mazeSize = 15;
+let mazeModel = new MazeModel();
 let cellSize = 30;
-let playerPos = { x: 1, y: 1 };
-let goalPos = { x: 0, y: 0 };
 let canvas, ctx;
 let gameStartTime;
 let timerInterval;
-let isGameComplete = false;
 let currentDifficulty = 0;
+let isHandlingCompletion = false; // Prevent multiple completion handlers
 
 // Maze session data (will be loaded from storage)
 let tabId = null;
@@ -46,11 +228,6 @@ const modalLimitDescription = document.getElementById('modalLimitDescription');
 const confirmLimitBtn = document.getElementById('confirmLimitBtn');
 const cancelLimitBtn = document.getElementById('cancelLimitBtn');
 
-// Maze generation constants
-const WALL = 1;
-const PATH = 0;
-const PLAYER = 2;
-const GOAL = 3;
 
 // Colors (Chrome Dino inspired)
 const COLORS = {
@@ -122,10 +299,10 @@ function updateCanvasSize() {
   const canvasSize = Math.max(minCanvasSize, Math.min(maxCanvasSize, maxWidth));
   
   // Calculate cell size based on canvas size and maze size
-  cellSize = Math.max(4, Math.floor(canvasSize / mazeSize));
+  cellSize = Math.max(4, Math.floor(canvasSize / mazeModel.size));
   
   // Adjust canvas size to be exact multiple of cell size for crisp rendering
-  const actualCanvasSize = mazeSize * cellSize;
+  const actualCanvasSize = mazeModel.size * cellSize;
   
   // Set canvas size (this automatically clears the canvas)
   canvas.width = actualCanvasSize;
@@ -146,8 +323,8 @@ function updateCanvasSize() {
   }
   
   // Re-render if maze exists
-  if (maze.length > 0) {
-    renderMaze();
+  if (mazeModel.grid.length > 0) {
+    renderMaze(mazeModel);
   }
 }
 
@@ -201,10 +378,11 @@ async function initializeGame() {
   currentDifficulty = Math.min(difficulty, DIFFICULTY_SETTINGS.length - 1);
   const difficultySettings = DIFFICULTY_SETTINGS[currentDifficulty];
   
-  // Ensure maze size is always odd for proper generation algorithm
-  mazeSize = ensureOddSize(difficultySettings.size);
+  // Initialize maze model with difficulty settings
+  mazeModel.initialize(difficultySettings);
+  isHandlingCompletion = false; // Reset completion handler flag
   
-  // Calculate responsive canvas size
+  // Calculate responsive canvas size after model is initialized
   updateCanvasSize();
   
   // Add debounced resize listener for responsive updates
@@ -216,10 +394,7 @@ async function initializeGame() {
   
   // Update UI
   difficultyLevelEl.textContent = difficultySettings.name;
-  mazeSizeEl.textContent = `${mazeSize}x${mazeSize}`;
-  
-  // Generate maze
-  generateMaze();
+  mazeSizeEl.textContent = `${mazeModel.size}x${mazeModel.size}`;
   
   // Start timer
   gameStartTime = Date.now();
@@ -230,132 +405,15 @@ async function initializeGame() {
   motivationMessageEl.textContent = randomMessage;
   
   // Initial render
-  renderMaze();
+  renderMaze(mazeModel);
 }
 
-/**
- * Ensure maze size is odd for proper maze generation algorithm
- * The maze generation algorithm requires odd dimensions to work correctly
- */
-function ensureOddSize(size) {
-  // If size is even, make it odd by adding 1
-  return size % 2 === 0 ? size + 1 : size;
-}
-
-/**
- * Generate maze using recursive backtracking algorithm
- */
-function generateMaze() {
-  // Initialize maze with walls
-  maze = Array(mazeSize).fill().map(() => Array(mazeSize).fill(WALL));
-  
-  // Starting position (always odd coordinates for proper maze generation)
-  const startX = 1;
-  const startY = 1;
-  maze[startY][startX] = PATH;
-  
-  // Stack for backtracking
-  const stack = [{ x: startX, y: startY }];
-  
-  while (stack.length > 0) {
-    const current = stack[stack.length - 1];
-    const neighbors = getUnvisitedNeighbors(current.x, current.y);
-    
-    if (neighbors.length > 0) {
-      // Choose random neighbor
-      const next = neighbors[Math.floor(Math.random() * neighbors.length)];
-      
-      // Remove wall between current and next
-      const wallX = current.x + (next.x - current.x) / 2;
-      const wallY = current.y + (next.y - current.y) / 2;
-      maze[wallY][wallX] = PATH;
-      maze[next.y][next.x] = PATH;
-      
-      stack.push(next);
-    } else {
-      stack.pop();
-    }
-  }
-  
-  // Set player and goal positions
-  playerPos = { x: startX, y: startY };
-  
-  // Place goal at the farthest reachable position
-  goalPos = findFarthestPosition(startX, startY);
-  maze[goalPos.y][goalPos.x] = GOAL;
-}
-
-/**
- * Get unvisited neighbors for maze generation
- */
-function getUnvisitedNeighbors(x, y) {
-  const neighbors = [];
-  const directions = [
-    { x: 0, y: -2 }, // Up
-    { x: 2, y: 0 },  // Right
-    { x: 0, y: 2 },  // Down
-    { x: -2, y: 0 }  // Left
-  ];
-  
-  for (const dir of directions) {
-    const newX = x + dir.x;
-    const newY = y + dir.y;
-    
-    if (newX > 0 && newX < mazeSize - 1 && 
-        newY > 0 && newY < mazeSize - 1 && 
-        maze[newY][newX] === WALL) {
-      neighbors.push({ x: newX, y: newY });
-    }
-  }
-  
-  return neighbors;
-}
-
-/**
- * Find the farthest reachable position from start using BFS
- */
-function findFarthestPosition(startX, startY) {
-  const visited = Array(mazeSize).fill().map(() => Array(mazeSize).fill(false));
-  const queue = [{ x: startX, y: startY, distance: 0 }];
-  visited[startY][startX] = true;
-  
-  let farthest = { x: startX, y: startY };
-  let maxDistance = 0;
-  
-  while (queue.length > 0) {
-    const current = queue.shift();
-    
-    if (current.distance > maxDistance) {
-      maxDistance = current.distance;
-      farthest = { x: current.x, y: current.y };
-    }
-    
-    // Check all 4 directions
-    const directions = [
-      { x: 0, y: -1 }, { x: 1, y: 0 }, { x: 0, y: 1 }, { x: -1, y: 0 }
-    ];
-    
-    for (const dir of directions) {
-      const newX = current.x + dir.x;
-      const newY = current.y + dir.y;
-      
-      if (newX >= 0 && newX < mazeSize && 
-          newY >= 0 && newY < mazeSize && 
-          !visited[newY][newX] && 
-          maze[newY][newX] === PATH) {
-        visited[newY][newX] = true;
-        queue.push({ x: newX, y: newY, distance: current.distance + 1 });
-      }
-    }
-  }
-  
-  return farthest;
-}
 
 /**
  * Render the maze on canvas - optimized for performance
+ * @param {MazeModel} model - The maze model to render
  */
-function renderMaze() {
+function renderMaze(model) {
   // Clear canvas
   ctx.fillStyle = COLORS.background;
   ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -364,9 +422,9 @@ function renderMaze() {
   
   // Draw walls in one pass
   ctx.fillStyle = COLORS.wall;
-  for (let y = 0; y < mazeSize; y++) {
-    for (let x = 0; x < mazeSize; x++) {
-      if (maze[y][x] === WALL) {
+  for (let y = 0; y < model.size; y++) {
+    for (let x = 0; x < model.size; x++) {
+      if (model.grid[y][x] === WALL) {
         ctx.fillRect(x * cellSize, y * cellSize, cellSize, cellSize);
       }
     }
@@ -374,9 +432,9 @@ function renderMaze() {
   
   // Draw paths in one pass
   ctx.fillStyle = COLORS.path;
-  for (let y = 0; y < mazeSize; y++) {
-    for (let x = 0; x < mazeSize; x++) {
-      if (maze[y][x] === PATH || maze[y][x] === GOAL) {
+  for (let y = 0; y < model.size; y++) {
+    for (let x = 0; x < model.size; x++) {
+      if (model.grid[y][x] === PATH || model.grid[y][x] === GOAL) {
         ctx.fillRect(x * cellSize, y * cellSize, cellSize, cellSize);
       }
     }
@@ -385,27 +443,27 @@ function renderMaze() {
   // Draw goal
   ctx.fillStyle = COLORS.goal;
   ctx.fillRect(
-    goalPos.x * cellSize + 2,
-    goalPos.y * cellSize + 2,
+    model.goalPos.x * cellSize + 2,
+    model.goalPos.y * cellSize + 2,
     cellSize - 4,
     cellSize - 4
   );
   
   // Only draw borders for smaller mazes to avoid performance issues
-  if (mazeSize <= 25) {
+  if (model.size <= 25) {
     ctx.strokeStyle = COLORS.border;
     ctx.lineWidth = 1;
     ctx.beginPath();
     
     // Draw grid lines efficiently
-    for (let i = 0; i <= mazeSize; i++) {
+    for (let i = 0; i <= model.size; i++) {
       // Vertical lines
       ctx.moveTo(i * cellSize, 0);
-      ctx.lineTo(i * cellSize, mazeSize * cellSize);
+      ctx.lineTo(i * cellSize, model.size * cellSize);
       
       // Horizontal lines
       ctx.moveTo(0, i * cellSize);
-      ctx.lineTo(mazeSize * cellSize, i * cellSize);
+      ctx.lineTo(model.size * cellSize, i * cellSize);
     }
     
     ctx.stroke();
@@ -413,8 +471,8 @@ function renderMaze() {
   
   // Draw player
   ctx.fillStyle = COLORS.player;
-  const playerX = playerPos.x * cellSize + 3;
-  const playerY = playerPos.y * cellSize + 3;
+  const playerX = model.playerPos.x * cellSize + 3;
+  const playerY = model.playerPos.y * cellSize + 3;
   const playerSize = Math.max(4, cellSize - 6);
   
   ctx.fillRect(playerX, playerY, playerSize, playerSize);
@@ -426,14 +484,14 @@ function renderMaze() {
     const eyeOffset = Math.floor(cellSize * 0.3);
     
     ctx.fillRect(
-      playerPos.x * cellSize + eyeOffset,
-      playerPos.y * cellSize + eyeOffset,
+      model.playerPos.x * cellSize + eyeOffset,
+      model.playerPos.y * cellSize + eyeOffset,
       eyeSize,
       eyeSize
     );
     ctx.fillRect(
-      playerPos.x * cellSize + Math.floor(cellSize * 0.6),
-      playerPos.y * cellSize + eyeOffset,
+      model.playerPos.x * cellSize + Math.floor(cellSize * 0.6),
+      model.playerPos.y * cellSize + eyeOffset,
       eyeSize,
       eyeSize
     );
@@ -444,25 +502,13 @@ function renderMaze() {
  * Handle player movement
  */
 function movePlayer(dx, dy) {
-  if (isGameComplete) return;
+  const goalReached = mazeModel.movePlayer(dx, dy);
   
-  const newX = playerPos.x + dx;
-  const newY = playerPos.y + dy;
+  renderMaze(mazeModel);
   
-  // Check bounds and walls
-  if (newX >= 0 && newX < mazeSize && 
-      newY >= 0 && newY < mazeSize && 
-      maze[newY][newX] !== WALL) {
-    
-    playerPos.x = newX;
-    playerPos.y = newY;
-    
-    renderMaze();
-    
-    // Check if goal reached
-    if (newX === goalPos.x && newY === goalPos.y) {
-      handleMazeComplete();
-    }
+  // Check if goal reached
+  if (goalReached) {
+    handleMazeComplete();
   }
 }
 
@@ -470,9 +516,9 @@ function movePlayer(dx, dy) {
  * Handle maze completion
  */
 async function handleMazeComplete() {
-  if (isGameComplete) return; // Prevent multiple completions
+  if (isHandlingCompletion) return; // Prevent multiple completion handlers
   
-  isGameComplete = true;
+  isHandlingCompletion = true;
   stopTimer();
   
   // Show completion overlay and send completion message
@@ -491,8 +537,8 @@ async function sendMazeCompletionMessage() {
       type: 'MAZE_COMPLETED',
       data: {
         difficulty: currentDifficulty,
-        time: Date.now() - gameStartTime,
-        size: mazeSize,
+        time: mazeModel.getElapsedTime(),
+        size: mazeModel.size,
         tabId: parseInt(tabId) || null,
         action: action
       }
@@ -707,7 +753,6 @@ function setupEventListeners() {
   // Button handlers
   resetMazeBtn.addEventListener('click', () => {
     if (confirm('Generate a new maze? Your current progress will be lost.')) {
-      isGameComplete = false;
       mazeOverlay.style.display = 'none';
       stopTimer();
       initializeGame();
