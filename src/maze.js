@@ -475,134 +475,48 @@ async function handleMazeComplete() {
   isGameComplete = true;
   stopTimer();
   
-  // Show completion overlay
+  // Show completion overlay and send completion message
   mazeOverlay.style.display = 'flex';
-  
-  // Add delay before sending completion message to let UI settle
-  setTimeout(async () => {
-    await sendMazeCompletionMessage();
-  }, 500); // Back to simple approach
+  await sendMazeCompletionMessage();
 }
 
 /**
- * Send maze completion message with basic error handling
+ * Send maze completion message
  */
 async function sendMazeCompletionMessage() {
-  const maxRetries = 3;
-  let retryCount = 0;
-  
-  while (retryCount < maxRetries) {
-    try {
-      mazeLogger.log(`Sending maze completion message (attempt ${retryCount + 1})...`);
-      
-      // Check if chrome runtime is available before sending
-      if (!chrome?.runtime) {
-        throw new Error('Chrome runtime not available');
+  try {
+    mazeLogger.log('Sending maze completion message...');
+    
+    await chrome.runtime.sendMessage({
+      type: 'MAZE_COMPLETED',
+      data: {
+        difficulty: currentDifficulty,
+        time: Date.now() - gameStartTime,
+        size: mazeSize,
+        tabId: parseInt(tabId) || null,
+        action: action
       }
-      
-      await chrome.runtime.sendMessage({
-        type: 'MAZE_COMPLETED',
-        data: {
-          difficulty: currentDifficulty,
-          time: Date.now() - gameStartTime,
-          size: mazeSize,
-          tabId: parseInt(tabId) || null,
-          action: action // Include the action so background script knows the maze type
-        }
-      });
-      
-      mazeLogger.log('Maze completion message sent successfully');
-      mazeLogger.log('Current action value:', action);
-      
-      // Handle different completion types
-      if (action === 'updateLimit') {
-        // Wait for success animation, then show limit update modal
-        setTimeout(async () => {
-          try {
-            mazeOverlay.style.display = 'none';
-            await showUpdateLimitModal();
-          } catch (error) {
-            mazeLogger.error('Error showing update limit modal:', error);
-          }
-        }, 2000);
-      } else {
-        // Normal maze completion - background will handle URL loading
-        mazeLogger.log('Normal maze completion - waiting for background script redirect');
-        
-        // Set a timeout to prevent infinite waiting if background fails
-        setTimeout(() => {
-          if (isGameComplete && document.visibilityState === 'visible') {
-            mazeLogger.warn('Background script may have failed, attempting self-close');
-            window.close();
-          }
-        }, 10000); // 10 second timeout
-      }
-      
-      return; // Success, exit retry loop
-      
-    } catch (error) {
-      retryCount++;
-      mazeLogger.error(`Error sending maze completion message (attempt ${retryCount}):`, error);
-      
-      if (retryCount >= maxRetries) {
-        mazeLogger.error('All retry attempts failed, using fallback');
-        await handleCompletionFallback();
-        return;
-      }
-      
-      // Wait before retry
-      await new Promise(resolve => setTimeout(resolve, 500 * retryCount));
+    });
+    
+    mazeLogger.log('Maze completion message sent successfully');
+    
+    // Handle different completion types
+    if (action === 'updateLimit') {
+      // Brief delay for success animation, then show limit update modal
+      setTimeout(async () => {
+        mazeOverlay.style.display = 'none';
+        await showUpdateLimitModal();
+      }, 500);
+    } else {
+      // Normal maze completion - background will handle URL loading
+      mazeLogger.log('Normal maze completion - waiting for background script redirect');
     }
+    
+  } catch (error) {
+    mazeLogger.error('Error sending maze completion message:', error);
   }
 }
 
-/**
- * Fallback handling when maze completion fails
- */
-async function handleCompletionFallback() {
-  try {
-    mazeLogger.log('Attempting fallback maze completion handling...');
-    
-    // Try different approaches to handle the completion
-    if (typeof chrome !== 'undefined' && chrome.runtime) {
-      try {
-        // Try to send a simpler close message
-        await chrome.runtime.sendMessage({ type: 'CLOSE_BLOB_TAB' });
-        return;
-      } catch (e) {
-        mazeLogger.log('Close message failed, trying window.close');
-      }
-    }
-    
-    // Last resort: close window directly
-    setTimeout(() => {
-      window.close();
-    }, 1000);
-    
-  } catch (fallbackError) {
-    mazeLogger.error('All fallback methods failed:', fallbackError);
-    // Show user message as final fallback
-    if (mazeOverlay) {
-      mazeOverlay.innerHTML = `
-        <div style="padding: 20px; text-align: center; background: white; border-radius: 10px;">
-          <h3>Maze Complete!</h3>
-          <p>Please manually close this tab or navigate to your desired page.</p>
-          <button id="fallbackCloseBtn" style="padding: 10px 20px; margin-top: 10px; background: #4ecdc4; color: white; border: none; border-radius: 5px; cursor: pointer;">
-            Close Tab
-          </button>
-        </div>
-      `;
-      
-      // Add event listener to the close button
-      const fallbackCloseBtn = document.getElementById('fallbackCloseBtn');
-      if (fallbackCloseBtn) {
-        fallbackCloseBtn.addEventListener('click', () => {
-          window.close();
-        });
-      }
-    }
-  }
-}
 
 /**
  * Show the update limit modal
