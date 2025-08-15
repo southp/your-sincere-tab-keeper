@@ -15,8 +15,12 @@ export function isSpecialTab(tab) {
 }
 
 /**
- * Check if tab is a maze tab
+ * Check if tab is a maze tab from this extension
  */
 export function isMazeTab(tab) {
-  return tab.url && tab.url.includes('maze.html');
+  if (!tab.url) return false;
+  
+  // Check if the URL is from our extension and points to maze.html
+  const extensionBaseUrl = chrome.runtime.getURL('');
+  return tab.url.startsWith(extensionBaseUrl) && tab.url.includes('maze.html');
 }
