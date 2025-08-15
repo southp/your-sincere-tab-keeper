@@ -46,6 +46,10 @@ async function build() {
     console.log('📄 Flattening HTML files...');
     await flattenHtmlFiles();
 
+    // Update JavaScript file paths for production
+    console.log('🔗 Updating file paths for production...');
+    await updateFilePaths();
+
     // Remove development files
     console.log('🗑️ Removing development files...');
     await cleanupDevFiles();
@@ -212,6 +216,36 @@ async function flattenHtmlFiles() {
     } else {
       throw new Error(`Failed to flatten HTML files: ${error.message}`);
     }
+  }
+}
+
+/**
+ * Update file paths in JavaScript files for production build
+ */
+async function updateFilePaths() {
+  const distPath = join(rootDir, 'dist');
+  
+  try {
+    // Get all JavaScript files in dist
+    const files = await fs.readdir(distPath);
+    const jsFiles = files.filter(file => file.endsWith('.js'));
+    
+    for (const file of jsFiles) {
+      const filePath = join(distPath, file);
+      let content = await fs.readFile(filePath, 'utf8');
+      
+      // Update chrome.runtime.getURL paths to remove 'src/'
+      const originalContent = content;
+      content = content.replace(/chrome\.runtime\.getURL\(['"`]src\//g, "chrome.runtime.getURL('");
+      
+      if (content !== originalContent) {
+        await fs.writeFile(filePath, content);
+        console.log(`   ✓ Updated paths in ${file}`);
+      }
+    }
+    
+  } catch (error) {
+    throw new Error(`Failed to update file paths: ${error.message}`);
   }
 }
 

@@ -26,7 +26,7 @@ chrome.runtime.onInstalled.addListener(async (details) => {
   if (details.reason === 'install') {
     // Show onboarding page for first-time users
     chrome.tabs.create({
-      url: chrome.runtime.getURL('options.html?onboarding=true')
+      url: chrome.runtime.getURL('src/options.html?onboarding=true')
     });
   }
 });
@@ -67,7 +67,7 @@ chrome.tabs.onCreated.addListener(async (tab) => {
       // Show the playful blob page instead of closing the tab
       try {
         generalLogger.log('Showing playful blob for excess tab:', tab.id, '- maze already exists');
-        const blobUrl = chrome.runtime.getURL('blob.html');
+        const blobUrl = chrome.runtime.getURL('src/blob.html');
         await chrome.tabs.update(tab.id, { url: blobUrl });
       } catch (error) {
         generalLogger.error('Failed to show blob page, closing excess tab:', tab.id, error);
@@ -111,7 +111,7 @@ chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
         // Show the playful blob page instead of closing the tab
         try {
           generalLogger.log('Showing playful blob for tab URL change:', tabId, '- maze already exists');
-          const blobUrl = chrome.runtime.getURL('blob.html');
+          const blobUrl = chrome.runtime.getURL('src/blob.html');
           await chrome.tabs.update(tabId, { url: blobUrl });
         } catch (error) {
           generalLogger.error('Failed to show blob page, closing tab:', tabId, error);
@@ -244,7 +244,7 @@ async function handleTabLimitExceeded(tab) {
   });
   
   // Redirect to maze
-  const mazeUrl = chrome.runtime.getURL('maze.html');
+  const mazeUrl = chrome.runtime.getURL('src/maze.html');
   
   try {
     await chrome.tabs.update(tab.id, { url: mazeUrl });

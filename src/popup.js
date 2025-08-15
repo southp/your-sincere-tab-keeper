@@ -158,7 +158,7 @@ async function handleUpdateLimit() {
     });
     
     // Create a new tab with maze for limit update
-    const mazeUrl = chrome.runtime.getURL('maze.html');
+    const mazeUrl = chrome.runtime.getURL('src/maze.html');
     await chrome.tabs.create({ url: mazeUrl });
     
     // Close popup

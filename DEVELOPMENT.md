@@ -52,6 +52,18 @@ your-sincere-tab-keeper-claude/
 - **`src/maze.js`** - Maze game implementation
 - **`assets/icon-*.png`** - Extension icons (generated from `icon.svg`)
 
+## Important Path Considerations
+
+**For Development (Unpacked Extension):**
+- HTML files are in `src/` directory relative to manifest
+- JavaScript code uses `chrome.runtime.getURL('src/filename.html')`
+- This allows loading unpacked extension from project root
+
+**For Production (Built Extension):**
+- Build process flattens HTML files to `dist/` root
+- Build process automatically updates all `src/` references in JS files
+- Final extension has flat structure for Chrome Web Store
+
 ## Build Process
 
 The build process:

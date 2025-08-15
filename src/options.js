@@ -337,7 +337,7 @@ async function handleChangeLimit() {
     });
     
     // Create maze tab for limit update
-    const mazeUrl = chrome.runtime.getURL('maze.html');
+    const mazeUrl = chrome.runtime.getURL('src/maze.html');
     await chrome.tabs.create({ url: mazeUrl });
     
     showNotification('Solve the maze to update your tab limit!', 'info');

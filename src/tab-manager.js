@@ -126,7 +126,7 @@ export class TabManager {
       });
       
       // Redirect to maze
-      const mazeUrl = chrome.runtime.getURL('maze.html');
+      const mazeUrl = chrome.runtime.getURL('src/maze.html');
       
       try {
         await chrome.tabs.update(tab.id, { url: mazeUrl });

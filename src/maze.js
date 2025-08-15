@@ -476,7 +476,7 @@ async function setupLimitSelector() {
       const okBtn = document.getElementById('okBtn');
       okBtn.addEventListener('click', () => {
         // Navigate current tab to options page instead of opening new tab
-        window.location.href = chrome.runtime.getURL('options.html');
+        window.location.href = chrome.runtime.getURL('src/options.html');
       });
       
     } catch (error) {
