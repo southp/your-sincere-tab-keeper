@@ -142,6 +142,9 @@ body {
   background: #333;
   border-radius: 12px;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+  max-width: 500px;
+  max-height: 80vh;
+  overflow-y: auto;
 }
 
 .success-icon {
@@ -159,6 +162,37 @@ body {
   font-size: 16px;
   margin-bottom: 20px;
   opacity: 0.9;
+}
+
+.completion-message {
+  font-size: 14px;
+  margin-bottom: 24px;
+  opacity: 0.8;
+}
+
+.productivity-tip {
+  background: rgba(102, 126, 234, 0.1);
+  border: 1px solid rgba(102, 126, 234, 0.3);
+  border-radius: 8px;
+  padding: 20px;
+  margin: 20px 0;
+  text-align: left;
+}
+
+.productivity-tip h4 {
+  color: #667eea;
+  font-size: 18px;
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.productivity-tip p {
+  font-size: 15px;
+  line-height: 1.5;
+  margin-bottom: 0;
+  opacity: 0.95;
 }
 
 .loading-spinner {

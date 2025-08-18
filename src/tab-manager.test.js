@@ -53,7 +53,13 @@ describe('TabManager', () => {
   };
 
   beforeEach(() => {
-    tabManager = new TabManager();
+    // Create TabManager with fast timing for tests
+    tabManager = new TabManager({
+      timing: {
+        MAZE_COMPLETION_DISPLAY: 100,    // Fast completion display for tests
+        EMPTY_TAB_CLEANUP_DELAY: 50      // Fast cleanup delay for tests
+      }
+    });
     
     // Reset all mocks
     jest.clearAllMocks();
@@ -84,6 +90,29 @@ describe('TabManager', () => {
       expect(tabManager.mazesCompleted).toBe(0);
       expect(tabManager.isInitialized).toBe(false);
       expect(tabManager.restoringTabs).toBeInstanceOf(Set);
+    });
+
+    test('initializes with custom timing options', () => {
+      const customTabManager = new TabManager({
+        timing: {
+          MAZE_COMPLETION_DISPLAY: 1000,
+          EMPTY_TAB_CLEANUP_DELAY: 500
+        }
+      });
+
+      expect(customTabManager.timing.MAZE_COMPLETION_DISPLAY).toBe(1000);
+      expect(customTabManager.timing.EMPTY_TAB_CLEANUP_DELAY).toBe(500);
+    });
+
+    test('merges custom timing with defaults', () => {
+      const customTabManager = new TabManager({
+        timing: {
+          MAZE_COMPLETION_DISPLAY: 2000  // Only override one value
+        }
+      });
+
+      expect(customTabManager.timing.MAZE_COMPLETION_DISPLAY).toBe(2000);
+      expect(customTabManager.timing.EMPTY_TAB_CLEANUP_DELAY).toBe(TabManager.TIMING.EMPTY_TAB_CLEANUP_DELAY);
     });
   });
 
@@ -205,6 +234,7 @@ describe('TabManager', () => {
     test('redirects to maze when over limit and no maze exists', async () => {
       // Mock getCurrentTabCount directly to return count over limit
       tabManager.tabLimit = 2;
+      tabManager.restoringTabs.clear(); // Ensure clean state
       jest.spyOn(tabManager, 'getCurrentTabCount').mockResolvedValue(3);
 
       const result = await tabManager.shouldAllowNewTab({ id: 4 });
@@ -215,6 +245,7 @@ describe('TabManager', () => {
     test('shows notification when over limit and maze exists', async () => {
       // Mock getCurrentTabCount directly to return count over limit
       tabManager.tabLimit = 2;
+      tabManager.restoringTabs.clear(); // Ensure clean state
       jest.spyOn(tabManager, 'getCurrentTabCount').mockResolvedValue(3);
       tabManager.mazeTabId = 2;
 
@@ -299,7 +330,7 @@ describe('TabManager', () => {
       const tab = { id: 1 };
       mockChrome.tabs.get.mockResolvedValue(tab);
       // For updateLimit mazes, there's typically no stored URL
-      // tabManager.blockedUrls.set(1, 'http://example.com'); // Don't set URL for updateLimit
+      tabManager.blockedUrls.delete(1); // Ensure no URL is stored
 
       await tabManager.handleMazeCompleted(1, { action: 'updateLimit' });
 
@@ -325,9 +356,32 @@ describe('TabManager', () => {
 
       jest.useFakeTimers();
       await tabManager.handleMazeCompleted(1, {});
-      jest.advanceTimersByTime(800);
+      jest.advanceTimersByTime(tabManager.timing.EMPTY_TAB_CLEANUP_DELAY);
 
       expect(mockChrome.tabs.remove).toHaveBeenCalledWith(1);
+      jest.useRealTimers();
+    });
+
+    test('waits for productivity tip display before redirecting', async () => {
+      const tab = { id: 1 };
+      mockChrome.tabs.get.mockResolvedValue(tab);
+      tabManager.blockedUrls.set(1, 'http://example.com');
+      
+      jest.useFakeTimers();
+      const handleUrlRedirectSpy = jest.spyOn(tabManager, 'handleUrlRedirect').mockResolvedValue();
+
+      await tabManager.handleMazeCompleted(1, {});
+
+      // Should not have called redirect yet
+      expect(handleUrlRedirectSpy).not.toHaveBeenCalled();
+
+      // Advance time by the productivity tip display duration and run all pending timers
+      jest.advanceTimersByTime(tabManager.timing.MAZE_COMPLETION_DISPLAY);
+      await jest.runAllTimersAsync();
+
+      // Now redirect should be called
+      expect(handleUrlRedirectSpy).toHaveBeenCalledWith(1, 'http://example.com');
+      
       jest.useRealTimers();
     });
   });
@@ -426,7 +480,9 @@ describe('TabManager', () => {
         { id: 4, lastAccessed: 3000 }
       ];
       mockChrome.tabs.query.mockResolvedValue(tabs);
-      setupStandardMocks();
+      // Mock all tabs as regular tabs (not special or maze tabs)
+      mockUtils.isSpecialTab.mockReturnValue(false);
+      mockUtils.isMazeTab.mockReturnValue(false);
 
       await tabManager.smartTabClosure(2);
 
@@ -496,6 +552,9 @@ describe('TabManager', () => {
       tabManager.mazeTabId = 1;
       const tab = { id: 1, windowId: 123 };
       mockChrome.tabs.get.mockResolvedValue(tab);
+      
+      // Clear previous mock implementations and set specifically for this test
+      mockUtils.isMazeTab.mockClear();
       mockUtils.isMazeTab.mockReturnValue(true);
 
       const result = await tabManager.focusMazeTab();
@@ -597,6 +656,9 @@ describe('TabManager', () => {
     test('complete tab limiting workflow', async () => {
       await tabManager.initialize();
       tabManager.tabLimit = 2;
+      
+      // Clear restoring tabs to ensure clean test state
+      tabManager.restoringTabs.clear();
 
       // Mock getCurrentTabCount for each step
       let getCurrentTabCountSpy = jest.spyOn(tabManager, 'getCurrentTabCount');
@@ -627,9 +689,18 @@ describe('TabManager', () => {
 
       // Complete the maze
       mockChrome.tabs.get.mockResolvedValue({ id: 4 });
+      
+      jest.useFakeTimers();
       await tabManager.handleMazeCompleted(4, {});
+      
+      // Advance timers to handle the productivity tip delay
+      jest.advanceTimersByTime(tabManager.timing.MAZE_COMPLETION_DISPLAY);
+      await jest.runAllTimersAsync();
+      
       expect(tabManager.mazeTabId).toBeNull();
       expect(tabManager.mazesCompleted).toBe(1);
+      
+      jest.useRealTimers();
       
       getCurrentTabCountSpy.mockRestore();
     });

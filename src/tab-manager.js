@@ -10,7 +10,16 @@ import { Logger } from './debug.js';
 import { isSpecialTab, isMazeTab } from './utils.js';
 
 export class TabManager {
-  constructor() {
+  // Configurable timing constants
+  static TIMING = {
+    MAZE_COMPLETION_DISPLAY: 5000,    // How long to show productivity tip
+    EMPTY_TAB_CLEANUP_DELAY: 800      // Delay before closing empty tabs
+  };
+
+  constructor(options = {}) {
+    // Allow timing override for testing
+    this.timing = { ...TabManager.TIMING, ...options.timing };
+    
     // Initialize loggers
     this.tabLogger = new Logger('TAB-MANAGER');
     this.mazeLogger = new Logger('MAZE-MANAGER');
@@ -227,15 +236,17 @@ export class TabManager {
             await this.handleUrlRedirect(tabId, 'chrome://newtab/');
           }
           this.restoringTabs.delete(tabId);
-        }, 800);
+        }, this.timing.EMPTY_TAB_CLEANUP_DELAY);
         return;
       } else {
         this.tabLogger.log('Using stored URL for tab', tabId, ':', originalUrl);
       }
       
-      await this.handleUrlRedirect(tabId, targetUrl);
-      
-      this.mazeLogger.log('Maze completion handling finished for tab:', tabId);
+      // Wait to allow productivity tip to be displayed
+      setTimeout(async () => {
+        await this.handleUrlRedirect(tabId, targetUrl);
+        this.mazeLogger.log('Maze completion handling finished for tab:', tabId);
+      }, this.timing.MAZE_COMPLETION_DISPLAY);
       
     } catch (error) {
       this.mazeLogger.error('Error in handleMazeCompleted:', error);

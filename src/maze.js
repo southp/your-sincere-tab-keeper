@@ -7,6 +7,7 @@ import { TAB_LIMITS, LIMIT_DESCRIPTIONS } from './constants.js';
 import { renderLimitButtons, setupLimitButtonListeners, updateLimitDescription } from './ui-utils.js';
 import { Logger } from './debug.js';
 import { MazeModel, WALL, PATH, PLAYER, GOAL } from './maze-model.js';
+import { getRandomTip } from './productivity-tips.js';
 
 // Create scoped logger for maze functionality
 const mazeLogger = new Logger('MAZE-GAME');
@@ -329,6 +330,28 @@ function movePlayer(dx, dy) {
 }
 
 /**
+ * Show completion message with productivity tip
+ */
+function showCompletionMessage() {
+  const tip = getRandomTip();
+  
+  // Update the overlay content with the productivity tip
+  const overlayContent = document.querySelector('#mazeOverlay .overlay-content');
+  overlayContent.innerHTML = `
+    <div class="success-icon">🎉</div>
+    <h3>Congratulations!</h3>
+    <p class="completion-message">You solved the maze! Here's a productivity tip while we redirect you:</p>
+    <div class="productivity-tip">
+      <h4>💡 ${tip.title}</h4>
+      <p>${tip.message}</p>
+    </div>
+    <div class="loading-spinner"></div>
+  `;
+  
+  mazeOverlay.style.display = 'flex';
+}
+
+/**
  * Handle maze completion
  */
 async function handleMazeComplete() {
@@ -337,8 +360,8 @@ async function handleMazeComplete() {
   isHandlingCompletion = true;
   stopTimer();
   
-  // Show completion overlay and send completion message
-  mazeOverlay.style.display = 'flex';
+  // Show completion overlay with productivity tip and send completion message
+  showCompletionMessage();
   await sendMazeCompletionMessage();
 }
 
@@ -364,14 +387,15 @@ async function sendMazeCompletionMessage() {
     
     // Handle different completion types
     if (action === 'updateLimit') {
-      // Brief delay for success animation, then show limit update modal
+      // Extended delay to show productivity tip, then show limit update modal
       setTimeout(async () => {
         mazeOverlay.style.display = 'none';
         await showUpdateLimitModal();
-      }, 500);
+      }, 5000);
     } else {
-      // Normal maze completion - background will handle URL loading
-      mazeLogger.log('Normal maze completion - waiting for background script redirect');
+      // Normal maze completion - show tip for 5 seconds, then background will handle URL loading
+      mazeLogger.log('Normal maze completion - showing productivity tip for 5 seconds');
+      // Note: Background script will wait for this delay before redirecting
     }
     
   } catch (error) {
