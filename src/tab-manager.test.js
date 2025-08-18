@@ -30,18 +30,22 @@ const mockChrome = {
 };
 
 // Mock utility functions before any imports
-const mockUtils = {
+jest.mock('./utils.js', () => ({
   isSpecialTab: jest.fn().mockReturnValue(false),
   isMazeTab: jest.fn().mockReturnValue(false)
-};
-
-jest.mock('./utils.js', () => mockUtils);
+}));
 
 // Set up global chrome mock
 global.chrome = mockChrome;
 
 // Import mocked functions and TabManager after mocking
 import { isSpecialTab, isMazeTab } from './utils.js';
+
+// Get references to the mocked functions
+const mockUtils = {
+  isSpecialTab,
+  isMazeTab
+};
 
 describe('TabManager', () => {
   let tabManager;
