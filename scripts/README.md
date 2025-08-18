@@ -1,9 +1,9 @@
 # Build Scripts
 
-This directory contains build and development scripts.
+This directory contains build and validation scripts for the Chrome extension.
 
-- `build.js` - Production build script
-- `validate.js` - Build validation script
+- `build.js` - Production build script that optimizes the extension for Chrome Web Store
+- `validate.js` - Build validation script that ensures all required files are present
 
-Use `npm run dev` to start the development server with Vite.
+Use `npm run build` to build the extension for production.
 

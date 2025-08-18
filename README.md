@@ -25,7 +25,7 @@ This extension is built with:
 
 ```bash
 npm install
-npm run dev
+npm run build
 ```
 
 ### Build

@@ -33,10 +33,10 @@ This document provides a step-by-step roadmap to build the Chrome extension desc
 
   * Setup input/output folders
   * Handle HTML input entries: `options.html`, `maze.html`
-* [ ] **0.2.3** Enable live reload for development \[depends on 0.2.2]
+* [x] **0.2.3** ~~Enable live reload for development~~ \[removed - not applicable for browser extensions]
 
-  * Integrate Vite dev server
-  * Setup HMR for popup and options
+  * ~~Integrate Vite dev server~~ - Removed as dev servers don't apply to browser extensions
+  * ~~Setup HMR for popup and options~~ - Extensions require manual reload in browser
 
 ---
 
