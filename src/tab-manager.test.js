@@ -232,24 +232,46 @@ describe('TabManager', () => {
     });
 
     test('redirects to maze when over limit and no maze exists', async () => {
-      // Mock getCurrentTabCount directly to return count over limit
+      // Ensure TabManager is initialized and set up properly
       tabManager.tabLimit = 2;
+      tabManager.isInitialized = true;
       tabManager.restoringTabs.clear(); // Ensure clean state
+      tabManager.mazeTabId = null; // Ensure no maze exists
+      
+      // Mock utility functions for this specific test
+      mockUtils.isSpecialTab.mockReturnValue(false);
+      mockUtils.isMazeTab.mockReturnValue(false);
+      
       jest.spyOn(tabManager, 'getCurrentTabCount').mockResolvedValue(3);
 
-      const result = await tabManager.shouldAllowNewTab({ id: 4 });
+      const tab = { id: 4, url: 'http://example.com' };
+      
+      // Debug: verify initial state
+      expect(tabManager.isInitialized).toBe(true);
+      expect(tabManager.tabLimit).toBe(2);
+      expect(tabManager.restoringTabs.has(4)).toBe(false);
+      expect(tabManager.mazeTabId).toBe(null);
+
+      const result = await tabManager.shouldAllowNewTab(tab);
 
       expect(result).toEqual({ action: 'redirect-to-maze' });
     });
 
     test('shows notification when over limit and maze exists', async () => {
-      // Mock getCurrentTabCount directly to return count over limit
+      // Ensure TabManager is initialized and set up properly
       tabManager.tabLimit = 2;
+      tabManager.isInitialized = true;
       tabManager.restoringTabs.clear(); // Ensure clean state
+      
+      // Mock utility functions for this specific test
+      mockUtils.isSpecialTab.mockReturnValue(false);
+      mockUtils.isMazeTab.mockReturnValue(false);
+      
       jest.spyOn(tabManager, 'getCurrentTabCount').mockResolvedValue(3);
-      tabManager.mazeTabId = 2;
+      tabManager.mazeTabId = 2; // Maze exists
 
-      const result = await tabManager.shouldAllowNewTab({ id: 4 });
+      const tab = { id: 4, url: 'http://example.com' };
+      const result = await tabManager.shouldAllowNewTab(tab);
 
       expect(result).toEqual({ action: 'show-notification' });
     });
@@ -479,13 +501,25 @@ describe('TabManager', () => {
         { id: 3, lastAccessed: 1500 },
         { id: 4, lastAccessed: 3000 }
       ];
+      
+      // Clear previous mock implementations and set specifically for this test
+      mockChrome.tabs.query.mockClear();
+      mockChrome.tabs.remove.mockClear();
       mockChrome.tabs.query.mockResolvedValue(tabs);
-      // Mock all tabs as regular tabs (not special or maze tabs)
-      mockUtils.isSpecialTab.mockReturnValue(false);
-      mockUtils.isMazeTab.mockReturnValue(false);
+      
+      // Use mockImplementation to ensure the mocks work correctly
+      mockUtils.isSpecialTab.mockImplementation(() => false);
+      mockUtils.isMazeTab.mockImplementation(() => false);
+      
+      // Ensure remove doesn't throw
+      mockChrome.tabs.remove.mockResolvedValue();
 
-      await tabManager.smartTabClosure(2);
-
+      const result = await tabManager.smartTabClosure(2);
+      
+      // Debug: check if we can see how many tabs were considered for removal
+      expect(mockUtils.isSpecialTab).toHaveBeenCalledTimes(4); // Should be called for each tab
+      expect(mockUtils.isMazeTab).toHaveBeenCalledTimes(4); // Should be called for each tab
+      
       expect(mockChrome.tabs.remove).toHaveBeenCalledTimes(2);
       expect(mockChrome.tabs.remove).toHaveBeenCalledWith(1); // oldest
       expect(mockChrome.tabs.remove).toHaveBeenCalledWith(3); // second oldest
@@ -656,6 +690,7 @@ describe('TabManager', () => {
     test('complete tab limiting workflow', async () => {
       await tabManager.initialize();
       tabManager.tabLimit = 2;
+      tabManager.isInitialized = true;
       
       // Clear restoring tabs to ensure clean test state
       tabManager.restoringTabs.clear();
@@ -673,8 +708,11 @@ describe('TabManager', () => {
       result = await tabManager.shouldAllowNewTab({ id: 3 });
       expect(result.action).toBe('allow');
 
-      // Third tab - over limit, redirect to maze (count = 3)
+      // Third tab - over limit, redirect to maze (count = 3)  
       getCurrentTabCountSpy.mockResolvedValueOnce(3);
+      // Ensure utility functions are mocked properly
+      mockUtils.isSpecialTab.mockReturnValue(false);
+      mockUtils.isMazeTab.mockReturnValue(false);
       result = await tabManager.shouldAllowNewTab({ id: 4 });
       expect(result.action).toBe('redirect-to-maze');
 

@@ -4,7 +4,8 @@
 
 export const Environment = {
   DEVELOPMENT: 'development',
-  PRODUCTION: 'production'
+  PRODUCTION: 'production',
+  TEST: 'test'
 };
 
 let currentEnvironment = null;
@@ -17,6 +18,21 @@ export async function getEnvironment() {
 }
 
 async function detectEnvironment() {
+  // Check if we're in a test environment first
+  if (typeof global !== 'undefined' && global.chrome && global.chrome.__testMode) {
+    return Environment.TEST;
+  }
+  
+  // Check for Jest test environment
+  if (typeof process !== 'undefined' && process.env && process.env.NODE_ENV === 'test') {
+    return Environment.TEST;
+  }
+  
+  // Check for common test globals
+  if (typeof jest !== 'undefined' || typeof describe !== 'undefined' || typeof it !== 'undefined') {
+    return Environment.TEST;
+  }
+  
   try {
     // Use chrome.management.getSelf() for more robust detection
     const extensionInfo = await chrome.management.getSelf();
@@ -40,8 +56,8 @@ async function detectEnvironment() {
         return Environment.DEVELOPMENT;
       }
     } catch (manifestError) {
-      // Final fallback to development if all detection fails
-      return Environment.DEVELOPMENT;
+      // If Chrome APIs are not available, we're likely in a test environment
+      return Environment.TEST;
     }
   }
 }
@@ -52,4 +68,8 @@ export async function isDevelopment() {
 
 export async function isProduction() {
   return (await getEnvironment()) === Environment.PRODUCTION;
+}
+
+export async function isTest() {
+  return (await getEnvironment()) === Environment.TEST;
 }
