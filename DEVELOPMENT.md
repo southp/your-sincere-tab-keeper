@@ -3,7 +3,7 @@
 ## Project Structure
 
 ```
-your-sincere-tab-keeper-claude/
+your-sincere-tab-keeper/
 ├── manifest.json              # Chrome extension manifest (project root)
 ├── src/                      # Source code
 │   ├── background.js         # Service worker
@@ -27,7 +27,7 @@ your-sincere-tab-keeper-claude/
 1. Open Chrome and go to `chrome://extensions/`
 2. Enable "Developer mode" (top right toggle)
 3. Click "Load unpacked"
-4. **Select the project root directory** (`your-sincere-tab-keeper-claude/`)
+4. **Select the project root directory** (`your-sincere-tab-keeper/`)
    - This will load `manifest.json` from the root
    - All paths in manifest point to `src/` and `assets/` directories
 
