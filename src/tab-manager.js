@@ -113,9 +113,14 @@ export class TabManager {
     
     const currentCount = await this.getCurrentTabCount();
     
-    // If within limit (including the new tab), allow
+    // If within limit (including the new tab), allow and mark as unblocked
     // Note: currentCount includes the tab being evaluated since onCreated fires after tab creation
-    if (currentCount <= this.tabLimit) return { action: 'allow' };
+    if (currentCount <= this.tabLimit) {
+      // Mark this tab as unblocked so it won't show mazes on URL changes
+      this.unblockedTabs.add(tab.id);
+      this.tabLogger.log('Marked new tab as unblocked (within limit):', tab.id);
+      return { action: 'allow' };
+    }
     
     // Over limit - check if maze already exists
     if (this.mazeTabId) {

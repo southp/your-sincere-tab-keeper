@@ -290,6 +290,44 @@ describe('TabManager', () => {
       expect(result).toEqual({ action: 'allow' });
     });
 
+    test('marks new tabs as unblocked when within limit', async () => {
+      tabManager.tabLimit = 5;
+      tabManager.isInitialized = true;
+      mockUtils.isSpecialTab.mockReturnValue(false);
+      mockUtils.isMazeTab.mockReturnValue(false);
+      mockUtils.isPopupWindow.mockResolvedValue(false);
+      
+      // Mock getCurrentTabCount to return 3 (within limit of 5)
+      jest.spyOn(tabManager, 'getCurrentTabCount').mockResolvedValue(3);
+
+      const tab = { id: 4, url: 'http://example.com' };
+      const result = await tabManager.shouldAllowNewTab(tab);
+
+      expect(result).toEqual({ action: 'allow' });
+      expect(tabManager.unblockedTabs.has(4)).toBe(true);
+    });
+
+    test('handles incremental unblocking after tabs are closed', async () => {
+      // Simulate scenario: limit=3, had tabs 1,2,3 unblocked, closed 2&3, now opening new tabs
+      tabManager.tabLimit = 3;
+      tabManager.isInitialized = true;
+      tabManager.unblockedTabs.add(1); // Pre-existing unblocked tab
+      
+      mockUtils.isSpecialTab.mockReturnValue(false);
+      mockUtils.isMazeTab.mockReturnValue(false);
+      mockUtils.isPopupWindow.mockResolvedValue(false);
+      
+      // New tab would bring count to 2 (within limit of 3)
+      jest.spyOn(tabManager, 'getCurrentTabCount').mockResolvedValue(2);
+
+      const newTab = { id: 5, url: 'http://newsite.com' };
+      const result = await tabManager.shouldAllowNewTab(newTab);
+
+      expect(result).toEqual({ action: 'allow' });
+      expect(tabManager.unblockedTabs.has(1)).toBe(true); // Old tab still unblocked
+      expect(tabManager.unblockedTabs.has(5)).toBe(true); // New tab also unblocked
+    });
+
     test('redirects to maze when over limit and no maze exists', async () => {
       // Ensure TabManager is initialized and set up properly
       tabManager.tabLimit = 2;
