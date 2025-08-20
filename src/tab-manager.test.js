@@ -547,6 +547,91 @@ describe('TabManager', () => {
     });
   });
 
+  describe('markExistingTabsAsUnblocked', () => {
+    beforeEach(() => {
+      // Reset utility mocks for each test
+      mockUtils.isSpecialTab.mockReturnValue(false);
+      mockUtils.isMazeTab.mockReturnValue(false);
+      mockUtils.isPopupWindow.mockResolvedValue(false);
+    });
+
+    test('marks existing tabs as unblocked up to limit', async () => {
+      tabManager.tabLimit = 3;
+      
+      // Mock 5 regular tabs
+      const tabs = [
+        { id: 1, url: 'https://example.com' },
+        { id: 2, url: 'https://google.com' },
+        { id: 3, url: 'https://github.com' },
+        { id: 4, url: 'https://stackoverflow.com' },
+        { id: 5, url: 'https://mdn.dev' }
+      ];
+      
+      mockChrome.tabs.query.mockResolvedValue(tabs);
+      
+      await tabManager.markExistingTabsAsUnblocked();
+      
+      // Should mark first 3 tabs (up to limit) as unblocked
+      expect(tabManager.unblockedTabs.has(1)).toBe(true);
+      expect(tabManager.unblockedTabs.has(2)).toBe(true);
+      expect(tabManager.unblockedTabs.has(3)).toBe(true);
+      expect(tabManager.unblockedTabs.has(4)).toBe(false);
+      expect(tabManager.unblockedTabs.has(5)).toBe(false);
+    });
+
+    test('excludes special tabs, maze tabs, and popups', async () => {
+      tabManager.tabLimit = 3;
+      
+      const tabs = [
+        { id: 1, url: 'chrome://settings' }, // Special tab
+        { id: 2, url: 'chrome-extension://abc/maze.html' }, // Maze tab
+        { id: 3, url: 'https://accounts.google.com', windowId: 123 }, // Popup
+        { id: 4, url: 'https://example.com' }, // Regular tab
+        { id: 5, url: 'https://google.com' } // Regular tab
+      ];
+      
+      mockChrome.tabs.query.mockResolvedValue(tabs);
+      
+      // Configure mocks to identify special tabs
+      mockUtils.isSpecialTab.mockImplementation(tab => tab.url.startsWith('chrome'));
+      mockUtils.isMazeTab.mockImplementation(tab => tab.url.includes('maze.html'));
+      mockUtils.isPopupWindow.mockImplementation(tab => tab.id === 3);
+      
+      await tabManager.markExistingTabsAsUnblocked();
+      
+      // Should only mark regular tabs as unblocked
+      expect(tabManager.unblockedTabs.has(1)).toBe(false);
+      expect(tabManager.unblockedTabs.has(2)).toBe(false);
+      expect(tabManager.unblockedTabs.has(3)).toBe(false);
+      expect(tabManager.unblockedTabs.has(4)).toBe(true);
+      expect(tabManager.unblockedTabs.has(5)).toBe(true);
+    });
+
+    test('does not override already unblocked tabs', async () => {
+      tabManager.tabLimit = 2;
+      tabManager.unblockedTabs.add(1); // Already unblocked
+      
+      const tabs = [
+        { id: 1, url: 'https://example.com' },
+        { id: 2, url: 'https://google.com' }
+      ];
+      
+      mockChrome.tabs.query.mockResolvedValue(tabs);
+      
+      await tabManager.markExistingTabsAsUnblocked();
+      
+      // Should still be unblocked
+      expect(tabManager.unblockedTabs.has(1)).toBe(true);
+      expect(tabManager.unblockedTabs.has(2)).toBe(true);
+    });
+
+    test('handles errors gracefully', async () => {
+      mockChrome.tabs.query.mockRejectedValue(new Error('Query failed'));
+      
+      await expect(tabManager.markExistingTabsAsUnblocked()).resolves.not.toThrow();
+    });
+  });
+
   describe('handleTabLimitUpdate', () => {
     beforeEach(async () => {
       await tabManager.initialize();
@@ -575,6 +660,26 @@ describe('TabManager', () => {
       await tabManager.handleTabLimitUpdate(3);
 
       expect(tabManager.smartTabClosure).toHaveBeenCalledWith(3);
+    });
+
+    test('marks additional tabs as unblocked when limit increased', async () => {
+      tabManager.tabLimit = 2;
+      jest.spyOn(tabManager, 'markExistingTabsAsUnblocked').mockResolvedValue();
+
+      await tabManager.handleTabLimitUpdate(5);
+
+      expect(tabManager.markExistingTabsAsUnblocked).toHaveBeenCalled();
+    });
+
+    test('does nothing special when limit stays the same', async () => {
+      tabManager.tabLimit = 4;
+      const markExistingTabsSpy = jest.spyOn(tabManager, 'markExistingTabsAsUnblocked').mockResolvedValue();
+      const smartTabClosureSpy = jest.spyOn(tabManager, 'smartTabClosure').mockResolvedValue();
+
+      await tabManager.handleTabLimitUpdate(4);
+
+      expect(markExistingTabsSpy).not.toHaveBeenCalled();
+      expect(smartTabClosureSpy).not.toHaveBeenCalled();
     });
   });
 

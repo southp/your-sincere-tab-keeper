@@ -62,6 +62,9 @@ export class TabManager {
       // Clean up any stale tab references from previous sessions
       await this.cleanupStaleTabReferences();
 
+      // Mark existing tabs as unblocked to prevent counter-intuitive behavior
+      await this.markExistingTabsAsUnblocked();
+
       this.isInitialized = true;
       this.generalLogger.log('TabManager initialized successfully');
     } catch (error) {
@@ -353,6 +356,46 @@ export class TabManager {
   }
 
   /**
+   * Mark existing tabs as unblocked to prevent counter-intuitive behavior
+   * When users have tabs open before reaching their limit, those tabs should
+   * remain unblocked even if their URLs change later.
+   */
+  async markExistingTabsAsUnblocked() {
+    try {
+      // Get all currently existing tabs
+      const existingTabs = await chrome.tabs.query({});
+      
+      // Filter to regular tabs (exclude special tabs, maze tabs, popups)
+      const regularTabs = [];
+      for (const tab of existingTabs) {
+        if (!isSpecialTab(tab) && !isMazeTab(tab) && !(await isPopupWindow(tab))) {
+          regularTabs.push(tab);
+        }
+      }
+      
+      // Sort tabs by ID (older tabs typically have lower IDs)
+      regularTabs.sort((a, b) => a.id - b.id);
+      
+      // Mark up to the tab limit as unblocked
+      const tabsToUnblock = regularTabs.slice(0, this.tabLimit);
+      
+      tabsToUnblock.forEach(tab => {
+        if (!this.unblockedTabs.has(tab.id)) {
+          this.unblockedTabs.add(tab.id);
+          this.tabLogger.log('Marked existing tab as unblocked:', tab.id, tab.url);
+        }
+      });
+      
+      if (tabsToUnblock.length > 0) {
+        this.generalLogger.log(`Marked ${tabsToUnblock.length} existing tabs as unblocked`);
+      }
+      
+    } catch (error) {
+      this.generalLogger.error('Error marking existing tabs as unblocked:', error);
+    }
+  }
+
+  /**
    * Handle tab limit updates
    */
   async handleTabLimitUpdate(newLimit) {
@@ -362,9 +405,12 @@ export class TabManager {
       await chrome.storage.local.set({ tabLimit: newLimit });
       this.generalLogger.log('Tab limit updated from', oldLimit, 'to:', newLimit);
       
-      // If the new limit is lower, close excess tabs intelligently
       if (newLimit < oldLimit) {
+        // If the new limit is lower, close excess tabs intelligently
         await this.smartTabClosure(newLimit);
+      } else if (newLimit > oldLimit) {
+        // If the new limit is higher, mark additional existing tabs as unblocked
+        await this.markExistingTabsAsUnblocked();
       }
     } else {
       this.generalLogger.error('Invalid tab limit:', newLimit);
