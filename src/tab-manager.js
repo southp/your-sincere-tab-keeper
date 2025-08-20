@@ -33,6 +33,7 @@ export class TabManager {
     this.mazesCompleted = 0; // Session counter for difficulty scaling
     this.isInitialized = false;
     this.restoringTabs = new Set(); // Track tabs currently being restored
+    this.unblockedTabs = new Set(); // Track tabs that have solved mazes and are permanently unblocked
   }
 
   /**
@@ -94,6 +95,9 @@ export class TabManager {
     
     // Allow tabs being restored from maze completion
     if (this.restoringTabs.has(tab.id)) return { action: 'allow' };
+    
+    // Allow tabs that have been permanently unblocked by solving a maze
+    if (this.unblockedTabs.has(tab.id)) return { action: 'allow' };
     
     const currentCount = await this.getCurrentTabCount();
     
@@ -205,6 +209,10 @@ export class TabManager {
       this.mazesCompleted++;
       await this.incrementStat('mazesCompleted');
       
+      // Mark this tab as permanently unblocked for its lifetime
+      this.unblockedTabs.add(tabId);
+      this.tabLogger.log('Marked tab as permanently unblocked:', tabId);
+      
       // Handle URL restoration
       const originalUrl = this.blockedUrls.get(tabId);
       this.tabLogger.log('Retrieved original URL for tab', tabId, ':', originalUrl || 'none (will use new tab page)');
@@ -278,6 +286,7 @@ export class TabManager {
    */
   cleanupTabReferences(tabId) {
     this.restoringTabs.delete(tabId);
+    this.unblockedTabs.delete(tabId);
     if (this.mazeTabId === tabId) {
       this.mazeTabId = null;
     }

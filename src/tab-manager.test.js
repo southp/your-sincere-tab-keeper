@@ -227,6 +227,24 @@ describe('TabManager', () => {
       expect(result).toEqual({ action: 'allow' });
     });
 
+    test('allows unblocked tabs regardless of limit', async () => {
+      // Set up a scenario where limit would normally be exceeded
+      tabManager.tabLimit = 2;
+      tabManager.isInitialized = true;
+      tabManager.mazeTabId = null;
+      mockUtils.isSpecialTab.mockReturnValue(false);
+      mockUtils.isMazeTab.mockReturnValue(false);
+      jest.spyOn(tabManager, 'getCurrentTabCount').mockResolvedValue(3); // Over limit
+      
+      // Mark tab as unblocked
+      const tab = { id: 4, url: 'http://example.com' };
+      tabManager.unblockedTabs.add(4);
+
+      const result = await tabManager.shouldAllowNewTab(tab);
+
+      expect(result).toEqual({ action: 'allow' });
+    });
+
     test('allows tab when under limit', async () => {
       mockChrome.tabs.query.mockResolvedValue([{ id: 1 }, { id: 2 }]);
 
@@ -352,6 +370,19 @@ describe('TabManager', () => {
       });
     });
 
+    test('marks tab as permanently unblocked after completion', async () => {
+      const tab = { id: 1 };
+      mockChrome.tabs.get.mockResolvedValue(tab);
+      
+      // Ensure tab is not initially unblocked
+      expect(tabManager.unblockedTabs.has(1)).toBe(false);
+      
+      await tabManager.handleMazeCompleted(1, {});
+      
+      // Verify tab is now marked as unblocked
+      expect(tabManager.unblockedTabs.has(1)).toBe(true);
+    });
+
     test('handles updateLimit maze completion', async () => {
       const tab = { id: 1 };
       mockChrome.tabs.get.mockResolvedValue(tab);
@@ -434,12 +465,14 @@ describe('TabManager', () => {
       tabManager.restoringTabs.add(1);
       tabManager.mazeTabId = 1;
       tabManager.blockedUrls.set(1, 'http://example.com');
+      tabManager.unblockedTabs.add(1);
 
       tabManager.cleanupTabReferences(1);
 
       expect(tabManager.restoringTabs.has(1)).toBe(false);
       expect(tabManager.mazeTabId).toBeNull();
       expect(tabManager.blockedUrls.has(1)).toBe(false);
+      expect(tabManager.unblockedTabs.has(1)).toBe(false);
     });
   });
 
