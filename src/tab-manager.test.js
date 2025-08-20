@@ -275,6 +275,21 @@ describe('TabManager', () => {
       expect(result).toEqual({ action: 'allow' });
     });
 
+    test('allows tab when exactly at limit', async () => {
+      tabManager.tabLimit = 3;
+      tabManager.isInitialized = true;
+      mockUtils.isSpecialTab.mockReturnValue(false);
+      mockUtils.isMazeTab.mockReturnValue(false);
+      mockUtils.isPopupWindow.mockResolvedValue(false);
+      
+      // Mock getCurrentTabCount to return 3 (including the new tab being evaluated)
+      jest.spyOn(tabManager, 'getCurrentTabCount').mockResolvedValue(3);
+
+      const result = await tabManager.shouldAllowNewTab({ id: 3 });
+
+      expect(result).toEqual({ action: 'allow' });
+    });
+
     test('redirects to maze when over limit and no maze exists', async () => {
       // Ensure TabManager is initialized and set up properly
       tabManager.tabLimit = 2;

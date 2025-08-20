@@ -113,8 +113,9 @@ export class TabManager {
     
     const currentCount = await this.getCurrentTabCount();
     
-    // If under limit, allow
-    if (currentCount < this.tabLimit) return { action: 'allow' };
+    // If within limit (including the new tab), allow
+    // Note: currentCount includes the tab being evaluated since onCreated fires after tab creation
+    if (currentCount <= this.tabLimit) return { action: 'allow' };
     
     // Over limit - check if maze already exists
     if (this.mazeTabId) {
