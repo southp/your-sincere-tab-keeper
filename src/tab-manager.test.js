@@ -500,6 +500,53 @@ describe('TabManager', () => {
     });
   });
 
+  describe('cleanupStaleTabReferences', () => {
+    test('removes references to tabs that no longer exist', async () => {
+      // Set up stale references
+      tabManager.unblockedTabs.add(99); // Non-existent tab
+      tabManager.unblockedTabs.add(100); // Existing tab
+      tabManager.restoringTabs.add(98); // Non-existent tab  
+      tabManager.blockedUrls.set(97, 'http://example.com'); // Non-existent tab
+      tabManager.mazeTabId = 96; // Non-existent tab
+      
+      // Mock existing tabs (only tab 100 exists)
+      mockChrome.tabs.query.mockResolvedValue([{ id: 100 }]);
+      
+      await tabManager.cleanupStaleTabReferences();
+      
+      // Should keep only existing tabs
+      expect(tabManager.unblockedTabs.has(99)).toBe(false);
+      expect(tabManager.unblockedTabs.has(100)).toBe(true);
+      expect(tabManager.restoringTabs.has(98)).toBe(false);
+      expect(tabManager.blockedUrls.has(97)).toBe(false);
+      expect(tabManager.mazeTabId).toBeNull();
+    });
+
+    test('handles errors gracefully during cleanup', async () => {
+      mockChrome.tabs.query.mockRejectedValue(new Error('Query failed'));
+      
+      await expect(tabManager.cleanupStaleTabReferences()).resolves.not.toThrow();
+    });
+
+    test('does nothing when all references are valid', async () => {
+      tabManager.unblockedTabs.add(1);
+      tabManager.restoringTabs.add(2);
+      tabManager.blockedUrls.set(3, 'http://example.com');
+      tabManager.mazeTabId = 4;
+      
+      mockChrome.tabs.query.mockResolvedValue([
+        { id: 1 }, { id: 2 }, { id: 3 }, { id: 4 }
+      ]);
+      
+      await tabManager.cleanupStaleTabReferences();
+      
+      expect(tabManager.unblockedTabs.has(1)).toBe(true);
+      expect(tabManager.restoringTabs.has(2)).toBe(true);
+      expect(tabManager.blockedUrls.has(3)).toBe(true);
+      expect(tabManager.mazeTabId).toBe(4);
+    });
+  });
+
   describe('handleTabLimitUpdate', () => {
     beforeEach(async () => {
       await tabManager.initialize();

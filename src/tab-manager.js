@@ -59,6 +59,9 @@ export class TabManager {
         this.storageLogger.log('Set install date');
       }
 
+      // Clean up any stale tab references from previous sessions
+      await this.cleanupStaleTabReferences();
+
       this.isInitialized = true;
       this.generalLogger.log('TabManager initialized successfully');
     } catch (error) {
@@ -300,6 +303,53 @@ export class TabManager {
       this.blockedUrls.delete(tabId);
     }
     this.generalLogger.log('Cleaned up all references for tab:', tabId);
+  }
+
+  /**
+   * Clean up stale tab references from previous sessions
+   * This prevents tab ID recycling issues where new tabs get the same IDs
+   * as tabs from previous browser sessions that were stored in memory.
+   */
+  async cleanupStaleTabReferences() {
+    try {
+      // Get all currently existing tabs
+      const existingTabs = await chrome.tabs.query({});
+      const existingTabIds = new Set(existingTabs.map(tab => tab.id));
+      
+      // Clean up unblocked tabs that no longer exist
+      const staleUnblockedTabs = [...this.unblockedTabs].filter(tabId => !existingTabIds.has(tabId));
+      staleUnblockedTabs.forEach(tabId => {
+        this.unblockedTabs.delete(tabId);
+        this.tabLogger.log('Removed stale unblocked tab reference:', tabId);
+      });
+      
+      // Clean up restoring tabs that no longer exist
+      const staleRestoringTabs = [...this.restoringTabs].filter(tabId => !existingTabIds.has(tabId));
+      staleRestoringTabs.forEach(tabId => {
+        this.restoringTabs.delete(tabId);
+        this.tabLogger.log('Removed stale restoring tab reference:', tabId);
+      });
+      
+      // Clean up blocked URLs for tabs that no longer exist
+      const staleBlockedUrls = [...this.blockedUrls.keys()].filter(tabId => !existingTabIds.has(tabId));
+      staleBlockedUrls.forEach(tabId => {
+        this.blockedUrls.delete(tabId);
+        this.tabLogger.log('Removed stale blocked URL for tab:', tabId);
+      });
+      
+      // Validate maze tab still exists
+      if (this.mazeTabId && !existingTabIds.has(this.mazeTabId)) {
+        this.tabLogger.log('Maze tab no longer exists, clearing reference:', this.mazeTabId);
+        this.mazeTabId = null;
+      }
+      
+      if (staleUnblockedTabs.length || staleRestoringTabs.length || staleBlockedUrls.length) {
+        this.generalLogger.log(`Cleaned up stale references: ${staleUnblockedTabs.length} unblocked, ${staleRestoringTabs.length} restoring, ${staleBlockedUrls.length} blocked URLs`);
+      }
+      
+    } catch (error) {
+      this.generalLogger.error('Error cleaning up stale tab references:', error);
+    }
   }
 
   /**
