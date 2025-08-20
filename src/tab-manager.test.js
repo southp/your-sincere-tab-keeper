@@ -22,6 +22,7 @@ const mockChrome = {
     remove: jest.fn()
   },
   windows: {
+    get: jest.fn(),
     update: jest.fn()
   },
   runtime: {
@@ -32,19 +33,21 @@ const mockChrome = {
 // Mock utility functions before any imports
 jest.mock('./utils.js', () => ({
   isSpecialTab: jest.fn().mockReturnValue(false),
-  isMazeTab: jest.fn().mockReturnValue(false)
+  isMazeTab: jest.fn().mockReturnValue(false),
+  isPopupWindow: jest.fn().mockResolvedValue(false)
 }));
 
 // Set up global chrome mock
 global.chrome = mockChrome;
 
 // Import mocked functions and TabManager after mocking
-import { isSpecialTab, isMazeTab } from './utils.js';
+import { isSpecialTab, isMazeTab, isPopupWindow } from './utils.js';
 
 // Get references to the mocked functions
 const mockUtils = {
   isSpecialTab,
-  isMazeTab
+  isMazeTab,
+  isPopupWindow
 };
 
 describe('TabManager', () => {
@@ -234,6 +237,7 @@ describe('TabManager', () => {
       tabManager.mazeTabId = null;
       mockUtils.isSpecialTab.mockReturnValue(false);
       mockUtils.isMazeTab.mockReturnValue(false);
+      mockUtils.isPopupWindow.mockResolvedValue(false);
       jest.spyOn(tabManager, 'getCurrentTabCount').mockResolvedValue(3); // Over limit
       
       // Mark tab as unblocked
@@ -243,6 +247,24 @@ describe('TabManager', () => {
       const result = await tabManager.shouldAllowNewTab(tab);
 
       expect(result).toEqual({ action: 'allow' });
+    });
+
+    test('allows popup windows regardless of limit', async () => {
+      // Set up a scenario where limit would normally be exceeded
+      tabManager.tabLimit = 2;
+      tabManager.isInitialized = true;
+      tabManager.mazeTabId = null;
+      mockUtils.isSpecialTab.mockReturnValue(false);
+      mockUtils.isMazeTab.mockReturnValue(false);
+      mockUtils.isPopupWindow.mockResolvedValue(true); // This is a popup window
+      jest.spyOn(tabManager, 'getCurrentTabCount').mockResolvedValue(3); // Over limit
+      
+      const tab = { id: 5, url: 'https://accounts.google.com/oauth/authorize', windowId: 123 };
+
+      const result = await tabManager.shouldAllowNewTab(tab);
+
+      expect(result).toEqual({ action: 'allow' });
+      expect(mockUtils.isPopupWindow).toHaveBeenCalledWith(tab);
     });
 
     test('allows tab when under limit', async () => {
@@ -263,6 +285,7 @@ describe('TabManager', () => {
       // Mock utility functions for this specific test
       mockUtils.isSpecialTab.mockReturnValue(false);
       mockUtils.isMazeTab.mockReturnValue(false);
+      mockUtils.isPopupWindow.mockResolvedValue(false);
       
       jest.spyOn(tabManager, 'getCurrentTabCount').mockResolvedValue(3);
 
@@ -288,6 +311,7 @@ describe('TabManager', () => {
       // Mock utility functions for this specific test
       mockUtils.isSpecialTab.mockReturnValue(false);
       mockUtils.isMazeTab.mockReturnValue(false);
+      mockUtils.isPopupWindow.mockResolvedValue(false);
       
       jest.spyOn(tabManager, 'getCurrentTabCount').mockResolvedValue(3);
       tabManager.mazeTabId = 2; // Maze exists

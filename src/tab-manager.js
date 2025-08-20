@@ -7,7 +7,7 @@
 
 import { TAB_LIMITS } from './constants.js';
 import { Logger } from './debug.js';
-import { isSpecialTab, isMazeTab } from './utils.js';
+import { isSpecialTab, isMazeTab, isPopupWindow } from './utils.js';
 
 export class TabManager {
   // Configurable timing constants
@@ -92,6 +92,12 @@ export class TabManager {
     
     // Allow special tabs and maze tabs
     if (isSpecialTab(tab) || isMazeTab(tab)) return { action: 'allow' };
+    
+    // Allow popup windows (SSO authentication, payment flows, etc.)
+    if (await isPopupWindow(tab)) {
+      this.tabLogger.log('Allowing popup window for tab:', tab.id);
+      return { action: 'allow' };
+    }
     
     // Allow tabs being restored from maze completion
     if (this.restoringTabs.has(tab.id)) return { action: 'allow' };
