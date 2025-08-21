@@ -6,6 +6,7 @@
 import { Logger } from './debug.js';
 import { TabManager } from './tab-manager.js';
 import { isSpecialTab, isMazeTab } from './utils.js';
+import { isDevelopment } from './env.js';
 
 // Create scoped loggers for service worker functionality
 const initLogger = new Logger('SERVICE-WORKER-INIT');
@@ -14,6 +15,9 @@ const generalLogger = new Logger('SERVICE-WORKER');
 
 // Initialize the tab manager (core application logic)
 const tabManager = new TabManager();
+
+// Setup development debugging utilities
+setupDebugUtilities();
 
 // Initialize extension on startup
 chrome.runtime.onStartup.addListener(async () => {
@@ -622,6 +626,126 @@ async function incrementStat(statName) {
   } catch (error) {
     generalLogger.error(`Failed to increment ${statName}:`, error);
   }
+}
+
+/**
+ * Setup debugging utilities for development environment
+ */
+async function setupDebugUtilities() {
+  if (!(await isDevelopment())) {
+    return; // Only enable in development mode
+  }
+  
+  generalLogger.log('🔧 Development mode detected - setting up debug utilities');
+  
+  // Expose tab manager for console inspection
+  globalThis.debugTabKeeper = {
+    // Core state inspection
+    tabManager: tabManager,
+    
+    // Quick state getters
+    getState: () => ({
+      unblockedTabs: Array.from(tabManager.unblockedTabs),
+      restoringTabs: Array.from(tabManager.restoringTabs),
+      blockedUrls: Object.fromEntries(tabManager.blockedUrls),
+      mazeTabId: tabManager.mazeTabId,
+      tabLimit: tabManager.tabLimit
+    }),
+    
+    // Tab analysis helpers
+    getAllTabs: async () => {
+      const tabs = await chrome.tabs.query({});
+      return tabs.map(tab => ({
+        id: tab.id,
+        title: tab.title,
+        url: tab.url,
+        isSpecial: isSpecialTab(tab),
+        isMaze: isMazeTab(tab),
+        isUnblocked: tabManager.unblockedTabs.has(tab.id),
+        isRestoring: tabManager.restoringTabs.has(tab.id)
+      }));
+    },
+    
+    // Stats inspection
+    getStats: async () => {
+      return await tabManager.getExtensionStats();
+    },
+    
+    // State management helpers
+    clearUnblockedTabs: () => {
+      tabManager.unblockedTabs.clear();
+      generalLogger.log('🧹 Cleared all unblocked tabs');
+    },
+    
+    clearRestoringTabs: () => {
+      tabManager.restoringTabs.clear();
+      generalLogger.log('🧹 Cleared all restoring tabs');
+    },
+    
+    resetState: () => {
+      tabManager.unblockedTabs.clear();
+      tabManager.restoringTabs.clear();
+      tabManager.blockedUrls.clear();
+      tabManager.mazeTabId = null;
+      generalLogger.log('🔄 Reset all tab manager state');
+    },
+    
+    // Testing helpers
+    simulateTabLimit: async (limit) => {
+      await tabManager.updateTabLimit(limit);
+      generalLogger.log(`🎯 Set tab limit to ${limit} for testing`);
+    },
+    
+    forceBlock: async (url) => {
+      const tabs = await chrome.tabs.query({});
+      const regularTabs = tabs.filter(tab => !isSpecialTab(tab) && !isMazeTab(tab));
+      
+      if (regularTabs.length >= tabManager.tabLimit) {
+        generalLogger.log(`🚫 Would block new tab with URL: ${url} (${regularTabs.length}/${tabManager.tabLimit} tabs)`);
+        return true;
+      } else {
+        generalLogger.log(`✅ Would allow new tab with URL: ${url} (${regularTabs.length}/${tabManager.tabLimit} tabs)`);
+        return false;
+      }
+    },
+    
+    // Help function
+    help: () => {
+      console.log(`
+🔧 Tab Keeper Debug Utilities
+==============================
+
+Core Inspection:
+  debugTabKeeper.tabManager        - Direct access to tab manager instance
+  debugTabKeeper.getState()        - Get current state snapshot
+  debugTabKeeper.getAllTabs()      - Get all tabs with keeper status
+  debugTabKeeper.getStats()        - Get extension statistics
+
+State Management:
+  debugTabKeeper.clearUnblockedTabs()  - Clear unblocked tabs set
+  debugTabKeeper.clearRestoringTabs()  - Clear restoring tabs set  
+  debugTabKeeper.resetState()          - Reset all tab manager state
+
+Testing Helpers:
+  debugTabKeeper.simulateTabLimit(n)   - Set tab limit for testing
+  debugTabKeeper.forceBlock(url)       - Check if URL would be blocked
+
+Utilities:
+  debugTabKeeper.help()            - Show this help message
+
+Example Usage:
+  debugTabKeeper.getState()
+  debugTabKeeper.getAllTabs().then(console.table)
+  debugTabKeeper.tabManager.shouldAllowNewTab({url: 'https://example.com'})
+  debugTabKeeper.simulateTabLimit(3)
+      `);
+    }
+  };
+  
+  // Show initial help message
+  setTimeout(() => {
+    console.log('🔧 Tab Keeper debugging utilities loaded! Type debugTabKeeper.help() for usage.');
+  }, 1000);
 }
 
 // Initialize on service worker startup
