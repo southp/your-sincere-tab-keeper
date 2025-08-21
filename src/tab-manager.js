@@ -59,8 +59,8 @@ export class TabManager {
         this.storageLogger.log('Set install date');
       }
 
-      // Clean up any stale tab references from previous sessions
-      await this.cleanupStaleTabReferences();
+      // Initialize tab state based on currently open tabs
+      await this.initializeTabState();
 
       // Mark existing tabs as unblocked to prevent counter-intuitive behavior
       await this.markExistingTabsAsUnblocked();
@@ -315,49 +315,32 @@ export class TabManager {
   }
 
   /**
-   * Clean up stale tab references from previous sessions
-   * This prevents tab ID recycling issues where new tabs get the same IDs
-   * as tabs from previous browser sessions that were stored in memory.
+   * Initialize tab state based on currently open tabs
+   * Since service workers don't persist across browser restarts or terminations,
+   * we need to rebuild our in-memory state from the current browser state.
    */
-  async cleanupStaleTabReferences() {
+  async initializeTabState() {
     try {
       // Get all currently existing tabs
       const existingTabs = await chrome.tabs.query({});
-      const existingTabIds = new Set(existingTabs.map(tab => tab.id));
       
-      // Clean up unblocked tabs that no longer exist
-      const staleUnblockedTabs = [...this.unblockedTabs].filter(tabId => !existingTabIds.has(tabId));
-      staleUnblockedTabs.forEach(tabId => {
-        this.unblockedTabs.delete(tabId);
-        this.tabLogger.log('Removed stale unblocked tab reference:', tabId);
-      });
-      
-      // Clean up restoring tabs that no longer exist
-      const staleRestoringTabs = [...this.restoringTabs].filter(tabId => !existingTabIds.has(tabId));
-      staleRestoringTabs.forEach(tabId => {
-        this.restoringTabs.delete(tabId);
-        this.tabLogger.log('Removed stale restoring tab reference:', tabId);
-      });
-      
-      // Clean up blocked URLs for tabs that no longer exist
-      const staleBlockedUrls = [...this.blockedUrls.keys()].filter(tabId => !existingTabIds.has(tabId));
-      staleBlockedUrls.forEach(tabId => {
-        this.blockedUrls.delete(tabId);
-        this.tabLogger.log('Removed stale blocked URL for tab:', tabId);
-      });
-      
-      // Validate maze tab still exists
-      if (this.mazeTabId && !existingTabIds.has(this.mazeTabId)) {
-        this.tabLogger.log('Maze tab no longer exists, clearing reference:', this.mazeTabId);
-        this.mazeTabId = null;
+      // Check if any tab looks like a maze tab from this extension
+      const mazeTab = existingTabs.find(tab => isMazeTab(tab));
+      if (mazeTab) {
+        this.mazeTabId = mazeTab.id;
+        this.tabLogger.log('Found existing maze tab on initialization:', mazeTab.id);
       }
       
-      if (staleUnblockedTabs.length || staleRestoringTabs.length || staleBlockedUrls.length) {
-        this.generalLogger.log(`Cleaned up stale references: ${staleUnblockedTabs.length} unblocked, ${staleRestoringTabs.length} restoring, ${staleBlockedUrls.length} blocked URLs`);
-      }
+      // Note: We intentionally don't try to restore other state like unblockedTabs,
+      // restoringTabs, or blockedUrls because:
+      // 1. Service workers lose all memory on restart/termination
+      // 2. These states are transient and will be rebuilt naturally as users interact
+      // 3. markExistingTabsAsUnblocked() will handle the unblocked tabs properly
+      
+      this.generalLogger.log('Initialized tab state from current browser state');
       
     } catch (error) {
-      this.generalLogger.error('Error cleaning up stale tab references:', error);
+      this.generalLogger.error('Error initializing tab state:', error);
     }
   }
 

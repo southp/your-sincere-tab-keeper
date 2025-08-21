@@ -553,50 +553,61 @@ describe('TabManager', () => {
     });
   });
 
-  describe('cleanupStaleTabReferences', () => {
-    test('removes references to tabs that no longer exist', async () => {
-      // Set up stale references
-      tabManager.unblockedTabs.add(99); // Non-existent tab
-      tabManager.unblockedTabs.add(100); // Existing tab
-      tabManager.restoringTabs.add(98); // Non-existent tab  
-      tabManager.blockedUrls.set(97, 'http://example.com'); // Non-existent tab
-      tabManager.mazeTabId = 96; // Non-existent tab
+  describe('initializeTabState', () => {
+    beforeEach(() => {
+      // Reset utility mocks for each test
+      mockUtils.isSpecialTab.mockReturnValue(false);
+      mockUtils.isMazeTab.mockReturnValue(false);
+      mockUtils.isPopupWindow.mockResolvedValue(false);
+    });
+
+    test('finds and sets existing maze tab on initialization', async () => {
+      // Mock tabs where one is a maze tab
+      const tabs = [
+        { id: 1, url: 'https://example.com' },
+        { id: 2, url: 'chrome-extension://abc123/src/maze.html' },
+        { id: 3, url: 'https://google.com' }
+      ];
       
-      // Mock existing tabs (only tab 100 exists)
-      mockChrome.tabs.query.mockResolvedValue([{ id: 100 }]);
+      mockChrome.tabs.query.mockResolvedValue(tabs);
+      mockUtils.isMazeTab.mockImplementation(tab => tab.url.includes('maze.html'));
       
-      await tabManager.cleanupStaleTabReferences();
+      await tabManager.initializeTabState();
       
-      // Should keep only existing tabs
-      expect(tabManager.unblockedTabs.has(99)).toBe(false);
-      expect(tabManager.unblockedTabs.has(100)).toBe(true);
-      expect(tabManager.restoringTabs.has(98)).toBe(false);
-      expect(tabManager.blockedUrls.has(97)).toBe(false);
+      expect(tabManager.mazeTabId).toBe(2);
+    });
+
+    test('handles no maze tab present', async () => {
+      // Mock tabs with no maze tab
+      const tabs = [
+        { id: 1, url: 'https://example.com' },
+        { id: 2, url: 'https://google.com' }
+      ];
+      
+      mockChrome.tabs.query.mockResolvedValue(tabs);
+      
+      await tabManager.initializeTabState();
+      
       expect(tabManager.mazeTabId).toBeNull();
     });
 
-    test('handles errors gracefully during cleanup', async () => {
+    test('handles errors gracefully', async () => {
       mockChrome.tabs.query.mockRejectedValue(new Error('Query failed'));
       
-      await expect(tabManager.cleanupStaleTabReferences()).resolves.not.toThrow();
+      await expect(tabManager.initializeTabState()).resolves.not.toThrow();
     });
 
-    test('does nothing when all references are valid', async () => {
-      tabManager.unblockedTabs.add(1);
-      tabManager.restoringTabs.add(2);
-      tabManager.blockedUrls.set(3, 'http://example.com');
-      tabManager.mazeTabId = 4;
+    test('does not try to restore transient state', async () => {
+      // Mock tabs
+      const tabs = [{ id: 1, url: 'https://example.com' }];
+      mockChrome.tabs.query.mockResolvedValue(tabs);
       
-      mockChrome.tabs.query.mockResolvedValue([
-        { id: 1 }, { id: 2 }, { id: 3 }, { id: 4 }
-      ]);
+      await tabManager.initializeTabState();
       
-      await tabManager.cleanupStaleTabReferences();
-      
-      expect(tabManager.unblockedTabs.has(1)).toBe(true);
-      expect(tabManager.restoringTabs.has(2)).toBe(true);
-      expect(tabManager.blockedUrls.has(3)).toBe(true);
-      expect(tabManager.mazeTabId).toBe(4);
+      // Should not populate transient state (these start empty and get built naturally)
+      expect(tabManager.unblockedTabs.size).toBe(0);
+      expect(tabManager.restoringTabs.size).toBe(0);
+      expect(tabManager.blockedUrls.size).toBe(0);
     });
   });
 
