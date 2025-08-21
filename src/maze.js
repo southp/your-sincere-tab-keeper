@@ -8,6 +8,7 @@ import { renderLimitButtons, setupLimitButtonListeners, updateLimitDescription }
 import { Logger } from './debug.js';
 import { MazeModel, WALL, PATH, PLAYER, GOAL } from './maze-model.js';
 import { getRandomTip } from './productivity-tips.js';
+import { isDevelopment } from './env.js';
 
 // Create scoped logger for maze functionality
 const mazeLogger = new Logger('MAZE-GAME');
@@ -86,6 +87,9 @@ document.addEventListener('DOMContentLoaded', async () => {
   await initializeGame();
   setupEventListeners();
   await loadStats();
+  
+  // Setup development debugging utilities
+  setupMazeDebugUtilities();
   
   // Handle different actions
   if (action === 'updateLimit') {
@@ -629,4 +633,215 @@ window.addEventListener('focus', () => {
   // Refresh stats when tab gains focus
   loadStats();
 });
+
+/**
+ * Setup maze debugging utilities for development environment
+ */
+async function setupMazeDebugUtilities() {
+  if (!(await isDevelopment())) {
+    return; // Only enable in development mode
+  }
+  
+  mazeLogger.log('🔧 Maze debug utilities enabled for development');
+  
+  // Expose maze debugging utilities
+  globalThis.debugMaze = {
+    // Core maze inspection
+    mazeModel: mazeModel,
+    currentDifficulty: () => currentDifficulty,
+    gameState: () => ({
+      gameStartTime,
+      cellSize,
+      isHandlingCompletion,
+      action,
+      tabId,
+      difficulty
+    }),
+    
+    // Difficulty manipulation
+    setDifficulty: async (newDifficulty) => {
+      if (newDifficulty < 0 || newDifficulty >= DIFFICULTY_SETTINGS.length) {
+        console.error(`❌ Invalid difficulty. Must be 0-${DIFFICULTY_SETTINGS.length - 1}`);
+        return;
+      }
+      
+      currentDifficulty = newDifficulty;
+      const difficultySettings = DIFFICULTY_SETTINGS[currentDifficulty];
+      
+      // Regenerate maze with new difficulty
+      mazeModel.initialize(difficultySettings);
+      updateCanvasSize();
+      renderMaze(mazeModel);
+      
+      // Update UI
+      difficultyLevelEl.textContent = difficultySettings.name;
+      mazeSizeEl.textContent = `${mazeModel.size}x${mazeModel.size}`;
+      
+      mazeLogger.log(`🎯 Set difficulty to ${currentDifficulty} (${difficultySettings.name})`);
+    },
+    
+    // Maze completion helpers
+    finishMaze: () => {
+      mazeLogger.log('🏁 Force finishing maze...');
+      handleMazeComplete();
+    },
+    
+    solveInstantly: () => {
+      // Move player to goal position
+      mazeModel.playerPos.x = mazeModel.goalPos.x;
+      mazeModel.playerPos.y = mazeModel.goalPos.y;
+      renderMaze(mazeModel);
+      
+      mazeLogger.log('✨ Teleported player to goal');
+      
+      // Trigger completion
+      setTimeout(() => {
+        handleMazeComplete();
+      }, 500);
+    },
+    
+    // Maze inspection utilities
+    getMazeGrid: () => mazeModel.grid,
+    getPlayerPos: () => ({ ...mazeModel.playerPos }),
+    getGoalPos: () => ({ ...mazeModel.goalPos }),
+    getMazeSize: () => mazeModel.size,
+    
+    // Path finding helpers
+    findPath: () => {
+      // Simple pathfinding to show solution
+      const path = [];
+      const visited = new Set();
+      const queue = [{ ...mazeModel.playerPos, path: [{ ...mazeModel.playerPos }] }];
+      
+      while (queue.length > 0) {
+        const { x, y, path: currentPath } = queue.shift();
+        const key = `${x},${y}`;
+        
+        if (visited.has(key)) continue;
+        visited.add(key);
+        
+        if (x === mazeModel.goalPos.x && y === mazeModel.goalPos.y) {
+          return currentPath;
+        }
+        
+        // Check all 4 directions
+        const directions = [[0, 1], [1, 0], [0, -1], [-1, 0]];
+        for (const [dx, dy] of directions) {
+          const newX = x + dx;
+          const newY = y + dy;
+          
+          if (newX >= 0 && newX < mazeModel.size && 
+              newY >= 0 && newY < mazeModel.size &&
+              mazeModel.grid[newY][newX] !== WALL) {
+            queue.push({
+              x: newX,
+              y: newY,
+              path: [...currentPath, { x: newX, y: newY }]
+            });
+          }
+        }
+      }
+      return null; // No path found
+    },
+    
+    // Visual helpers
+    highlightPath: () => {
+      const path = debugMaze.findPath();
+      if (!path) {
+        console.log('❌ No path found to goal');
+        return;
+      }
+      
+      console.log(`🗺️ Path to goal (${path.length} steps):`, path);
+      
+      // Visual highlight on canvas
+      const ctx = canvas.getContext('2d');
+      ctx.strokeStyle = '#ffff00';
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      
+      for (let i = 0; i < path.length - 1; i++) {
+        const from = path[i];
+        const to = path[i + 1];
+        
+        ctx.moveTo(
+          from.x * cellSize + cellSize / 2,
+          from.y * cellSize + cellSize / 2
+        );
+        ctx.lineTo(
+          to.x * cellSize + cellSize / 2,
+          to.y * cellSize + cellSize / 2
+        );
+      }
+      ctx.stroke();
+      
+      return path;
+    },
+    
+    // Timer manipulation
+    resetTimer: () => {
+      gameStartTime = Date.now();
+      mazeLogger.log('⏱️ Reset timer');
+    },
+    
+    // Render helpers
+    rerender: () => {
+      renderMaze(mazeModel);
+      mazeLogger.log('🎨 Re-rendered maze');
+    },
+    
+    regenerate: () => {
+      const difficultySettings = DIFFICULTY_SETTINGS[currentDifficulty];
+      mazeModel.initialize(difficultySettings);
+      updateCanvasSize();
+      renderMaze(mazeModel);
+      mazeLogger.log('🔄 Regenerated maze');
+    },
+    
+    // Help function
+    help: () => {
+      console.log(`
+🧩 Maze Debug Utilities
+=======================
+
+Difficulty Control:
+  debugMaze.setDifficulty(0-5)     - Set difficulty (0=Beginner, 5=Master)
+  debugMaze.currentDifficulty()    - Get current difficulty level
+
+Maze Completion:
+  debugMaze.finishMaze()           - Force finish maze (triggers completion)
+  debugMaze.solveInstantly()       - Teleport to goal and finish
+
+Maze Inspection:
+  debugMaze.mazeModel              - Direct access to maze model
+  debugMaze.gameState()            - Get current game state
+  debugMaze.getMazeGrid()          - Get maze grid (2D array)
+  debugMaze.getPlayerPos()         - Get player position {x, y}
+  debugMaze.getGoalPos()           - Get goal position {x, y}
+
+Pathfinding & Hints:
+  debugMaze.findPath()             - Find solution path to goal
+  debugMaze.highlightPath()        - Visually highlight solution path
+
+Visual & Testing:
+  debugMaze.rerender()             - Re-render maze canvas
+  debugMaze.regenerate()           - Generate new maze (same difficulty)
+  debugMaze.resetTimer()           - Reset timer to current time
+
+Utilities:
+  debugMaze.help()                 - Show this help message
+
+Example Usage:
+  debugMaze.setDifficulty(3)       // Set to Hard difficulty
+  debugMaze.highlightPath()        // Show solution
+  debugMaze.solveInstantly()       // Skip to completion
+      `);
+    }
+  };
+  
+  // Show initial help message
+  setTimeout(() => {
+    console.log('🧩 Maze debugging utilities loaded! Type debugMaze.help() for usage.');
+  }, 1000);
+}
 
