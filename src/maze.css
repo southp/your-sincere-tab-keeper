@@ -60,7 +60,7 @@ body {
 .maze-grid {
   flex: 1;
   display: grid;
-  grid-template-columns: 1fr 2fr;
+  grid-template-columns: 1fr 1fr;
   grid-template-rows: minmax(40px, auto) 1fr minmax(30px, auto);
   gap: 8px;
   padding: 8px;
@@ -75,7 +75,8 @@ body {
 .maze-info {
   grid-area: maze-info;
   display: flex;
-  gap: 16px;
+  justify-content: center;
+  gap: 20px;
   padding: 6px 10px;
   background: #3a3a3a;
   border-radius: 6px;
@@ -86,8 +87,9 @@ body {
 .stats-timer {
   grid-area: stats-timer;
   display: flex;
-  justify-content: space-between;
+  justify-content: center;
   align-items: center;
+  gap: 20px;
   padding: 6px 10px;
   background: #3a3a3a;
   border-radius: 6px;
@@ -347,7 +349,7 @@ body {
 
 .stats-preview {
   display: flex;
-  gap: 16px;
+  gap: 12px;
   align-items: center;
 }
 
@@ -517,13 +519,20 @@ body {
       "motivation";
   }
   
-  .maze-info,
-  .stats-timer {
+  .maze-info {
     justify-content: center;
   }
   
   .stats-timer {
-    flex-direction: column;
+    flex-direction: row;
+    gap: 12px;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: center;
+    min-height: 32px;
+  }
+  
+  .stats-preview {
     gap: 8px;
   }
   
