@@ -34,8 +34,6 @@ const challengeMessageEl = document.getElementById('challengeMessage');
 const motivationMessageEl = document.getElementById('motivationMessage');
 const sessionMazesEl = document.getElementById('sessionMazes');
 const totalMazesEl = document.getElementById('totalMazes');
-const resetMazeBtn = document.getElementById('resetMazeBtn');
-const giveUpBtn = document.getElementById('giveUpBtn');
 const mazeOverlay = document.getElementById('mazeOverlay');
 
 // Update limit modal elements
@@ -590,20 +588,6 @@ function setupEventListeners() {
     }
   });
   
-  // Button handlers
-  resetMazeBtn.addEventListener('click', () => {
-    if (confirm('Generate a new maze? Your current progress will be lost.')) {
-      mazeOverlay.style.display = 'none';
-      stopTimer();
-      initializeGame();
-    }
-  });
-  
-  giveUpBtn.addEventListener('click', () => {
-    if (confirm('Give up on this maze? The tab will be closed.')) {
-      window.close();
-    }
-  });
 }
 
 // Prevent context menu on canvas
