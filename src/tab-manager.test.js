@@ -905,6 +905,78 @@ describe('TabManager', () => {
     });
   });
 
+  describe('onTabReplaced', () => {
+    beforeEach(() => {
+      // Set up some initial state to test transfers
+      tabManager.unblockedTabs.add(100);
+      tabManager.restoringTabs.add(101);
+      tabManager.blockedUrls.set(102, 'http://blocked-example.com');
+      tabManager.mazeTabId = 103;
+    });
+
+    test('transfers unblocked status from old to new tab', () => {
+      tabManager.onTabReplaced(200, 100); // new: 200, old: 100
+
+      expect(tabManager.unblockedTabs.has(100)).toBe(false);
+      expect(tabManager.unblockedTabs.has(200)).toBe(true);
+    });
+
+    test('transfers restoring status from old to new tab', () => {
+      tabManager.onTabReplaced(201, 101); // new: 201, old: 101
+
+      expect(tabManager.restoringTabs.has(101)).toBe(false);
+      expect(tabManager.restoringTabs.has(201)).toBe(true);
+    });
+
+    test('transfers blocked URL mapping from old to new tab', () => {
+      tabManager.onTabReplaced(202, 102); // new: 202, old: 102
+
+      expect(tabManager.blockedUrls.has(102)).toBe(false);
+      expect(tabManager.blockedUrls.has(202)).toBe(true);
+      expect(tabManager.blockedUrls.get(202)).toBe('http://blocked-example.com');
+    });
+
+    test('updates maze tab reference when maze tab is replaced', () => {
+      tabManager.onTabReplaced(203, 103); // new: 203, old: 103
+
+      expect(tabManager.mazeTabId).toBe(203);
+    });
+
+    test('handles replacement of tab with no tracked state', () => {
+      // This should not cause any errors
+      expect(() => {
+        tabManager.onTabReplaced(300, 999); // Replace non-tracked tab
+      }).not.toThrow();
+
+      // No state should be affected
+      expect(tabManager.unblockedTabs.has(300)).toBe(false);
+      expect(tabManager.restoringTabs.has(300)).toBe(false);
+      expect(tabManager.blockedUrls.has(300)).toBe(false);
+      expect(tabManager.mazeTabId).toBe(103); // unchanged
+    });
+
+    test('handles multiple state transfers in single replacement', () => {
+      // Set up a tab with multiple types of state
+      const oldTabId = 150;
+      const newTabId = 250;
+      
+      tabManager.unblockedTabs.add(oldTabId);
+      tabManager.restoringTabs.add(oldTabId);
+      tabManager.blockedUrls.set(oldTabId, 'http://multi-state.com');
+
+      tabManager.onTabReplaced(newTabId, oldTabId);
+
+      // All state should transfer
+      expect(tabManager.unblockedTabs.has(oldTabId)).toBe(false);
+      expect(tabManager.unblockedTabs.has(newTabId)).toBe(true);
+      expect(tabManager.restoringTabs.has(oldTabId)).toBe(false);
+      expect(tabManager.restoringTabs.has(newTabId)).toBe(true);
+      expect(tabManager.blockedUrls.has(oldTabId)).toBe(false);
+      expect(tabManager.blockedUrls.has(newTabId)).toBe(true);
+      expect(tabManager.blockedUrls.get(newTabId)).toBe('http://multi-state.com');
+    });
+  });
+
   describe('logLimitHitTimestamp', () => {
     test('logs timestamp and increments blocked attempts', async () => {
       const mockTimestamp = 1234567890;

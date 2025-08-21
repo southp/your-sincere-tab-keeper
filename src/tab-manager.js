@@ -512,6 +512,43 @@ export class TabManager {
   }
 
   /**
+   * Handle tab replacement due to prerendering
+   * When Chrome prerenders a page and swaps it in, the tab ID changes.
+   * We need to transfer all references from the old tab ID to the new one.
+   */
+  onTabReplaced(addedTabId, removedTabId) {
+    this.generalLogger.log('Tab replaced due to prerendering:', removedTabId, '→', addedTabId);
+    
+    // Transfer unblocked status
+    if (this.unblockedTabs.has(removedTabId)) {
+      this.unblockedTabs.delete(removedTabId);
+      this.unblockedTabs.add(addedTabId);
+      this.tabLogger.log('Transferred unblocked status:', removedTabId, '→', addedTabId);
+    }
+    
+    // Transfer restoring status
+    if (this.restoringTabs.has(removedTabId)) {
+      this.restoringTabs.delete(removedTabId);
+      this.restoringTabs.add(addedTabId);
+      this.tabLogger.log('Transferred restoring status:', removedTabId, '→', addedTabId);
+    }
+    
+    // Transfer blocked URL mapping
+    if (this.blockedUrls.has(removedTabId)) {
+      const blockedUrl = this.blockedUrls.get(removedTabId);
+      this.blockedUrls.delete(removedTabId);
+      this.blockedUrls.set(addedTabId, blockedUrl);
+      this.tabLogger.log('Transferred blocked URL mapping:', removedTabId, '→', addedTabId);
+    }
+    
+    // Update maze tab reference
+    if (this.mazeTabId === removedTabId) {
+      this.mazeTabId = addedTabId;
+      this.tabLogger.log('Updated maze tab reference:', removedTabId, '→', addedTabId);
+    }
+  }
+
+  /**
    * Handle tab loading completion
    */
   onTabLoadComplete(tabId) {

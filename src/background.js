@@ -134,6 +134,22 @@ chrome.tabs.onRemoved.addListener((tabId) => {
 });
 
 /**
+ * Handle tab replacement due to prerendering
+ */
+chrome.tabs.onReplaced.addListener((addedTabId, removedTabId) => {
+  tabManager.onTabReplaced(addedTabId, removedTabId);
+});
+
+/**
+ * Handle tab replacement via webNavigation (alternative event)
+ * This provides additional coverage for prerendering tab replacements
+ */
+chrome.webNavigation.onTabReplaced.addListener((details) => {
+  // details.tabId is the new tab, details.replacedTabId is the old tab
+  tabManager.onTabReplaced(details.tabId, details.replacedTabId);
+});
+
+/**
  * Handle messages from content scripts and pages
  */
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
