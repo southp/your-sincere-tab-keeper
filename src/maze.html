@@ -14,12 +14,11 @@
         <h1>Your Sincere Tab Keeper</h1>
       </div>
       <div class="challenge-text">
-        <h2>🧩 Maze Challenge</h2>
-        <p id="challengeMessage">Solve this maze to open your new tab!</p>
+        <span id="challengeMessage">Solve this maze to open your new tab!</span>
       </div>
     </header>
 
-    <main class="maze-content">
+    <main class="maze-grid">
       <div class="maze-info">
         <div class="info-item">
           <span class="info-label">Difficulty:</span>
@@ -29,14 +28,30 @@
           <span class="info-label">Size:</span>
           <span class="info-value" id="mazeSize">15x15</span>
         </div>
+      </div>
+
+      <div class="stats-timer">
         <div class="info-item">
           <span class="info-label">Timer:</span>
           <span class="info-value" id="timer">00:00</span>
+        </div>
+        <div class="stats-preview">
+          <div class="stat">
+            <span class="stat-number" id="sessionMazes">0</span>
+            <span class="stat-label">Session</span>
+          </div>
+          <div class="stat">
+            <span class="stat-number" id="totalMazes">0</span>
+            <span class="stat-label">Total</span>
+          </div>
         </div>
       </div>
 
       <div class="maze-wrapper">
         <canvas id="mazeCanvas"></canvas>
+        <div class="controls-ambient">
+          <div class="controls-hint">Use ↑←↓→ or WASD keys to move</div>
+        </div>
         <div class="maze-overlay" id="mazeOverlay" style="display: none;">
           <div class="overlay-content">
             <div class="success-icon">🎉</div>
@@ -47,43 +62,10 @@
         </div>
       </div>
 
-      <div class="controls">
-        <div class="control-instructions">
-          <h3>🎮 Controls</h3>
-          <div class="key-instructions">
-            <div class="key-group">
-              <div class="key">↑</div>
-              <div class="key">←</div>
-              <div class="key">↓</div>
-              <div class="key">→</div>
-              <span>or</span>
-              <div class="key">W</div>
-              <div class="key">A</div>
-              <div class="key">S</div>
-              <div class="key">D</div>
-            </div>
-            <p>Use arrow keys or WASD to move</p>
-          </div>
-        </div>
-
-      </div>
-    </main>
-
-    <footer class="maze-footer">
-      <div class="motivation-text">
+      <footer class="motivation-text">
         <p id="motivationMessage">Every maze solved is a step toward more mindful browsing! 🌟</p>
-      </div>
-      <div class="stats-preview">
-        <div class="stat">
-          <span class="stat-number" id="sessionMazes">0</span>
-          <span class="stat-label">This Session</span>
-        </div>
-        <div class="stat">
-          <span class="stat-number" id="totalMazes">0</span>
-          <span class="stat-label">Total Solved</span>
-        </div>
-      </div>
-    </footer>
+      </footer>
+    </main>
   </div>
 
   <!-- Update Limit Modal (shown when action=updateLimit) -->
