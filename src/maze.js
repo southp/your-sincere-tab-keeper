@@ -189,9 +189,38 @@ async function initializeGame() {
   canvas = document.getElementById('mazeCanvas');
   ctx = canvas.getContext('2d');
   
-  // Set difficulty based on session count
-  currentDifficulty = Math.min(difficulty, DIFFICULTY_SETTINGS.length - 1);
+  // Get current session stats to determine difficulty
+  let sessionMazesCompleted = 0;
+  try {
+    const response = await chrome.runtime.sendMessage({ type: 'GET_STATS' });
+    if (response && !response.error) {
+      sessionMazesCompleted = response.sessionMazesCompleted || 0;
+    }
+  } catch (error) {
+    mazeLogger.error('Error getting session stats for difficulty:', error);
+  }
+  
+  // Set difficulty based on session completed mazes and action type
+  let calculatedDifficulty = sessionMazesCompleted;
+  
+  // For updateLimit actions, ensure minimum Hard difficulty (index 3)
+  if (action === 'updateLimit') {
+    const minHardDifficulty = 3; // Hard level index
+    calculatedDifficulty = Math.max(sessionMazesCompleted, minHardDifficulty);
+  }
+  
+  // Use stored difficulty as fallback, but prioritize calculated difficulty
+  calculatedDifficulty = Math.max(difficulty, calculatedDifficulty);
+  currentDifficulty = Math.min(calculatedDifficulty, DIFFICULTY_SETTINGS.length - 1);
   const difficultySettings = DIFFICULTY_SETTINGS[currentDifficulty];
+  
+  mazeLogger.log('Difficulty calculation:', { 
+    action,
+    storedDifficulty: difficulty, 
+    sessionMazesCompleted, 
+    calculatedDifficulty,
+    finalDifficulty: currentDifficulty 
+  });
   
   // Initialize maze model with difficulty settings
   mazeModel.initialize(difficultySettings);
