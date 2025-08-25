@@ -1,0 +1,701 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trend Graph Component Test</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+            color: #333;
+        }
+
+        .test-container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .header h1 {
+            margin: 0 0 10px 0;
+            color: #2c3e50;
+        }
+
+        .header p {
+            margin: 0;
+            color: #666;
+        }
+
+        .test-section {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .test-section h2 {
+            margin: 0 0 15px 0;
+            color: #2c3e50;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 10px;
+        }
+
+        .test-section h3 {
+            margin: 20px 0 10px 0;
+            color: #34495e;
+        }
+
+        .test-description {
+            background: #ecf0f1;
+            padding: 15px;
+            border-radius: 4px;
+            margin-bottom: 15px;
+            border-left: 4px solid #3498db;
+        }
+
+        .controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .control-group label {
+            font-weight: bold;
+            font-size: 12px;
+            color: #666;
+            text-transform: uppercase;
+        }
+
+        button {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
+            background: #3498db;
+            color: white;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background 0.2s;
+        }
+
+        button:hover {
+            background: #2980b9;
+        }
+
+        button.secondary {
+            background: #95a5a6;
+        }
+
+        button.secondary:hover {
+            background: #7f8c8d;
+        }
+
+        .data-preview {
+            background: #2c3e50;
+            color: #ecf0f1;
+            padding: 15px;
+            border-radius: 4px;
+            font-family: 'Monaco', 'Menlo', monospace;
+            font-size: 12px;
+            max-height: 200px;
+            overflow-y: auto;
+            margin-bottom: 15px;
+        }
+
+        trend-graph {
+            display: block;
+            margin: 20px 0;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+
+        .graph-container {
+            min-height: 400px;
+            border: 2px dashed #ddd;
+            border-radius: 8px;
+            position: relative;
+        }
+
+        .loading {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 300px;
+            color: #666;
+            font-style: italic;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .stat-card {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 4px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #3498db;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: #666;
+            margin-top: 5px;
+            text-transform: uppercase;
+        }
+
+        .responsive-test {
+            resize: horizontal;
+            overflow: hidden;
+            border: 2px solid #e74c3c;
+            border-radius: 4px;
+            min-width: 300px;
+            max-width: 100%;
+        }
+
+        @media (max-width: 768px) {
+            .controls {
+                flex-direction: column;
+            }
+            
+            .stats {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <div class="header">
+            <h1>🧪 Trend Graph Component Integration Test</h1>
+            <p>Isolated testing environment for the trend-graph web component with rich mock data scenarios</p>
+        </div>
+
+        <div class="test-section">
+            <h2>📊 Interactive Test Environment</h2>
+            <div class="test-description">
+                <strong>Test different data scenarios and component features:</strong>
+                Load various mock datasets, switch time periods, adjust granularity, and verify responsive behavior.
+            </div>
+
+            <div class="controls">
+                <div class="control-group">
+                    <label>Mock Data Scenarios</label>
+                    <button onclick="loadScenario('rich')">Rich Dataset (90 days)</button>
+                </div>
+                <div class="control-group">
+                    <label>Edge Cases</label>
+                    <button onclick="loadScenario('sparse')" class="secondary">Sparse Data</button>
+                </div>
+                <div class="control-group">
+                    <label>Special Scenarios</label>
+                    <button onclick="loadScenario('empty')" class="secondary">Empty Data</button>
+                </div>
+                <div class="control-group">
+                    <label>Stress Tests</label>
+                    <button onclick="loadScenario('extreme')" class="secondary">Extreme Values</button>
+                </div>
+                <div class="control-group">
+                    <label>Reset</label>
+                    <button onclick="clearGraph()" class="secondary">Clear Graph</button>
+                </div>
+            </div>
+
+            <div class="graph-container">
+                <div id="loadingIndicator" class="loading">Loading trend-graph component...</div>
+                <trend-graph id="testGraph" style="display: none;"></trend-graph>
+                <div id="errorDisplay" style="display: none; color: #e74c3c; padding: 20px; text-align: center; font-weight: bold;"></div>
+            </div>
+
+            <div id="dataStats" class="stats" style="display: none;">
+                <div class="stat-card">
+                    <div class="stat-value" id="totalDays">0</div>
+                    <div class="stat-label">Total Days</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="totalMazes">0</div>
+                    <div class="stat-label">Total Mazes</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="avgTabLimit">0</div>
+                    <div class="stat-label">Avg Tab Limit</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="totalBlocked">0</div>
+                    <div class="stat-label">Total Blocked</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2>📋 Current Data Preview</h2>
+            <div class="test-description">
+                View the raw data being fed to the component to understand the test scenario.
+            </div>
+            <div id="dataPreview" class="data-preview">
+                No data loaded. Click a scenario button above to load test data.
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2>📱 Responsive Behavior Test</h2>
+            <div class="test-description">
+                <strong>Resize the container below to test responsive behavior:</strong>
+                Drag the right edge to see how the graph adapts to different screen sizes.
+            </div>
+            <div class="responsive-test">
+                <trend-graph id="responsiveGraph"></trend-graph>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2>🧩 Component Features Test</h2>
+            <div class="test-description">
+                Test all interactive features of the trend graph component.
+            </div>
+            
+            <h3>Time Period Controls</h3>
+            <p>Load rich data first, then use the component's built-in controls to test:</p>
+            <ul>
+                <li><strong>Current Month</strong> - Shows data for the current calendar month</li>
+                <li><strong>Last 30 Days</strong> - Rolling 30-day window</li>
+                <li><strong>Last 90 Days</strong> - Rolling 90-day window for trends</li>
+            </ul>
+
+            <h3>Granularity Options</h3>
+            <ul>
+                <li><strong>Daily</strong> - Individual day data points</li>
+                <li><strong>Weekly</strong> - Aggregated weekly averages</li>
+                <li><strong>Monthly</strong> - Aggregated monthly totals</li>
+            </ul>
+
+            <h3>Interactive Elements</h3>
+            <ul>
+                <li><strong>Hover Effects</strong> - Hover over data points to see tooltips</li>
+                <li><strong>Legend</strong> - Click legend items to show/hide data series</li>
+                <li><strong>Responsive Layout</strong> - Resize window to see layout adaptation</li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- Import the trend-graph component with error handling -->
+    <script type="module">
+        (async function() {
+            console.log('🔄 Attempting to import trend-graph component...');
+            console.log('📂 Current location:', window.location.href);
+            console.log('📁 Trying to load from: ../src/trend-graph.js');
+            
+            // First test if we can access the file
+            try {
+                const response = await fetch('../src/trend-graph.js');
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                console.log('✅ trend-graph.js file is accessible via fetch');
+            } catch (fetchError) {
+                console.error('❌ Cannot access trend-graph.js file:', fetchError);
+                document.getElementById('loadingIndicator').innerHTML = `
+                    <div style="color: #e74c3c; text-align: center;">
+                        ❌ Cannot access trend-graph component file<br>
+                        <small>Error: ${fetchError.message}</small><br>
+                        <small>Make sure the test server is running from the correct directory</small>
+                    </div>
+                `;
+                return;
+            }
+            
+            // Now try to import as module
+            try {
+                await import('../src/trend-graph.js');
+                console.log('✅ trend-graph component imported successfully');
+                
+                // Verify the component was registered
+                if (customElements.get('trend-graph')) {
+                    console.log('✅ trend-graph custom element is registered');
+                } else {
+                    console.warn('⚠️ trend-graph imported but custom element not found');
+                }
+            } catch (error) {
+                console.error('❌ Failed to import trend-graph component:', error);
+                
+                // Show error in the UI
+                const loadingIndicator = document.getElementById('loadingIndicator');
+                if (loadingIndicator) {
+                    loadingIndicator.innerHTML = `
+                        <div style="color: #e74c3c; text-align: center;">
+                            ❌ Failed to load trend-graph component<br>
+                            <small>Error: ${error.message}</small><br>
+                            <small>Check console for detailed error information</small>
+                        </div>
+                    `;
+                }
+            }
+        })();
+    </script>
+    
+    <script>
+        // Mock data generators
+        const MockDataGenerator = {
+            /**
+             * Generate rich dataset with realistic patterns
+             */
+            generateRichData() {
+                const data = {
+                    dailyMazes: {},
+                    dailyTabLimits: {},
+                    dailyBlockedAttempts: {}
+                };
+
+                const today = new Date();
+                const startDate = new Date(today);
+                startDate.setDate(today.getDate() - 90);
+
+                for (let d = new Date(startDate); d <= today; d.setDate(d.getDate() + 1)) {
+                    const dateKey = this.formatDate(d);
+                    const dayOfWeek = d.getDay();
+                    const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+                    
+                    // Realistic patterns: less activity on weekends, varying engagement
+                    const baseActivity = isWeekend ? 0.3 : 1.0;
+                    const randomFactor = 0.5 + Math.random() * 0.8;
+                    const activityLevel = baseActivity * randomFactor;
+
+                    // Generate maze completions (0-8 per day, with realistic distribution)
+                    const mazeCount = Math.floor(Math.random() * 8 * activityLevel);
+                    if (mazeCount > 0) {
+                        data.dailyMazes[dateKey] = mazeCount;
+                    }
+
+                    // Generate tab limits (2-8, with preference for middle values)
+                    const tabLimit = Math.floor(2 + Math.random() * 6.5);
+                    data.dailyTabLimits[dateKey] = tabLimit;
+
+                    // Generate blocked attempts (0-15, correlated with activity)
+                    const blockedCount = Math.floor(Math.random() * 15 * activityLevel);
+                    if (blockedCount > 0) {
+                        data.dailyBlockedAttempts[dateKey] = blockedCount;
+                    }
+                }
+
+                return data;
+            },
+
+            /**
+             * Generate sparse dataset with gaps
+             */
+            generateSparseData() {
+                const data = {
+                    dailyMazes: {},
+                    dailyTabLimits: {},
+                    dailyBlockedAttempts: {}
+                };
+
+                const today = new Date();
+                const dates = [];
+                
+                // Generate only 15 random dates in the last 60 days
+                for (let i = 0; i < 15; i++) {
+                    const randomDays = Math.floor(Math.random() * 60);
+                    const date = new Date(today);
+                    date.setDate(today.getDate() - randomDays);
+                    dates.push(date);
+                }
+
+                dates.forEach(date => {
+                    const dateKey = this.formatDate(date);
+                    
+                    // Sparse but meaningful data
+                    if (Math.random() > 0.3) {
+                        data.dailyMazes[dateKey] = Math.floor(Math.random() * 5) + 1;
+                    }
+                    
+                    data.dailyTabLimits[dateKey] = Math.floor(Math.random() * 4) + 3;
+                    
+                    if (Math.random() > 0.4) {
+                        data.dailyBlockedAttempts[dateKey] = Math.floor(Math.random() * 8) + 1;
+                    }
+                });
+
+                return data;
+            },
+
+            /**
+             * Generate extreme values to test edge cases
+             */
+            generateExtremeData() {
+                const data = {
+                    dailyMazes: {},
+                    dailyTabLimits: {},
+                    dailyBlockedAttempts: {}
+                };
+
+                const today = new Date();
+                const scenarios = [
+                    { mazes: 0, tabLimit: 2, blocked: 0 },      // Minimal activity
+                    { mazes: 50, tabLimit: 8, blocked: 100 },  // Maximum activity  
+                    { mazes: 25, tabLimit: 2, blocked: 200 },  // High blocking with low limit
+                    { mazes: 1, tabLimit: 8, blocked: 0 },     // High limit, low activity
+                    { mazes: 30, tabLimit: 5, blocked: 5 },    // High maze completion
+                ];
+
+                scenarios.forEach((scenario, index) => {
+                    const date = new Date(today);
+                    date.setDate(today.getDate() - (index * 10));
+                    const dateKey = this.formatDate(date);
+                    
+                    data.dailyMazes[dateKey] = scenario.mazes;
+                    data.dailyTabLimits[dateKey] = scenario.tabLimit;
+                    data.dailyBlockedAttempts[dateKey] = scenario.blocked;
+                });
+
+                return data;
+            },
+
+            /**
+             * Generate empty dataset
+             */
+            generateEmptyData() {
+                return {
+                    dailyMazes: {},
+                    dailyTabLimits: {},
+                    dailyBlockedAttempts: {}
+                };
+            },
+
+            formatDate(date) {
+                const year = date.getFullYear();
+                const month = String(date.getMonth() + 1).padStart(2, '0');
+                const day = String(date.getDate()).padStart(2, '0');
+                return `${year}-${month}-${day}`;
+            }
+        };
+
+        // Test interface functions
+        let currentData = null;
+
+        function loadScenario(scenarioType) {
+            console.log(`🔄 Loading scenario: ${scenarioType}`);
+            
+            const generators = {
+                'rich': () => MockDataGenerator.generateRichData(),
+                'sparse': () => MockDataGenerator.generateSparseData(),
+                'empty': () => MockDataGenerator.generateEmptyData(),
+                'extreme': () => MockDataGenerator.generateExtremeData()
+            };
+
+            const generator = generators[scenarioType];
+            if (!generator) {
+                console.error('Unknown scenario type:', scenarioType);
+                return;
+            }
+
+            try {
+                currentData = generator();
+                console.log(`✅ Generated data for ${scenarioType}:`, currentData);
+                
+                // Update both graphs with error checking
+                const mainGraph = document.getElementById('testGraph');
+                const responsiveGraph = document.getElementById('responsiveGraph');
+                
+                console.log('📊 Main graph element:', mainGraph);
+                console.log('📊 Responsive graph element:', responsiveGraph);
+                
+                if (mainGraph) {
+                    console.log('🔄 Setting data on main graph...');
+                    if (typeof mainGraph.setData === 'function') {
+                        mainGraph.setData(currentData);
+                        console.log('✅ Main graph data set successfully');
+                    } else {
+                        console.error('❌ Main graph setData method not found. Available methods:', Object.getOwnPropertyNames(mainGraph));
+                    }
+                } else {
+                    console.error('❌ Main graph element not found');
+                }
+                
+                if (responsiveGraph) {
+                    console.log('🔄 Setting data on responsive graph...');
+                    if (typeof responsiveGraph.setData === 'function') {
+                        responsiveGraph.setData(currentData);
+                        console.log('✅ Responsive graph data set successfully');
+                    } else {
+                        console.error('❌ Responsive graph setData method not found');
+                    }
+                } else {
+                    console.error('❌ Responsive graph element not found');
+                }
+
+                // Update data preview and statistics
+                updateDataPreview();
+                updateStatistics();
+
+                console.log(`✅ Successfully loaded ${scenarioType} scenario`);
+                
+            } catch (error) {
+                console.error(`❌ Error loading ${scenarioType} scenario:`, error);
+            }
+        }
+
+        function clearGraph() {
+            currentData = null;
+            
+            const mainGraph = document.getElementById('testGraph');
+            const responsiveGraph = document.getElementById('responsiveGraph');
+            
+            if (mainGraph) {
+                mainGraph.setData({ dailyMazes: {}, dailyTabLimits: {}, dailyBlockedAttempts: {} });
+            }
+            
+            if (responsiveGraph) {
+                responsiveGraph.setData({ dailyMazes: {}, dailyTabLimits: {}, dailyBlockedAttempts: {} });
+            }
+
+            document.getElementById('dataPreview').textContent = 'No data loaded. Click a scenario button above to load test data.';
+            document.getElementById('dataStats').style.display = 'none';
+        }
+
+        function updateDataPreview() {
+            if (!currentData) return;
+
+            const preview = {
+                totalDays: Object.keys(currentData.dailyMazes).length + Object.keys(currentData.dailyTabLimits).length + Object.keys(currentData.dailyBlockedAttempts).length,
+                sampleData: {
+                    dailyMazes: Object.fromEntries(Object.entries(currentData.dailyMazes).slice(0, 5)),
+                    dailyTabLimits: Object.fromEntries(Object.entries(currentData.dailyTabLimits).slice(0, 5)),
+                    dailyBlockedAttempts: Object.fromEntries(Object.entries(currentData.dailyBlockedAttempts).slice(0, 5))
+                }
+            };
+
+            document.getElementById('dataPreview').textContent = JSON.stringify(preview, null, 2);
+        }
+
+        function updateStatistics() {
+            if (!currentData) return;
+
+            const mazeCount = Object.values(currentData.dailyMazes).reduce((sum, val) => sum + val, 0);
+            const tabLimits = Object.values(currentData.dailyTabLimits);
+            const avgTabLimit = tabLimits.length > 0 ? (tabLimits.reduce((sum, val) => sum + val, 0) / tabLimits.length).toFixed(1) : 0;
+            const blockedCount = Object.values(currentData.dailyBlockedAttempts).reduce((sum, val) => sum + val, 0);
+            const uniqueDays = new Set([
+                ...Object.keys(currentData.dailyMazes),
+                ...Object.keys(currentData.dailyTabLimits),
+                ...Object.keys(currentData.dailyBlockedAttempts)
+            ]).size;
+
+            document.getElementById('totalDays').textContent = uniqueDays;
+            document.getElementById('totalMazes').textContent = mazeCount;
+            document.getElementById('avgTabLimit').textContent = avgTabLimit;
+            document.getElementById('totalBlocked').textContent = blockedCount;
+            document.getElementById('dataStats').style.display = 'grid';
+        }
+
+        function showError(message) {
+            const errorDisplay = document.getElementById('errorDisplay');
+            const loadingIndicator = document.getElementById('loadingIndicator');
+            const mainGraph = document.getElementById('testGraph');
+            
+            if (errorDisplay) {
+                errorDisplay.textContent = `❌ Error: ${message}`;
+                errorDisplay.style.display = 'block';
+            }
+            if (loadingIndicator) loadingIndicator.style.display = 'none';
+            if (mainGraph) mainGraph.style.display = 'none';
+            
+            console.error('❌', message);
+        }
+        
+        function showGraph() {
+            const errorDisplay = document.getElementById('errorDisplay');
+            const loadingIndicator = document.getElementById('loadingIndicator');
+            const mainGraph = document.getElementById('testGraph');
+            
+            if (errorDisplay) errorDisplay.style.display = 'none';
+            if (loadingIndicator) loadingIndicator.style.display = 'none';
+            if (mainGraph) mainGraph.style.display = 'block';
+        }
+
+        // Page loaded message
+        console.log('🧪 Trend Graph Integration Test Page Script Loaded');
+        console.log('📊 Available test scenarios: rich, sparse, empty, extreme');
+        
+        // Initialize when component is ready
+        async function initializeTest() {
+            console.log('🔧 Initializing trend-graph test...');
+            
+            try {
+                // Wait for the component to be defined
+                await customElements.whenDefined('trend-graph');
+                console.log('✅ trend-graph custom element is now defined!');
+                
+                showGraph();
+                
+                // Wait a moment for elements to be fully initialized
+                setTimeout(() => {
+                    console.log('🔄 Auto-loading rich data scenario...');
+                    
+                    // Verify elements have the setData method before calling
+                    const mainGraph = document.getElementById('testGraph');
+                    const responsiveGraph = document.getElementById('responsiveGraph');
+                    
+                    if (mainGraph && typeof mainGraph.setData === 'function') {
+                        loadScenario('rich');
+                    } else {
+                        console.error('❌ Component elements not properly initialized');
+                        showError('Component elements not properly initialized. Try refreshing the page.');
+                    }
+                }, 500);
+                
+            } catch (error) {
+                console.error('❌ Error waiting for trend-graph definition:', error);
+                showError('Failed to load trend-graph component. Check console for details.');
+            }
+        }
+        
+        // Start initialization when DOM is ready
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initializeTest);
+        } else {
+            initializeTest();
+        }
+
+        // Fallback timeout in case something goes wrong
+        setTimeout(() => {
+            if (!customElements.get('trend-graph')) {
+                showError('trend-graph component failed to load after 10 seconds. Check if the test server is running and the component file exists.');
+            }
+        }, 10000);
+
+        // Add some global test utilities
+        window.trendGraphTest = {
+            loadScenario,
+            clearGraph,
+            getCurrentData: () => currentData,
+            MockDataGenerator
+        };
+    </script>
+</body>
+</html>
