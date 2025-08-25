@@ -94,7 +94,7 @@ describe('TabManager', () => {
       expect(tabManager.tabLimit).toBe(TAB_LIMITS.DEFAULT);
       expect(tabManager.blockedUrls).toBeInstanceOf(Map);
       expect(tabManager.mazeTabId).toBeNull();
-      expect(tabManager.mazesCompleted).toBe(0);
+      expect(tabManager.dailyMazesCompleted).toBe(0);
       expect(tabManager.isInitialized).toBe(false);
       expect(tabManager.restoringTabs).toBeInstanceOf(Set);
     });
@@ -441,7 +441,7 @@ describe('TabManager', () => {
 
       expect(tabManager.restoringTabs.has(1)).toBe(true);
       expect(tabManager.mazeTabId).toBeNull();
-      expect(tabManager.mazesCompleted).toBe(1);
+      expect(tabManager.dailyMazesCompleted).toBe(1);
       expect(mockChrome.storage.local.set).toHaveBeenCalledWith({
         mazesCompleted: 1
       });
@@ -471,7 +471,7 @@ describe('TabManager', () => {
       // UpdateLimit mazes clear restoring flag and return early
       expect(tabManager.restoringTabs.has(1)).toBe(false);
       expect(tabManager.mazeTabId).toBeNull();
-      expect(tabManager.mazesCompleted).toBe(1);
+      expect(tabManager.dailyMazesCompleted).toBe(1);
     });
 
     test('handles tab not found', async () => {
@@ -815,7 +815,7 @@ describe('TabManager', () => {
       };
       mockChrome.storage.local.get.mockResolvedValue(mockStats);
       tabManager.tabLimit = 4;
-      tabManager.mazesCompleted = 2;
+      tabManager.dailyMazesCompleted = 2;
 
       const stats = await tabManager.getStats();
 
@@ -823,7 +823,7 @@ describe('TabManager', () => {
         mazesCompleted: 5,
         blockedAttempts: 10,
         tabLimit: 4,
-        sessionMazesCompleted: 2,
+        dailyMazesCompleted: 2,
         installDate: 1234567890
       });
     });
@@ -1046,9 +1046,303 @@ describe('TabManager', () => {
       await jest.runAllTimersAsync();
       
       expect(tabManager.mazeTabId).toBeNull();
-      expect(tabManager.mazesCompleted).toBe(1);
+      expect(tabManager.dailyMazesCompleted).toBe(1);
       
       jest.useRealTimers();
+    });
+  });
+
+  describe('Daily Maze Tracking', () => {
+    let originalDate;
+    let mockDate;
+
+    beforeEach(() => {
+      // Mock Date before creating TabManager instance
+      originalDate = global.Date;
+      mockDate = new originalDate('2024-03-15T10:30:00.000Z');
+      
+      global.Date = jest.fn(() => mockDate);
+      global.Date.now = jest.fn(() => mockDate.getTime());
+      global.Date.prototype = originalDate.prototype;
+      
+      // Create a fresh TabManager instance with mocked date
+      tabManager = new TabManager();
+    });
+
+    afterEach(() => {
+      global.Date = originalDate;
+    });
+
+    const setMockDate = (dateString) => {
+      mockDate = new originalDate(dateString);
+      global.Date = jest.fn(() => mockDate);
+      global.Date.now = jest.fn(() => mockDate.getTime());
+      global.Date.prototype = originalDate.prototype;
+    };
+
+    describe('getTodayKey', () => {
+      test('returns correct date key format', () => {
+        const key = tabManager.getTodayKey();
+        expect(key).toBe('2024-03-15');
+      });
+
+      test('pads single digit months and days', () => {
+        setMockDate('2024-01-05T10:30:00.000Z');
+        const key = tabManager.getTodayKey();
+        expect(key).toBe('2024-01-05');
+      });
+
+      test('handles year boundary correctly', () => {
+        setMockDate('2025-01-01T00:00:00.000Z');
+        const key = tabManager.getTodayKey();
+        expect(key).toBe('2025-01-01');
+      });
+    });
+
+    describe('getTodayMazeCount', () => {
+      test('returns 0 when no daily data exists', async () => {
+        mockChrome.storage.local.get.mockResolvedValue({});
+        
+        const count = await tabManager.getTodayMazeCount();
+        expect(count).toBe(0);
+      });
+
+      test('returns 0 when today has no data', async () => {
+        mockChrome.storage.local.get.mockResolvedValue({
+          dailyMazes: {
+            '2024-03-14': 5, // Yesterday
+            '2024-03-16': 3  // Tomorrow
+          }
+        });
+        
+        const count = await tabManager.getTodayMazeCount();
+        expect(count).toBe(0);
+      });
+
+      test('returns correct count for today', async () => {
+        mockChrome.storage.local.get.mockResolvedValue({
+          dailyMazes: {
+            '2024-03-14': 5,  // Yesterday
+            '2024-03-15': 7,  // Today
+            '2024-03-16': 3   // Tomorrow
+          }
+        });
+        
+        const count = await tabManager.getTodayMazeCount();
+        expect(count).toBe(7);
+      });
+
+      test('handles storage error gracefully', async () => {
+        mockChrome.storage.local.get.mockRejectedValue(new Error('Storage error'));
+        
+        const count = await tabManager.getTodayMazeCount();
+        expect(count).toBe(0);
+      });
+    });
+
+    describe('incrementTodayMazeCount', () => {
+      test('creates new daily entry when none exists', async () => {
+        mockChrome.storage.local.get.mockResolvedValue({});
+        mockChrome.storage.local.set.mockResolvedValue();
+        
+        await tabManager.incrementTodayMazeCount();
+        
+        expect(tabManager.dailyMazesCompleted).toBe(1);
+        expect(mockChrome.storage.local.set).toHaveBeenCalledWith({
+          dailyMazes: {
+            '2024-03-15': 1
+          }
+        });
+      });
+
+      test('increments existing daily count', async () => {
+        mockChrome.storage.local.get.mockResolvedValue({
+          dailyMazes: {
+            '2024-03-14': 5,  // Yesterday
+            '2024-03-15': 3,  // Today
+            '2024-03-16': 2   // Tomorrow
+          }
+        });
+        mockChrome.storage.local.set.mockResolvedValue();
+        
+        await tabManager.incrementTodayMazeCount();
+        
+        expect(tabManager.dailyMazesCompleted).toBe(4);
+        expect(mockChrome.storage.local.set).toHaveBeenCalledWith({
+          dailyMazes: {
+            '2024-03-14': 5,  // Preserved
+            '2024-03-15': 4,  // Incremented
+            '2024-03-16': 2   // Preserved
+          }
+        });
+      });
+
+      test('preserves other days when incrementing today', async () => {
+        mockChrome.storage.local.get.mockResolvedValue({
+          dailyMazes: {
+            '2024-03-10': 8,
+            '2024-03-11': 12,
+            '2024-03-12': 6,
+            '2024-03-13': 9,
+            '2024-03-14': 5
+          }
+        });
+        mockChrome.storage.local.set.mockResolvedValue();
+        
+        await tabManager.incrementTodayMazeCount();
+        
+        expect(mockChrome.storage.local.set).toHaveBeenCalledWith({
+          dailyMazes: {
+            '2024-03-10': 8,   // All preserved
+            '2024-03-11': 12,
+            '2024-03-12': 6,
+            '2024-03-13': 9,
+            '2024-03-14': 5,
+            '2024-03-15': 1    // New entry for today
+          }
+        });
+      });
+
+      test('handles storage error gracefully', async () => {
+        mockChrome.storage.local.get.mockRejectedValue(new Error('Storage error'));
+        
+        // Should not throw
+        await expect(tabManager.incrementTodayMazeCount()).resolves.not.toThrow();
+        
+        // Daily count should remain 0 since it couldn't increment
+        expect(tabManager.dailyMazesCompleted).toBe(0);
+      });
+
+      test('handles storage set error gracefully', async () => {
+        mockChrome.storage.local.get.mockResolvedValue({});
+        mockChrome.storage.local.set.mockRejectedValue(new Error('Storage set error'));
+        
+        // Should not throw
+        await expect(tabManager.incrementTodayMazeCount()).resolves.not.toThrow();
+      });
+    });
+
+    describe('initialization with daily data', () => {
+      test('loads today\'s maze count on initialization', async () => {
+        mockChrome.storage.local.get
+          .mockResolvedValueOnce({ tabLimit: 5 })  // First call for tabLimit
+          .mockResolvedValueOnce({ installDate: Date.now() })  // Second call for installDate
+          .mockResolvedValueOnce({  // Third call for dailyMazes
+            dailyMazes: {
+              '2024-03-15': 8
+            }
+          });
+        
+        await tabManager.initialize();
+        
+        expect(tabManager.dailyMazesCompleted).toBe(8);
+      });
+
+      test('sets daily maze count to 0 when no data for today', async () => {
+        mockChrome.storage.local.get
+          .mockResolvedValueOnce({ tabLimit: 5 })
+          .mockResolvedValueOnce({ installDate: Date.now() })
+          .mockResolvedValueOnce({
+            dailyMazes: {
+              '2024-03-14': 5  // Yesterday's data only
+            }
+          });
+        
+        await tabManager.initialize();
+        
+        expect(tabManager.dailyMazesCompleted).toBe(0);
+      });
+    });
+
+    describe('cross-day behavior', () => {
+      test('different days have independent counts', async () => {
+        // Test March 15th
+        mockChrome.storage.local.get.mockResolvedValue({
+          dailyMazes: {
+            '2024-03-15': 5
+          }
+        });
+        
+        let count = await tabManager.getTodayMazeCount();
+        expect(count).toBe(5);
+        
+        // Switch to March 16th
+        setMockDate('2024-03-16T10:30:00.000Z');
+        
+        count = await tabManager.getTodayMazeCount();
+        expect(count).toBe(0); // Should be 0 for the new day
+      });
+
+      test('incrementing on different days creates separate entries', async () => {
+        // Start with some existing data
+        mockChrome.storage.local.get.mockResolvedValue({
+          dailyMazes: {
+            '2024-03-15': 3
+          }
+        });
+        
+        await tabManager.incrementTodayMazeCount();
+        expect(tabManager.dailyMazesCompleted).toBe(4);
+        
+        // Switch to next day
+        setMockDate('2024-03-16T10:30:00.000Z');
+        
+        // Mock the storage to return the updated data from previous day
+        mockChrome.storage.local.get.mockResolvedValue({
+          dailyMazes: {
+            '2024-03-15': 4  // Previous day's final count
+          }
+        });
+        
+        await tabManager.incrementTodayMazeCount();
+        
+        // Should create a new entry for the new day
+        expect(mockChrome.storage.local.set).toHaveBeenLastCalledWith({
+          dailyMazes: {
+            '2024-03-15': 4,  // Previous day preserved
+            '2024-03-16': 1   // New day starts at 1
+          }
+        });
+      });
+    });
+
+    describe('integration with maze completion', () => {
+      test('handleMazeCompleted increments daily count', async () => {
+        await tabManager.initialize();
+        tabManager.mazeTabId = 1;
+        
+        const tab = { id: 1 };
+        mockChrome.tabs.get.mockResolvedValue(tab);
+        mockChrome.storage.local.get.mockResolvedValue({
+          dailyMazes: {
+            '2024-03-15': 2
+          }
+        });
+        
+        await tabManager.handleMazeCompleted(1, {});
+        
+        expect(tabManager.dailyMazesCompleted).toBe(3);
+        expect(mockChrome.storage.local.set).toHaveBeenCalledWith({
+          dailyMazes: {
+            '2024-03-15': 3
+          }
+        });
+      });
+
+      test('difficulty calculation uses daily count', async () => {
+        // Set up initial daily count
+        tabManager.dailyMazesCompleted = 4;
+        
+        await tabManager.handleTabLimitExceeded({ id: 1, url: 'http://example.com' });
+        
+        expect(mockChrome.storage.local.set).toHaveBeenCalledWith({
+          currentMazeSession: {
+            tabId: 1,
+            difficulty: 4,
+            timestamp: expect.any(Number)
+          }
+        });
+      });
     });
   });
 });

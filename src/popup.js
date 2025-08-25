@@ -144,7 +144,7 @@ async function handleUpdateLimit() {
     
     // Get current session difficulty and ensure minimum Hard level for limit updates
     const response = await chrome.runtime.sendMessage({ type: 'GET_STATS' });
-    const currentDifficulty = response?.sessionMazesCompleted || 0;
+    const currentDifficulty = response?.dailyMazesCompleted || 0;
     const minHardDifficulty = 3; // Hard level index
     const updateLimitDifficulty = Math.max(currentDifficulty, minHardDifficulty);
     

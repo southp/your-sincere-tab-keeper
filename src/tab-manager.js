@@ -30,10 +30,55 @@ export class TabManager {
     this.tabLimit = TAB_LIMITS.DEFAULT;
     this.blockedUrls = new Map(); // tabId -> original URL mapping
     this.mazeTabId = null; // Track current maze tab
-    this.mazesCompleted = 0; // Session counter for difficulty scaling
+    this.dailyMazesCompleted = 0; // Daily counter for difficulty scaling
     this.isInitialized = false;
     this.restoringTabs = new Set(); // Track tabs currently being restored
     this.unblockedTabs = new Set(); // Track tabs that have solved mazes and are permanently unblocked
+  }
+
+  /**
+   * Get today's date key for daily tracking (YYYY-MM-DD format)
+   */
+  getTodayKey() {
+    const today = new Date();
+    return today.getFullYear() + '-' + 
+           String(today.getMonth() + 1).padStart(2, '0') + '-' + 
+           String(today.getDate()).padStart(2, '0');
+  }
+
+  /**
+   * Get or initialize today's maze completion count
+   */
+  async getTodayMazeCount() {
+    try {
+      const todayKey = this.getTodayKey();
+      const result = await chrome.storage.local.get(['dailyMazes']);
+      const dailyMazes = result.dailyMazes || {};
+      return dailyMazes[todayKey] || 0;
+    } catch (error) {
+      this.storageLogger.error('Failed to get today\'s maze count:', error);
+      return 0;
+    }
+  }
+
+  /**
+   * Increment today's maze completion count
+   */
+  async incrementTodayMazeCount() {
+    try {
+      const todayKey = this.getTodayKey();
+      const result = await chrome.storage.local.get(['dailyMazes']);
+      const dailyMazes = result.dailyMazes || {};
+      
+      dailyMazes[todayKey] = (dailyMazes[todayKey] || 0) + 1;
+      this.dailyMazesCompleted = dailyMazes[todayKey];
+      
+      await chrome.storage.local.set({ dailyMazes });
+      
+      this.storageLogger.log(`Incremented today's maze count to ${this.dailyMazesCompleted}`);
+    } catch (error) {
+      this.storageLogger.error('Failed to increment today\'s maze count:', error);
+    }
   }
 
   /**
@@ -59,6 +104,10 @@ export class TabManager {
         this.storageLogger.log('Set install date');
       }
 
+      // Load today's maze completion count
+      this.dailyMazesCompleted = await this.getTodayMazeCount();
+      this.storageLogger.log('Loaded today\'s maze count:', this.dailyMazesCompleted);
+
       // Initialize tab state based on currently open tabs
       await this.initializeTabState();
 
@@ -71,6 +120,7 @@ export class TabManager {
       this.generalLogger.error('Failed to initialize TabManager:', error);
       // Set safe defaults
       this.tabLimit = TAB_LIMITS.DEFAULT;
+      this.dailyMazesCompleted = 0;
       this.isInitialized = true;
     }
   }
@@ -151,7 +201,7 @@ export class TabManager {
       await chrome.storage.local.set({
         currentMazeSession: {
           tabId: tab.id,
-          difficulty: this.mazesCompleted,
+          difficulty: this.dailyMazesCompleted,
           timestamp: Date.now()
         }
       });
@@ -224,7 +274,7 @@ export class TabManager {
       }
       
       // Increment completion counters
-      this.mazesCompleted++;
+      await this.incrementTodayMazeCount();
       await this.incrementStat('mazesCompleted');
       
       // Mark this tab as permanently unblocked for its lifetime
@@ -473,7 +523,7 @@ export class TabManager {
         mazesCompleted: stats.mazesCompleted || 0,
         blockedAttempts: stats.blockedAttempts || 0,
         tabLimit: this.tabLimit,
-        sessionMazesCompleted: this.mazesCompleted,
+        dailyMazesCompleted: this.dailyMazesCompleted,
         installDate: stats.installDate || Date.now()
       };
     } catch (error) {

@@ -126,7 +126,7 @@ async function loadStatistics() {
     if (response && !response.error) {
       totalMazesCompletedEl.textContent = response.mazesCompleted || 0;
       totalBlockedAttemptsEl.textContent = response.blockedAttempts || 0;
-      currentStreakEl.textContent = response.sessionMazesCompleted || 0;
+      currentStreakEl.textContent = response.dailyMazesCompleted || 0;
       
       // Calculate days active
       const installDate = response.installDate || Date.now();
@@ -323,7 +323,7 @@ async function handleChangeLimit() {
     
     // Get current session difficulty and ensure minimum Hard level for limit updates
     const response = await chrome.runtime.sendMessage({ type: 'GET_STATS' });
-    const currentDifficulty = response?.sessionMazesCompleted || 0;
+    const currentDifficulty = response?.dailyMazesCompleted || 0;
     const minHardDifficulty = 3; // Hard level index
     const updateLimitDifficulty = Math.max(currentDifficulty, minHardDifficulty);
     

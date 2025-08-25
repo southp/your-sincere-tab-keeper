@@ -33,7 +33,7 @@ const mazeSizeEl = document.getElementById('mazeSize');
 const timerEl = document.getElementById('timer');
 const challengeMessageEl = document.getElementById('challengeMessage');
 const motivationMessageEl = document.getElementById('motivationMessage');
-const sessionMazesEl = document.getElementById('sessionMazes');
+const dailyMazesEl = document.getElementById('dailyMazes');
 const totalMazesEl = document.getElementById('totalMazes');
 const mazeOverlay = document.getElementById('mazeOverlay');
 
@@ -193,24 +193,24 @@ async function initializeGame() {
   canvas = document.getElementById('mazeCanvas');
   ctx = canvas.getContext('2d');
   
-  // Get current session stats to determine difficulty
-  let sessionMazesCompleted = 0;
+  // Get current daily stats to determine difficulty
+  let dailyMazesCompleted = 0;
   try {
     const response = await chrome.runtime.sendMessage({ type: 'GET_STATS' });
     if (response && !response.error) {
-      sessionMazesCompleted = response.sessionMazesCompleted || 0;
+      dailyMazesCompleted = response.dailyMazesCompleted || 0;
     }
   } catch (error) {
-    mazeLogger.error('Error getting session stats for difficulty:', error);
+    mazeLogger.error('Error getting daily stats for difficulty:', error);
   }
   
-  // Set difficulty based on session completed mazes and action type
-  let calculatedDifficulty = sessionMazesCompleted;
+  // Set difficulty based on daily completed mazes and action type
+  let calculatedDifficulty = dailyMazesCompleted;
   
   // For updateLimit actions, ensure minimum Hard difficulty (index 3)
   if (action === 'updateLimit') {
     const minHardDifficulty = 3; // Hard level index
-    calculatedDifficulty = Math.max(sessionMazesCompleted, minHardDifficulty);
+    calculatedDifficulty = Math.max(dailyMazesCompleted, minHardDifficulty);
   }
   
   // Use stored difficulty as fallback, but prioritize calculated difficulty
@@ -221,7 +221,7 @@ async function initializeGame() {
   mazeLogger.log('Difficulty calculation:', { 
     action,
     storedDifficulty: difficulty, 
-    sessionMazesCompleted, 
+    dailyMazesCompleted, 
     calculatedDifficulty,
     finalDifficulty: currentDifficulty 
   });
@@ -579,7 +579,7 @@ async function loadStats() {
     const response = await chrome.runtime.sendMessage({ type: 'GET_STATS' });
     
     if (response && !response.error) {
-      sessionMazesEl.textContent = response.sessionMazesCompleted || 0;
+      dailyMazesEl.textContent = response.dailyMazesCompleted || 0;
       totalMazesEl.textContent = response.mazesCompleted || 0;
     }
   } catch (error) {
