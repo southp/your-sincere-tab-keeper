@@ -153,6 +153,24 @@ class TrendGraph extends HTMLElement {
           overflow: hidden;
         }
 
+        .tooltip {
+          position: absolute;
+          background: rgba(0, 0, 0, 0.8);
+          color: white;
+          padding: 8px 12px;
+          border-radius: 4px;
+          font-size: 12px;
+          pointer-events: none;
+          z-index: 1000;
+          white-space: pre-line;
+          opacity: 0;
+          transition: opacity 0.2s;
+        }
+
+        .tooltip.visible {
+          opacity: 1;
+        }
+
         .chart-svg {
           width: 100%;
           height: 100%;
@@ -241,6 +259,7 @@ class TrendGraph extends HTMLElement {
 
         <div class="chart-container">
           <div class="loading">Loading trend data...</div>
+          <div class="tooltip"></div>
         </div>
 
         <div class="legend">
@@ -298,8 +317,14 @@ class TrendGraph extends HTMLElement {
 
     // Create SVG chart
     const svg = this.createSVGChart(aggregatedData);
+    
+    // Preserve tooltip and only clear other content
+    const tooltip = chartContainer.querySelector('.tooltip');
     chartContainer.innerHTML = '';
     chartContainer.appendChild(svg);
+    if (tooltip) {
+      chartContainer.appendChild(tooltip);
+    }
   }
 
   getDateRange() {
@@ -340,7 +365,7 @@ class TrendGraph extends HTMLElement {
           date: date,
           dateKey: dateKey,
           mazes: this.data.dailyMazes[dateKey] || 0,
-          tabLimit: this.data.dailyTabLimits[dateKey] || 5, // Default tab limit
+          tabLimit: this.data.dailyTabLimits[dateKey] || 0, // Default tab limit
           blocked: this.data.dailyBlockedAttempts[dateKey] || 0
         });
       });
@@ -368,7 +393,7 @@ class TrendGraph extends HTMLElement {
         });
         
         // Average tab limit for the week
-        weekData.tabLimit = weekData.count > 0 ? Math.round(weekData.tabLimit / weekData.count) : 5;
+        weekData.tabLimit = weekData.count > 0 ? Math.round(weekData.tabLimit / weekData.count) : 0;
         data.push(weekData);
       });
     } else if (this.granularity === 'monthly') {
@@ -395,7 +420,7 @@ class TrendGraph extends HTMLElement {
         });
         
         // Average tab limit for the month
-        monthData.tabLimit = monthData.count > 0 ? Math.round(monthData.tabLimit / monthData.count) : 5;
+        monthData.tabLimit = monthData.count > 0 ? Math.round(monthData.tabLimit / monthData.count) : 0;
         data.push(monthData);
       });
     }
@@ -484,7 +509,7 @@ class TrendGraph extends HTMLElement {
     const overallMax = Math.max(maxMazes, maxTabLimit, maxBlocked);
 
     // Create scales
-    const xScale = (i) => margin.left + (i / (data.length - 1)) * chartWidth;
+    const xScale = (i) => margin.left + (data.length > 1 ? (i / (data.length - 1)) * chartWidth : chartWidth / 2);
     const yScale = (value) => margin.top + chartHeight - (value / overallMax) * chartHeight;
 
     // Background
@@ -553,6 +578,8 @@ class TrendGraph extends HTMLElement {
   }
 
   drawPoints(svg, data, xScale, yScale, property, color) {
+    const tooltip = this.shadowRoot.querySelector('.tooltip');
+    
     data.forEach((point, i) => {
       const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
       circle.setAttribute('cx', xScale(i));
@@ -562,10 +589,42 @@ class TrendGraph extends HTMLElement {
       circle.setAttribute('stroke', 'white');
       circle.setAttribute('stroke-width', '1');
       
-      // Add tooltip
-      const title = document.createElementNS('http://www.w3.org/2000/svg', 'title');
-      title.textContent = `${this.formatDate(point.date)}: ${point[property]}`;
-      circle.appendChild(title);
+      // Make points interactive with HTML tooltip
+      circle.addEventListener('mouseenter', (e) => {
+        circle.setAttribute('r', '5');
+        circle.setAttribute('stroke-width', '2');
+        
+        // Show tooltip
+        const propertyLabels = {
+          'mazes': 'Mazes Solved',
+          'tabLimit': 'Tab Limit', 
+          'blocked': 'Tabs Blocked'
+        };
+        const currentLabel = propertyLabels[property];
+        tooltip.innerHTML = `${this.formatDate(point.date)}<br/>${currentLabel}: ${point[property]}<br/>Mazes: ${point.mazes} | Tab Limit: ${point.tabLimit} | Blocked: ${point.blocked}`;
+        tooltip.classList.add('visible');
+        
+        // Position tooltip using circle position
+        const cx = parseFloat(circle.getAttribute('cx'));
+        const cy = parseFloat(circle.getAttribute('cy'));
+        tooltip.style.left = `${cx + 10}px`;
+        tooltip.style.top = `${cy - 60}px`;
+      });
+      
+      circle.addEventListener('mousemove', (e) => {
+        if (tooltip.classList.contains('visible')) {
+          const cx = parseFloat(circle.getAttribute('cx'));
+          const cy = parseFloat(circle.getAttribute('cy'));
+          tooltip.style.left = `${cx + 10}px`;
+          tooltip.style.top = `${cy - 60}px`;
+        }
+      });
+      
+      circle.addEventListener('mouseleave', () => {
+        circle.setAttribute('r', '3');
+        circle.setAttribute('stroke-width', '1');
+        tooltip.classList.remove('visible');
+      });
       
       svg.appendChild(circle);
     });
@@ -587,7 +646,7 @@ class TrendGraph extends HTMLElement {
     xAxis.setAttribute('x1', margin.left);
     xAxis.setAttribute('y1', margin.top + chartHeight);
     xAxis.setAttribute('x2', margin.left + chartWidth);
-    yAxis.setAttribute('y2', margin.top + chartHeight);
+    xAxis.setAttribute('y2', margin.top + chartHeight);
     xAxis.setAttribute('stroke', this.colors.text);
     xAxis.setAttribute('stroke-width', '1');
     svg.appendChild(xAxis);
@@ -611,7 +670,7 @@ class TrendGraph extends HTMLElement {
     const labelInterval = Math.max(1, Math.floor(data.length / 6));
     data.forEach((point, i) => {
       if (i % labelInterval === 0 || i === data.length - 1) {
-        const x = margin.left + (i / (data.length - 1)) * chartWidth;
+        const x = data.length > 1 ? margin.left + (i / (data.length - 1)) * chartWidth : margin.left + chartWidth / 2;
         const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
         text.setAttribute('x', x);
         text.setAttribute('y', margin.top + chartHeight + 20);
