@@ -604,19 +604,56 @@ class TrendGraph extends HTMLElement {
         tooltip.innerHTML = `${this.formatDate(point.date)}<br/>${currentLabel}: ${point[property]}<br/>Mazes: ${point.mazes} | Tab Limit: ${point.tabLimit} | Blocked: ${point.blocked}`;
         tooltip.classList.add('visible');
         
-        // Position tooltip using circle position
+        // Smart tooltip positioning to avoid boundary clipping
         const cx = parseFloat(circle.getAttribute('cx'));
         const cy = parseFloat(circle.getAttribute('cy'));
-        tooltip.style.left = `${cx + 10}px`;
-        tooltip.style.top = `${cy - 60}px`;
+        const containerRect = this.shadowRoot.querySelector('.chart-container');
+        const containerWidth = containerRect.offsetWidth;
+        const containerHeight = containerRect.offsetHeight;
+        
+        // Calculate tooltip dimensions (approximate)
+        const tooltipWidth = 200; // estimated width
+        const tooltipHeight = 60; // estimated height
+        
+        // Smart horizontal positioning
+        let left = cx + 10;
+        if (left + tooltipWidth > containerWidth) {
+          left = cx - tooltipWidth - 10; // Place to the left of point
+        }
+        
+        // Smart vertical positioning  
+        let top = cy - tooltipHeight - 10;
+        if (top < 0) {
+          top = cy + 15; // Place below point if not enough space above
+        }
+        
+        tooltip.style.left = `${left}px`;
+        tooltip.style.top = `${top}px`;
       });
       
       circle.addEventListener('mousemove', (e) => {
         if (tooltip.classList.contains('visible')) {
+          // Update positioning on mouse move using same smart logic
           const cx = parseFloat(circle.getAttribute('cx'));
           const cy = parseFloat(circle.getAttribute('cy'));
-          tooltip.style.left = `${cx + 10}px`;
-          tooltip.style.top = `${cy - 60}px`;
+          const containerRect = this.shadowRoot.querySelector('.chart-container');
+          const containerWidth = containerRect.offsetWidth;
+          
+          const tooltipWidth = 200;
+          const tooltipHeight = 60;
+          
+          let left = cx + 10;
+          if (left + tooltipWidth > containerWidth) {
+            left = cx - tooltipWidth - 10;
+          }
+          
+          let top = cy - tooltipHeight - 10;
+          if (top < 0) {
+            top = cy + 15;
+          }
+          
+          tooltip.style.left = `${left}px`;
+          tooltip.style.top = `${top}px`;
         }
       });
       
