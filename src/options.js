@@ -42,6 +42,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   await checkOnboardingStatus();
   await loadCurrentSettings();
   await loadStatistics();
+  await loadTrendData();
   setupEventListeners();
   generateInsights();
 });
@@ -139,6 +140,30 @@ async function loadStatistics() {
     }
   } catch (error) {
     optionsLogger.error('Error loading statistics:', error);
+  }
+}
+
+/**
+ * Load trend data and pass to TrendGraph component
+ */
+async function loadTrendData() {
+  try {
+    const result = await chrome.storage.local.get([
+      'dailyMazes', 
+      'dailyTabLimits', 
+      'dailyBlockedAttempts'
+    ]);
+
+    const trendGraph = document.querySelector('trend-graph');
+    if (trendGraph) {
+      trendGraph.setData({
+        dailyMazes: result.dailyMazes || {},
+        dailyTabLimits: result.dailyTabLimits || {},
+        dailyBlockedAttempts: result.dailyBlockedAttempts || {}
+      });
+    }
+  } catch (error) {
+    optionsLogger.error('Error loading trend data:', error);
   }
 }
 
@@ -300,6 +325,7 @@ async function handleCompleteOnboarding() {
     // Refresh the page to show updated settings
     await loadCurrentSettings();
     await loadStatistics();
+    await loadTrendData();
     generateInsights();
     
     // Show success message
@@ -371,6 +397,7 @@ async function handleResetStats() {
     
     // Reload statistics display
     await loadStatistics();
+    await loadTrendData();
     generateInsights();
     
     showNotification('Statistics reset successfully!', 'success');

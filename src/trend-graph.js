@@ -42,16 +42,29 @@ class TrendGraph extends HTMLElement {
   }
 
   connectedCallback() {
-    this.loadData();
+    this.updateChart();
   }
 
   attributeChangedCallback(name, oldValue, newValue) {
     if (oldValue !== newValue) {
       if (name === 'data-period') {
         this.period = newValue;
+        this.updateChart();
       } else if (name === 'data-granularity') {
         this.granularity = newValue;
+        this.updateChart();
       }
+    }
+  }
+
+  // Method to update data from parent component
+  setData(newData) {
+    if (newData) {
+      this.data = {
+        dailyMazes: newData.dailyMazes || {},
+        dailyTabLimits: newData.dailyTabLimits || {},
+        dailyBlockedAttempts: newData.dailyBlockedAttempts || {}
+      };
       this.updateChart();
     }
   }
@@ -270,27 +283,6 @@ class TrendGraph extends HTMLElement {
     });
   }
 
-  async loadData() {
-    try {
-      // Load data from Chrome storage
-      const result = await chrome.storage.local.get([
-        'dailyMazes', 
-        'dailyTabLimits', 
-        'dailyBlockedAttempts'
-      ]);
-
-      this.data = {
-        dailyMazes: result.dailyMazes || {},
-        dailyTabLimits: result.dailyTabLimits || {},
-        dailyBlockedAttempts: result.dailyBlockedAttempts || {}
-      };
-
-      this.updateChart();
-    } catch (error) {
-      console.error('Failed to load trend data:', error);
-      this.showError('Failed to load trend data');
-    }
-  }
 
   updateChart() {
     const chartContainer = this.shadowRoot.querySelector('.chart-container');
