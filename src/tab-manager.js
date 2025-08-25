@@ -82,6 +82,42 @@ export class TabManager {
   }
 
   /**
+   * Record today's tab limit for trend tracking
+   */
+  async recordTodayTabLimit() {
+    try {
+      const todayKey = this.getTodayKey();
+      const result = await chrome.storage.local.get(['dailyTabLimits']);
+      const dailyTabLimits = result.dailyTabLimits || {};
+      
+      dailyTabLimits[todayKey] = this.tabLimit;
+      await chrome.storage.local.set({ dailyTabLimits });
+      
+      this.storageLogger.log(`Recorded today's tab limit: ${this.tabLimit}`);
+    } catch (error) {
+      this.storageLogger.error('Failed to record today\'s tab limit:', error);
+    }
+  }
+
+  /**
+   * Increment today's blocked attempts count
+   */
+  async incrementTodayBlockedCount() {
+    try {
+      const todayKey = this.getTodayKey();
+      const result = await chrome.storage.local.get(['dailyBlockedAttempts']);
+      const dailyBlockedAttempts = result.dailyBlockedAttempts || {};
+      
+      dailyBlockedAttempts[todayKey] = (dailyBlockedAttempts[todayKey] || 0) + 1;
+      await chrome.storage.local.set({ dailyBlockedAttempts });
+      
+      this.storageLogger.log(`Incremented today's blocked count to ${dailyBlockedAttempts[todayKey]}`);
+    } catch (error) {
+      this.storageLogger.error('Failed to increment today\'s blocked count:', error);
+    }
+  }
+
+  /**
    * Initialize the tab manager with settings from storage
    */
   async initialize() {
@@ -107,6 +143,9 @@ export class TabManager {
       // Load today's maze completion count
       this.dailyMazesCompleted = await this.getTodayMazeCount();
       this.storageLogger.log('Loaded today\'s maze count:', this.dailyMazesCompleted);
+
+      // Record today's tab limit for trend tracking
+      await this.recordTodayTabLimit();
 
       // Initialize tab state based on currently open tabs
       await this.initializeTabState();
@@ -442,6 +481,7 @@ export class TabManager {
       const oldLimit = this.tabLimit;
       this.tabLimit = newLimit;
       await chrome.storage.local.set({ tabLimit: newLimit });
+      await this.recordTodayTabLimit();
       this.generalLogger.log('Tab limit updated from', oldLimit, 'to:', newLimit);
       
       if (newLimit < oldLimit) {
@@ -464,6 +504,7 @@ export class TabManager {
       if (newLimit && newLimit >= TAB_LIMITS.MIN && newLimit <= TAB_LIMITS.MAX) {
         this.tabLimit = newLimit;
         await chrome.storage.local.set({ tabLimit: newLimit });
+        await this.recordTodayTabLimit();
         this.generalLogger.log('Onboarding completed with tab limit:', newLimit);
       }
     } catch (error) {
@@ -614,6 +655,7 @@ export class TabManager {
   async logLimitHitTimestamp() {
     try {
       await this.incrementStat('blockedAttempts');
+      await this.incrementTodayBlockedCount();
       const timestamp = Date.now();
       await chrome.storage.local.set({ lastLimitHit: timestamp });
       this.storageLogger.log('Logged limit hit timestamp:', timestamp);

@@ -6,6 +6,7 @@
 import { TAB_LIMITS, LIMIT_DESCRIPTIONS } from './constants.js';
 import { renderLimitButtons, setupLimitButtonListeners, updateLimitDescription } from './ui-utils.js';
 import { Logger } from './debug.js';
+import './trend-graph.js';
 
 const optionsLogger = new Logger('OPTIONS');
 
