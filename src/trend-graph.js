@@ -615,10 +615,18 @@ class TrendGraph extends HTMLElement {
         const tooltipWidth = 200; // estimated width
         const tooltipHeight = 60; // estimated height
         
-        // Smart horizontal positioning
+        // Smart horizontal positioning with safety margins
         let left = cx + 10;
-        if (left + tooltipWidth > containerWidth) {
+        if (left + tooltipWidth > containerWidth - 20) { // Add 20px safety margin
           left = cx - tooltipWidth - 10; // Place to the left of point
+        }
+        // Ensure tooltip doesn't go off left edge when positioned to the left
+        if (left < 10) { // Minimum left margin
+          left = 10;
+        }
+        // Final check to ensure it doesn't exceed right boundary
+        if (left + tooltipWidth > containerWidth - 10) {
+          left = containerWidth - tooltipWidth - 10;
         }
         
         // Smart vertical positioning  
@@ -643,8 +651,16 @@ class TrendGraph extends HTMLElement {
           const tooltipHeight = 60;
           
           let left = cx + 10;
-          if (left + tooltipWidth > containerWidth) {
+          if (left + tooltipWidth > containerWidth - 20) { // Add 20px safety margin
             left = cx - tooltipWidth - 10;
+          }
+          // Ensure tooltip doesn't go off left edge when positioned to the left
+          if (left < 10) {
+            left = 10;
+          }
+          // Final check to ensure it doesn't exceed right boundary
+          if (left + tooltipWidth > containerWidth - 10) {
+            left = containerWidth - tooltipWidth - 10;
           }
           
           let top = cy - tooltipHeight - 10;
