@@ -5,6 +5,7 @@
 
 import { Logger } from './debug.js';
 import { isSpecialTab, isMazeTab } from './utils.js';
+import { usageDataStore } from './usage-data-store.js';
 
 // Create scoped logger for popup functionality
 const popupLogger = new Logger('POPUP');
@@ -148,13 +149,12 @@ async function handleUpdateLimit() {
     const minHardDifficulty = 3; // Hard level index
     const updateLimitDifficulty = Math.max(currentDifficulty, minHardDifficulty);
     
-    // Store maze session data securely in Chrome storage
-    await chrome.storage.local.set({
-      currentMazeSession: {
-        action: 'updateLimit',
-        difficulty: updateLimitDifficulty,
-        timestamp: Date.now()
-      }
+    // Store maze session data using data store
+    const store = usageDataStore();
+    await store.setMazeSession({
+      action: 'updateLimit',
+      difficulty: updateLimitDifficulty,
+      timestamp: Date.now()
     });
     
     // Create a new tab with maze for limit update
@@ -232,16 +232,17 @@ function showError(message) {
  */
 async function checkForMazeAlert() {
   try {
-    const result = await chrome.storage.local.get(['showMazeAlert', 'mazeAlertTime']);
+    const store = usageDataStore();
+    const alert = await store.getMazeAlert();
     
-    if (result.showMazeAlert && result.mazeAlertTime) {
+    if (alert.show && alert.time) {
       // Check if alert is recent (within last 5 seconds)
-      const timeDiff = Date.now() - result.mazeAlertTime;
+      const timeDiff = Date.now() - alert.time;
       if (timeDiff < 5000) {
         showSpeechBubble('You already have a maze to solve! 🧩', 'Focus on completing the current maze first.');
         
         // Clear the alert flag
-        await chrome.storage.local.remove(['showMazeAlert', 'mazeAlertTime']);
+        await store.setMazeAlert(false);
       }
     }
   } catch (error) {

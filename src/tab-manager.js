@@ -8,6 +8,7 @@
 import { TAB_LIMITS } from './constants.js';
 import { Logger } from './debug.js';
 import { isSpecialTab, isMazeTab, isPopupWindow } from './utils.js';
+import { usageDataStore } from './usage-data-store.js';
 
 export class TabManager {
   // Configurable timing constants
@@ -51,10 +52,8 @@ export class TabManager {
    */
   async getTodayMazeCount() {
     try {
-      const todayKey = this.getTodayKey();
-      const result = await chrome.storage.local.get(['dailyMazes']);
-      const dailyMazes = result.dailyMazes || {};
-      return dailyMazes[todayKey] || 0;
+      const store = usageDataStore();
+      return await store.getTodayMazeCount();
     } catch (error) {
       this.storageLogger.error('Failed to get today\'s maze count:', error);
       return 0;
@@ -66,14 +65,8 @@ export class TabManager {
    */
   async incrementTodayMazeCount() {
     try {
-      const todayKey = this.getTodayKey();
-      const result = await chrome.storage.local.get(['dailyMazes']);
-      const dailyMazes = result.dailyMazes || {};
-      
-      dailyMazes[todayKey] = (dailyMazes[todayKey] || 0) + 1;
-      this.dailyMazesCompleted = dailyMazes[todayKey];
-      
-      await chrome.storage.local.set({ dailyMazes });
+      const store = usageDataStore();
+      this.dailyMazesCompleted = await store.incrementTodayMazeCount();
       
       this.storageLogger.log(`Incremented today's maze count to ${this.dailyMazesCompleted}`);
     } catch (error) {
@@ -86,12 +79,8 @@ export class TabManager {
    */
   async recordTodayTabLimit() {
     try {
-      const todayKey = this.getTodayKey();
-      const result = await chrome.storage.local.get(['dailyTabLimits']);
-      const dailyTabLimits = result.dailyTabLimits || {};
-      
-      dailyTabLimits[todayKey] = this.tabLimit;
-      await chrome.storage.local.set({ dailyTabLimits });
+      const store = usageDataStore();
+      await store.recordTodayTabLimit(this.tabLimit);
       
       this.storageLogger.log(`Recorded today's tab limit: ${this.tabLimit}`);
     } catch (error) {
@@ -104,14 +93,10 @@ export class TabManager {
    */
   async incrementTodayBlockedCount() {
     try {
-      const todayKey = this.getTodayKey();
-      const result = await chrome.storage.local.get(['dailyBlockedAttempts']);
-      const dailyBlockedAttempts = result.dailyBlockedAttempts || {};
+      const store = usageDataStore();
+      const newCount = await store.incrementTodayBlockedCount();
       
-      dailyBlockedAttempts[todayKey] = (dailyBlockedAttempts[todayKey] || 0) + 1;
-      await chrome.storage.local.set({ dailyBlockedAttempts });
-      
-      this.storageLogger.log(`Incremented today's blocked count to ${dailyBlockedAttempts[todayKey]}`);
+      this.storageLogger.log(`Incremented today's blocked count to ${newCount}`);
     } catch (error) {
       this.storageLogger.error('Failed to increment today\'s blocked count:', error);
     }
@@ -123,22 +108,13 @@ export class TabManager {
   async initialize() {
     try {
       // Load tab limit from storage
-      const result = await chrome.storage.local.get(['tabLimit']);
-      if (result.tabLimit) {
-        this.tabLimit = result.tabLimit;
-        this.tabLogger.log('Loaded tab limit from storage:', this.tabLimit);
-      } else {
-        this.tabLimit = TAB_LIMITS.DEFAULT;
-        await chrome.storage.local.set({ tabLimit: this.tabLimit });
-        this.tabLogger.log('Set default tab limit:', this.tabLimit);
-      }
+      const store = usageDataStore();
+      this.tabLimit = await store.getTabLimit();
+      this.tabLogger.log('Loaded tab limit from storage:', this.tabLimit);
 
-      // Set install date if not exists
-      const installResult = await chrome.storage.local.get(['installDate']);
-      if (!installResult.installDate) {
-        await chrome.storage.local.set({ installDate: Date.now() });
-        this.storageLogger.log('Set install date');
-      }
+      // Initialize install date if not exists
+      await store.initializeInstallDate();
+      this.storageLogger.log('Initialized install date');
 
       // Load today's maze completion count
       this.dailyMazesCompleted = await this.getTodayMazeCount();
@@ -236,13 +212,12 @@ export class TabManager {
         this.tabLogger.log('No URL to store for tab', tab.id, '- will default to new tab page');
       }
       
-      // Store maze session data securely in Chrome storage
-      await chrome.storage.local.set({
-        currentMazeSession: {
-          tabId: tab.id,
-          difficulty: this.dailyMazesCompleted,
-          timestamp: Date.now()
-        }
+      // Store maze session data using data store
+      const store = usageDataStore();
+      await store.setMazeSession({
+        tabId: tab.id,
+        difficulty: this.dailyMazesCompleted,
+        timestamp: Date.now()
       });
       
       // Redirect to maze
@@ -295,8 +270,9 @@ export class TabManager {
       } else {
         // Fallback: check current storage
         try {
-          const result = await chrome.storage.local.get(['currentMazeSession']);
-          isUpdateLimitMaze = result.currentMazeSession && result.currentMazeSession.action === 'updateLimit';
+          const store = usageDataStore();
+          const session = await store.getMazeSession();
+          isUpdateLimitMaze = session && session.action === 'updateLimit';
         } catch (error) {
           this.mazeLogger.error('Failed to check maze session for updateLimit action:', error);
         }
@@ -480,7 +456,8 @@ export class TabManager {
     if (newLimit >= TAB_LIMITS.MIN && newLimit <= TAB_LIMITS.MAX) {
       const oldLimit = this.tabLimit;
       this.tabLimit = newLimit;
-      await chrome.storage.local.set({ tabLimit: newLimit });
+      const store = usageDataStore();
+      await store.setTabLimit(newLimit);
       await this.recordTodayTabLimit();
       this.generalLogger.log('Tab limit updated from', oldLimit, 'to:', newLimit);
       
@@ -503,7 +480,8 @@ export class TabManager {
     try {
       if (newLimit && newLimit >= TAB_LIMITS.MIN && newLimit <= TAB_LIMITS.MAX) {
         this.tabLimit = newLimit;
-        await chrome.storage.local.set({ tabLimit: newLimit });
+        const store = usageDataStore();
+      await store.setTabLimit(newLimit);
         await this.recordTodayTabLimit();
         this.generalLogger.log('Onboarding completed with tab limit:', newLimit);
       }
@@ -556,16 +534,12 @@ export class TabManager {
    */
   async getStats() {
     try {
-      const stats = await chrome.storage.local.get([
-        'mazesCompleted', 'blockedAttempts', 'installDate'
-      ]);
+      const store = usageDataStore();
+      const extendedStats = await store.getExtendedStatistics();
       
       return {
-        mazesCompleted: stats.mazesCompleted || 0,
-        blockedAttempts: stats.blockedAttempts || 0,
-        tabLimit: this.tabLimit,
-        dailyMazesCompleted: this.dailyMazesCompleted,
-        installDate: stats.installDate || Date.now()
+        ...extendedStats,
+        tabLimit: this.tabLimit
       };
     } catch (error) {
       this.generalLogger.error('Failed to get stats:', error);
@@ -656,8 +630,8 @@ export class TabManager {
     try {
       await this.incrementStat('blockedAttempts');
       await this.incrementTodayBlockedCount();
-      const timestamp = Date.now();
-      await chrome.storage.local.set({ lastLimitHit: timestamp });
+      const store = usageDataStore();
+      const timestamp = await store.setTimestamp('lastLimitHit');
       this.storageLogger.log('Logged limit hit timestamp:', timestamp);
     } catch (error) {
       this.storageLogger.error('Error logging limit hit timestamp:', error);
@@ -669,10 +643,8 @@ export class TabManager {
    */
   async incrementStat(statName) {
     try {
-      const result = await chrome.storage.local.get([statName]);
-      const currentValue = result[statName] || 0;
-      const newValue = currentValue + 1;
-      await chrome.storage.local.set({ [statName]: newValue });
+      const store = usageDataStore();
+      const newValue = await store.incrementStatistic(statName);
       this.storageLogger.log(`Incremented ${statName} to:`, newValue);
     } catch (error) {
       this.storageLogger.error(`Error incrementing ${statName}:`, error);

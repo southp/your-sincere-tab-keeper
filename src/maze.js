@@ -9,6 +9,7 @@ import { Logger } from './debug.js';
 import { MazeModel, WALL, PATH, PLAYER, GOAL } from './maze-model.js';
 import { getRandomTip } from './productivity-tips.js';
 import { isDevelopment } from './env.js';
+import { usageDataStore } from './usage-data-store.js';
 
 // Create scoped logger for maze functionality
 const mazeLogger = new Logger('MAZE-GAME');
@@ -156,8 +157,8 @@ async function loadMazeSessionData() {
     const sessionKey = `mazeSession_${Date.now()}`;
     
     // Try to get existing session data
-    const result = await chrome.storage.local.get(['currentMazeSession']);
-    const sessionData = result.currentMazeSession;
+    const store = usageDataStore();
+    const sessionData = await store.getMazeSession();
     
     if (sessionData) {
       tabId = sessionData.tabId;
@@ -168,7 +169,7 @@ async function loadMazeSessionData() {
       mazeLogger.log('Action loaded from storage:', action);
       
       // Clear the session data to prevent reuse
-      await chrome.storage.local.remove(['currentMazeSession']);
+      await store.clearMazeSession();
     } else {
       mazeLogger.warn('No maze session data found, using defaults');
       mazeLogger.log('Setting action to null (default)');

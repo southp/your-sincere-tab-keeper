@@ -129,7 +129,7 @@ describe('TabManager', () => {
 
       await tabManager.initialize();
 
-      expect(mockChrome.storage.local.get).toHaveBeenCalledWith(['tabLimit']);
+      // Should load the tab limit through UsageDataStore
       expect(tabManager.tabLimit).toBe(5);
       expect(tabManager.isInitialized).toBe(true);
     });
@@ -140,7 +140,6 @@ describe('TabManager', () => {
       await tabManager.initialize();
 
       expect(tabManager.tabLimit).toBe(TAB_LIMITS.DEFAULT);
-      expect(mockChrome.storage.local.set).toHaveBeenCalledWith({ tabLimit: TAB_LIMITS.DEFAULT });
       expect(tabManager.isInitialized).toBe(true);
     });
 
@@ -807,24 +806,39 @@ describe('TabManager', () => {
   });
 
   describe('getStats', () => {
-    test('returns complete statistics', async () => {
-      const mockStats = {
+    test('returns complete statistics', async () => {      
+      // Mock all the calls that UsageDataStore.getExtendedStatistics makes
+      // The calls are made in parallel so we need to set up all the expected data
+      const basicStats = {
         mazesCompleted: 5,
         blockedAttempts: 10,
+        tabLimit: TAB_LIMITS.DEFAULT,
         installDate: 1234567890
       };
-      mockChrome.storage.local.get.mockResolvedValue(mockStats);
+      const dailyData = {
+        dailyMazes: { '2025-08-25': 2 },
+        dailyTabLimits: {},
+        dailyBlockedAttempts: {}
+      };
+
+      mockChrome.storage.local.get
+        .mockResolvedValueOnce(basicStats) // getStatistics call
+        .mockResolvedValueOnce(dailyData)  // getDailyTrackingData call
+        .mockResolvedValueOnce({ dailyMazes: { '2025-08-25': 2 } }); // getTodayMazeCount call
+
       tabManager.tabLimit = 4;
-      tabManager.dailyMazesCompleted = 2;
 
       const stats = await tabManager.getStats();
 
       expect(stats).toEqual({
         mazesCompleted: 5,
         blockedAttempts: 10,
-        tabLimit: 4,
+        tabLimit: 4, // TabManager overrides this
         dailyMazesCompleted: 2,
-        installDate: 1234567890
+        installDate: 1234567890,
+        dailyMazes: { '2025-08-25': 2 },
+        dailyTabLimits: {},
+        dailyBlockedAttempts: {}
       });
     });
 

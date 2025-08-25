@@ -7,6 +7,7 @@ import { Logger } from './debug.js';
 import { TabManager } from './tab-manager.js';
 import { isSpecialTab, isMazeTab } from './utils.js';
 import { isDevelopment } from './env.js';
+import { usageDataStore } from './usage-data-store.js';
 
 // Create scoped loggers for service worker functionality
 const initLogger = new Logger('SERVICE-WORKER-INIT');
@@ -254,13 +255,12 @@ async function handleTabLimitExceeded(tab) {
     tabLogger.log('No URL to store for tab', tab.id, '- will default to new tab page');
   }
   
-  // Store maze session data securely in Chrome storage
-  await chrome.storage.local.set({
-    currentMazeSession: {
-      tabId: tab.id,
-      difficulty: mazesCompleted,
-      timestamp: Date.now()
-    }
+  // Store maze session data using data store
+  const store = usageDataStore();
+  await store.setMazeSession({
+    tabId: tab.id,
+    difficulty: mazesCompleted,
+    timestamp: Date.now()
   });
   
   // Redirect to maze
@@ -313,8 +313,9 @@ async function handleMazeCompleted(tabId, data) {
     } else {
       // Fallback: check current storage (in case message didn't include action)
       try {
-        const result = await chrome.storage.local.get(['currentMazeSession']);
-        isUpdateLimitMaze = result.currentMazeSession && result.currentMazeSession.action === 'updateLimit';
+        const store = usageDataStore();
+        const session = await store.getMazeSession();
+        isUpdateLimitMaze = session && session.action === 'updateLimit';
       } catch (error) {
         mazeLogger.error('Failed to check maze session for updateLimit action:', error);
       }
@@ -422,7 +423,8 @@ async function handleTabLimitUpdate(newLimit) {
   if (newLimit >= TAB_LIMITS.MIN && newLimit <= TAB_LIMITS.MAX) {
     const oldLimit = tabLimit;
     tabLimit = newLimit;
-    await chrome.storage.local.set({ tabLimit: newLimit });
+    const store = usageDataStore();
+    await store.setTabLimit(newLimit);
     generalLogger.log('Tab limit updated from', oldLimit, 'to:', newLimit);
     
     // If the new limit is lower, close excess tabs intelligently
@@ -439,7 +441,8 @@ async function handleTabLimitUpdate(newLimit) {
 async function handleCompleteOnboarding(newLimit) {
   if (newLimit >= TAB_LIMITS.MIN && newLimit <= TAB_LIMITS.MAX) {
     tabLimit = newLimit;
-    await chrome.storage.local.set({ tabLimit: newLimit });
+    const store = usageDataStore();
+    await store.setTabLimit(newLimit);
     generalLogger.log('Onboarding completed with tab limit:', newLimit);
     
     // Smart tab management: close oldest tabs, keep newest ones
@@ -558,10 +561,8 @@ async function showMazeExistsNotification() {
   } catch (error) {
     generalLogger.error('Failed to show maze exists notification:', error);
     // Fallback: Set a flag that the popup can check
-    await chrome.storage.local.set({ 
-      showMazeAlert: true,
-      mazeAlertTime: Date.now()
-    });
+    const store = usageDataStore();
+    await store.setMazeAlert(true);
   }
 }
 
@@ -570,19 +571,9 @@ async function showMazeExistsNotification() {
  */
 async function logLimitHitTimestamp() {
   try {
-    const now = Date.now();
-    const result = await chrome.storage.local.get(['limitHitTimestamps']);
-    const timestamps = result.limitHitTimestamps || [];
-    
-    // Add current timestamp
-    timestamps.push(now);
-    
-    // Keep only last 100 timestamps to prevent storage bloat
-    const recentTimestamps = timestamps.slice(-100);
-    
-    await chrome.storage.local.set({ limitHitTimestamps: recentTimestamps });
-    
-    generalLogger.log('Logged limit hit timestamp:', new Date(now).toLocaleString());
+    const store = usageDataStore();
+    const timestamp = await store.logLimitHitTimestamp();
+    generalLogger.log('Logged limit hit timestamp:', new Date(timestamp).toLocaleString());
   } catch (error) {
     generalLogger.error('Failed to log limit hit timestamp:', error);
   }
@@ -620,9 +611,8 @@ async function handleCloseBlobTab(tabId) {
  */
 async function incrementStat(statName) {
   try {
-    const result = await chrome.storage.local.get([statName]);
-    const currentValue = result[statName] || 0;
-    await chrome.storage.local.set({ [statName]: currentValue + 1 });
+    const store = usageDataStore();
+    await store.incrementStatistic(statName);
   } catch (error) {
     generalLogger.error(`Failed to increment ${statName}:`, error);
   }

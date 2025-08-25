@@ -6,6 +6,7 @@
 import { TAB_LIMITS, LIMIT_DESCRIPTIONS } from './constants.js';
 import { renderLimitButtons, setupLimitButtonListeners, updateLimitDescription } from './ui-utils.js';
 import { Logger } from './debug.js';
+import { usageDataStore } from './usage-data-store.js';
 import './trend-graph.js';
 
 const optionsLogger = new Logger('OPTIONS');
@@ -148,19 +149,12 @@ async function loadStatistics() {
  */
 async function loadTrendData() {
   try {
-    const result = await chrome.storage.local.get([
-      'dailyMazes', 
-      'dailyTabLimits', 
-      'dailyBlockedAttempts'
-    ]);
+    const store = usageDataStore();
+    const result = await store.getDailyTrackingData();
 
     const trendGraph = document.querySelector('trend-graph');
     if (trendGraph) {
-      trendGraph.setData({
-        dailyMazes: result.dailyMazes || {},
-        dailyTabLimits: result.dailyTabLimits || {},
-        dailyBlockedAttempts: result.dailyBlockedAttempts || {}
-      });
+      trendGraph.setData(result);
     }
   } catch (error) {
     optionsLogger.error('Error loading trend data:', error);
@@ -303,11 +297,10 @@ async function handleCompleteOnboarding() {
       }
     }
     
-    // Save selected limit
-    await chrome.storage.local.set({ 
-      tabLimit: selectedLimit,
-      installDate: Date.now()
-    });
+    // Save selected limit using data store
+    const store = usageDataStore();
+    await store.setTabLimit(selectedLimit);
+    await store.setInstallDate();
     
     // Send message to background script for smart tab management
     await chrome.runtime.sendMessage({
@@ -354,13 +347,12 @@ async function handleChangeLimit() {
     const minHardDifficulty = 3; // Hard level index
     const updateLimitDifficulty = Math.max(currentDifficulty, minHardDifficulty);
     
-    // Store maze session data securely in Chrome storage
-    await chrome.storage.local.set({
-      currentMazeSession: {
-        action: 'updateLimit',
-        difficulty: updateLimitDifficulty,
-        timestamp: Date.now()
-      }
+    // Store maze session data using data store
+    const store = usageDataStore();
+    await store.setMazeSession({
+      action: 'updateLimit',
+      difficulty: updateLimitDifficulty,
+      timestamp: Date.now()
     });
     
     // Create maze tab for limit update
@@ -389,11 +381,9 @@ async function handleResetStats() {
   try {
     resetStatsBtn.classList.add('loading');
     
-    // Reset statistics in storage
-    await chrome.storage.local.remove([
-      'mazesCompleted',
-      'blockedAttempts'
-    ]);
+    // Reset statistics using data store
+    const store = usageDataStore();
+    await store.resetStatistics();
     
     // Reload statistics display
     await loadStatistics();
@@ -417,34 +407,22 @@ async function handleExportStats() {
   try {
     exportStatsBtn.classList.add('loading');
     
-    const response = await chrome.runtime.sendMessage({ type: 'GET_STATS' });
+    const store = usageDataStore();
+    const exportData = await store.exportAllData();
     
-    if (response && !response.error) {
-      const exportData = {
-        exportDate: new Date().toISOString(),
-        tabLimit: response.tabLimit,
-        mazesCompleted: response.mazesCompleted || 0,
-        blockedAttempts: response.blockedAttempts || 0,
-        installDate: new Date(response.installDate || Date.now()).toISOString(),
-        daysActive: Math.floor((Date.now() - (response.installDate || Date.now())) / (1000 * 60 * 60 * 24))
-      };
-      
-      // Create and download JSON file
-      const dataStr = JSON.stringify(exportData, null, 2);
-      const dataBlob = new Blob([dataStr], { type: 'application/json' });
-      const url = URL.createObjectURL(dataBlob);
-      
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `tab-keeper-stats-${new Date().toISOString().split('T')[0]}.json`;
-      a.click();
-      
-      URL.revokeObjectURL(url);
-      
-      showNotification('Statistics exported successfully!', 'success');
-    } else {
-      throw new Error('Failed to get statistics');
-    }
+    // Create and download JSON file
+    const dataStr = JSON.stringify(exportData, null, 2);
+    const dataBlob = new Blob([dataStr], { type: 'application/json' });
+    const url = URL.createObjectURL(dataBlob);
+    
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `tab-keeper-stats-${new Date().toISOString().split('T')[0]}.json`;
+    a.click();
+    
+    URL.revokeObjectURL(url);
+    
+    showNotification('Statistics exported successfully!', 'success');
     
   } catch (error) {
     optionsLogger.error('Error exporting statistics:', error);
