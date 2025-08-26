@@ -448,5 +448,11 @@
   },
   "motivation8": {
     "message": "Every step in the maze is a step toward awareness! 👣"
+  },
+  "mazeAlreadyCompleted": {
+    "message": "Maze Already Completed!"
+  },
+  "mazeCompletedDescription": {
+    "message": "You've already solved this maze. Use your browser's navigation to continue."
   }
 }

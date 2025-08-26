@@ -79,11 +79,41 @@ const MOTIVATION_MESSAGES = [
   chrome.i18n.getMessage('motivation8')
 ];
 
+/**
+ * Check if this is a completed maze session that user navigated back to
+ */
+async function isCompletedMazeSession() {
+  try {
+    const response = await chrome.runtime.sendMessage({ type: 'CHECK_MAZE_COMPLETED' });
+    return response?.isCompleted || false;
+  } catch (error) {
+    mazeLogger.error('Error checking completed maze session:', error);
+    return false;
+  }
+}
+
+/**
+ * Show completed maze message instead of the game
+ */
+function showCompletedMazeMessage() {
+  // Hide the normal maze interface
+  document.querySelector('.maze-container').style.display = 'none';
+  
+  // Show the completed maze message
+  document.getElementById('completedMazeMessage').style.display = 'flex';
+}
+
 
 // Initialize game when DOM is loaded
 document.addEventListener('DOMContentLoaded', async () => {
   // Initialize internationalization
   initializeI18n();
+  
+  // Check if this is a completed maze that user navigated back to
+  if (await isCompletedMazeSession()) {
+    showCompletedMazeMessage();
+    return; // Don't initialize the game
+  }
   
   // Load maze session data from storage first
   await loadMazeSessionData();
@@ -396,6 +426,7 @@ async function handleMazeComplete() {
   stopTimer();
   
   // Show completion overlay with productivity tip and send completion message
+  // Note: TabManager will mark the maze as completed when it receives the MAZE_COMPLETED message
   showCompletionMessage();
   await sendMazeCompletionMessage();
 }

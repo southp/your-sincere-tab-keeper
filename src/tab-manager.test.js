@@ -1359,4 +1359,227 @@ describe('TabManager', () => {
       });
     });
   });
+
+  describe('Maze Completion Tracking', () => {
+    let mockSessionStorage;
+
+    beforeEach(() => {
+      // Mock sessionStorage
+      mockSessionStorage = {
+        setItem: jest.fn(),
+        getItem: jest.fn(),
+        removeItem: jest.fn()
+      };
+      global.sessionStorage = mockSessionStorage;
+    });
+
+    afterEach(() => {
+      delete global.sessionStorage;
+    });
+
+    describe('markMazeAsCompleted', () => {
+      test('marks maze as completed with valid tab ID', () => {
+        tabManager.markMazeAsCompleted(123);
+
+        expect(tabManager.completedMazeSessions.has('maze_completed_tab_123')).toBe(true);
+        expect(mockSessionStorage.setItem).toHaveBeenCalledWith('maze_completed_tab_123', 'true');
+      });
+
+      test('handles null tab ID gracefully', () => {
+        tabManager.markMazeAsCompleted(null);
+
+        expect(tabManager.completedMazeSessions.size).toBe(0);
+        expect(mockSessionStorage.setItem).not.toHaveBeenCalled();
+      });
+
+      test('handles sessionStorage error gracefully', () => {
+        mockSessionStorage.setItem.mockImplementation(() => {
+          throw new Error('sessionStorage error');
+        });
+
+        // Should not throw
+        expect(() => tabManager.markMazeAsCompleted(123)).not.toThrow();
+        expect(tabManager.completedMazeSessions.has('maze_completed_tab_123')).toBe(true);
+      });
+    });
+
+    describe('isMazeCompleted', () => {
+      test('returns true for completed maze in memory', () => {
+        tabManager.completedMazeSessions.add('maze_completed_tab_456');
+
+        const result = tabManager.isMazeCompleted(456);
+
+        expect(result).toBe(true);
+        expect(mockSessionStorage.getItem).not.toHaveBeenCalled(); // Should not need to check storage
+      });
+
+      test('returns true for completed maze in sessionStorage', () => {
+        mockSessionStorage.getItem.mockReturnValue('true');
+
+        const result = tabManager.isMazeCompleted(789);
+
+        expect(result).toBe(true);
+        expect(mockSessionStorage.getItem).toHaveBeenCalledWith('maze_completed_tab_789');
+        // Should sync back to in-memory state
+        expect(tabManager.completedMazeSessions.has('maze_completed_tab_789')).toBe(true);
+      });
+
+      test('returns false for non-completed maze', () => {
+        mockSessionStorage.getItem.mockReturnValue(null);
+
+        const result = tabManager.isMazeCompleted(999);
+
+        expect(result).toBe(false);
+        expect(mockSessionStorage.getItem).toHaveBeenCalledWith('maze_completed_tab_999');
+      });
+
+      test('returns false for null tab ID', () => {
+        const result = tabManager.isMazeCompleted(null);
+
+        expect(result).toBe(false);
+        expect(mockSessionStorage.getItem).not.toHaveBeenCalled();
+      });
+
+      test('returns false when sessionStorage throws error', () => {
+        mockSessionStorage.getItem.mockImplementation(() => {
+          throw new Error('sessionStorage error');
+        });
+
+        const result = tabManager.isMazeCompleted(555);
+
+        expect(result).toBe(false);
+      });
+
+      test('syncs sessionStorage to memory on positive check', () => {
+        mockSessionStorage.getItem.mockReturnValue('true');
+
+        tabManager.isMazeCompleted(111);
+
+        expect(tabManager.completedMazeSessions.has('maze_completed_tab_111')).toBe(true);
+      });
+    });
+
+    describe('clearMazeCompletion', () => {
+      test('clears completion tracking for valid tab ID', () => {
+        // Set up initial state
+        tabManager.completedMazeSessions.add('maze_completed_tab_222');
+        
+        tabManager.clearMazeCompletion(222);
+
+        expect(tabManager.completedMazeSessions.has('maze_completed_tab_222')).toBe(false);
+        expect(mockSessionStorage.removeItem).toHaveBeenCalledWith('maze_completed_tab_222');
+      });
+
+      test('handles null tab ID gracefully', () => {
+        tabManager.clearMazeCompletion(null);
+
+        expect(mockSessionStorage.removeItem).not.toHaveBeenCalled();
+      });
+
+      test('handles sessionStorage error gracefully', () => {
+        mockSessionStorage.removeItem.mockImplementation(() => {
+          throw new Error('sessionStorage error');
+        });
+        
+        tabManager.completedMazeSessions.add('maze_completed_tab_333');
+
+        // Should not throw
+        expect(() => tabManager.clearMazeCompletion(333)).not.toThrow();
+        expect(tabManager.completedMazeSessions.has('maze_completed_tab_333')).toBe(false);
+      });
+    });
+
+    describe('integration with handleMazeCompleted', () => {
+      test('handleMazeCompleted marks maze as completed', async () => {
+        await tabManager.initialize();
+        const tab = { id: 444 };
+        mockChrome.tabs.get.mockResolvedValue(tab);
+        tabManager.blockedUrls.set(444, 'http://example.com');
+
+        jest.useFakeTimers();
+        await tabManager.handleMazeCompleted(444, {});
+        jest.useRealTimers();
+
+        expect(tabManager.completedMazeSessions.has('maze_completed_tab_444')).toBe(true);
+        expect(mockSessionStorage.setItem).toHaveBeenCalledWith('maze_completed_tab_444', 'true');
+      });
+
+      test('completed mazes can be detected on subsequent checks', async () => {
+        // First, complete a maze
+        await tabManager.initialize();
+        const tab = { id: 555 };
+        mockChrome.tabs.get.mockResolvedValue(tab);
+        
+        jest.useFakeTimers();
+        await tabManager.handleMazeCompleted(555, {});
+        jest.useRealTimers();
+
+        // Then check if it's completed
+        const isCompleted = tabManager.isMazeCompleted(555);
+        expect(isCompleted).toBe(true);
+      });
+    });
+
+    describe('state management', () => {
+      test('completion tracking survives memory state and sessionStorage', () => {
+        // Mark as completed
+        tabManager.markMazeAsCompleted(666);
+        expect(tabManager.isMazeCompleted(666)).toBe(true);
+
+        // Clear memory state (simulate page reload)
+        tabManager.completedMazeSessions.clear();
+        expect(tabManager.completedMazeSessions.size).toBe(0);
+
+        // Should still be detected via sessionStorage
+        mockSessionStorage.getItem.mockReturnValue('true');
+        expect(tabManager.isMazeCompleted(666)).toBe(true);
+
+        // And should be synced back to memory
+        expect(tabManager.completedMazeSessions.has('maze_completed_tab_666')).toBe(true);
+      });
+
+      test('multiple tab completions are tracked independently', () => {
+        tabManager.markMazeAsCompleted(100);
+        tabManager.markMazeAsCompleted(200);
+        tabManager.markMazeAsCompleted(300);
+
+        expect(tabManager.isMazeCompleted(100)).toBe(true);
+        expect(tabManager.isMazeCompleted(200)).toBe(true);
+        expect(tabManager.isMazeCompleted(300)).toBe(true);
+        expect(tabManager.isMazeCompleted(400)).toBe(false);
+
+        // Clear one specific completion
+        tabManager.clearMazeCompletion(200);
+
+        expect(tabManager.isMazeCompleted(100)).toBe(true);
+        expect(tabManager.isMazeCompleted(200)).toBe(false);
+        expect(tabManager.isMazeCompleted(300)).toBe(true);
+      });
+    });
+
+    describe('edge cases', () => {
+      test('handles undefined tabId gracefully', () => {
+        expect(() => {
+          tabManager.markMazeAsCompleted(undefined);
+          tabManager.isMazeCompleted(undefined);
+          tabManager.clearMazeCompletion(undefined);
+        }).not.toThrow();
+      });
+
+      test('handles string tabId conversion', () => {
+        tabManager.markMazeAsCompleted('123');
+        expect(tabManager.isMazeCompleted('123')).toBe(true);
+        expect(tabManager.completedMazeSessions.has('maze_completed_tab_123')).toBe(true);
+      });
+
+      test('completion key format is consistent', () => {
+        const tabId = 999;
+        tabManager.markMazeAsCompleted(tabId);
+        
+        const expectedKey = `maze_completed_tab_${tabId}`;
+        expect(tabManager.completedMazeSessions.has(expectedKey)).toBe(true);
+        expect(mockSessionStorage.setItem).toHaveBeenCalledWith(expectedKey, 'true');
+      });
+    });
+  });
 });

@@ -448,5 +448,11 @@
   },
   "motivation8": {
     "message": "迷宮中的每一步都是邁向覺察的一步！👣"
+  },
+  "mazeAlreadyCompleted": {
+    "message": "迷宮已完成！"
+  },
+  "mazeCompletedDescription": {
+    "message": "您已經解決了這個迷宮。請使用瀏覽器的導覽功能繼續瀏覽。"
   }
 }

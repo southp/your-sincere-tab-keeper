@@ -35,6 +35,7 @@ export class TabManager {
     this.isInitialized = false;
     this.restoringTabs = new Set(); // Track tabs currently being restored
     this.unblockedTabs = new Set(); // Track tabs that have solved mazes and are permanently unblocked
+    this.completedMazeSessions = new Set(); // Track completed maze sessions to prevent re-entry
   }
 
   /**
@@ -296,6 +297,9 @@ export class TabManager {
       this.unblockedTabs.add(tabId);
       this.tabLogger.log('Marked tab as permanently unblocked:', tabId);
       
+      // Mark maze as completed to prevent re-entry on navigation
+      this.markMazeAsCompleted(tabId);
+      
       // Handle URL restoration
       const originalUrl = this.blockedUrls.get(tabId);
       this.tabLogger.log('Retrieved original URL for tab', tabId, ':', originalUrl || 'none (will use new tab page)');
@@ -342,6 +346,69 @@ export class TabManager {
     } catch (error) {
       this.mazeLogger.error('Error in handleMazeCompleted:', error);
       this.cleanupTabReferences(tabId);
+    }
+  }
+
+  /**
+   * Mark a maze session as completed to prevent re-entry on navigation
+   */
+  markMazeAsCompleted(tabId) {
+    if (tabId) {
+      const completionKey = `maze_completed_tab_${tabId}`;
+      this.completedMazeSessions.add(completionKey);
+      this.mazeLogger.log('Marked maze as completed for tab:', tabId);
+      
+      // Store in sessionStorage as well for persistence across page reloads
+      try {
+        sessionStorage.setItem(completionKey, 'true');
+      } catch (error) {
+        this.mazeLogger.error('Error storing completion marker in sessionStorage:', error);
+      }
+    }
+  }
+
+  /**
+   * Check if a maze session has already been completed
+   */
+  isMazeCompleted(tabId) {
+    if (!tabId) return false;
+    
+    const completionKey = `maze_completed_tab_${tabId}`;
+    
+    // Check in-memory state first
+    if (this.completedMazeSessions.has(completionKey)) {
+      return true;
+    }
+    
+    // Check sessionStorage as fallback
+    try {
+      const isCompleted = sessionStorage.getItem(completionKey) === 'true';
+      if (isCompleted) {
+        // Sync back to in-memory state
+        this.completedMazeSessions.add(completionKey);
+      }
+      return isCompleted;
+    } catch (error) {
+      this.mazeLogger.error('Error checking completion marker in sessionStorage:', error);
+      return false;
+    }
+  }
+
+  /**
+   * Clear completion tracking for a tab (used when maze tab is closed or replaced)
+   */
+  clearMazeCompletion(tabId) {
+    if (tabId) {
+      const completionKey = `maze_completed_tab_${tabId}`;
+      this.completedMazeSessions.delete(completionKey);
+      
+      try {
+        sessionStorage.removeItem(completionKey);
+      } catch (error) {
+        this.mazeLogger.error('Error removing completion marker from sessionStorage:', error);
+      }
+      
+      this.mazeLogger.log('Cleared maze completion marker for tab:', tabId);
     }
   }
 

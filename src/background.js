@@ -178,6 +178,12 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     case 'FOCUS_MAZE_TAB':
       tabManager.focusMazeTab();
       break;
+    case 'CHECK_MAZE_COMPLETED':
+      // Check if maze is completed for the requesting tab
+      const isCompleted = tabManager.isMazeCompleted(sender.tab.id);
+      sendResponse({ isCompleted });
+      return true; // Keep message channel open for response
+      break;
     case 'CLOSE_BLOB_TAB':
       handleCloseBlobTab(sender.tab.id);
       break;
