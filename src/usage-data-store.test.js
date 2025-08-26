@@ -463,61 +463,6 @@ describe('UsageDataStore', () => {
     });
   });
 
-  describe('UI State Operations', () => {
-    describe('setMazeAlert', () => {
-      it('should set alert state to show', async () => {
-        const beforeCall = Date.now();
-        
-        await store.setMazeAlert(true);
-        
-        const setCall = mockStorage.set.mock.calls[0][0];
-        expect(setCall.showMazeAlert).toBe(true);
-        expect(setCall.mazeAlertTime).toBeGreaterThanOrEqual(beforeCall);
-        expect(setCall.mazeAlertTime).toBeLessThanOrEqual(Date.now());
-      });
-
-      it('should clear alert state', async () => {
-        await store.setMazeAlert(false);
-        
-        expect(mockStorage.remove).toHaveBeenCalledWith(['showMazeAlert', 'mazeAlertTime']);
-      });
-
-      it('should default to show=true', async () => {
-        await store.setMazeAlert();
-        
-        const setCall = mockStorage.set.mock.calls[0][0];
-        expect(setCall.showMazeAlert).toBe(true);
-      });
-    });
-
-    describe('getMazeAlert', () => {
-      it('should return alert state', async () => {
-        const alertTime = Date.now();
-        mockStorage.get.mockResolvedValue({
-          showMazeAlert: true,
-          mazeAlertTime: alertTime
-        });
-        
-        const result = await store.getMazeAlert();
-        
-        expect(result).toEqual({
-          show: true,
-          time: alertTime
-        });
-      });
-
-      it('should return false state for missing data', async () => {
-        mockStorage.get.mockResolvedValue({});
-        
-        const result = await store.getMazeAlert();
-        
-        expect(result).toEqual({
-          show: false,
-          time: null
-        });
-      });
-    });
-  });
 
   describe('Initialization & Setup', () => {
     describe('initializeDefaults', () => {

@@ -385,45 +385,6 @@ class UsageDataStore {
     }
   }
 
-  // =============================================================================
-  // UI STATE OPERATIONS
-  // =============================================================================
-
-  /**
-   * Set maze alert state for UI
-   */
-  async setMazeAlert(show = true) {
-    try {
-      if (show) {
-        await this.storage.set({ 
-          showMazeAlert: true,
-          mazeAlertTime: Date.now()
-        });
-      } else {
-        await this.storage.remove(['showMazeAlert', 'mazeAlertTime']);
-      }
-      this.logger.log('Set maze alert state:', show);
-    } catch (error) {
-      this.logger.error('Failed to set maze alert:', error);
-      throw error;
-    }
-  }
-
-  /**
-   * Get maze alert state
-   */
-  async getMazeAlert() {
-    try {
-      const result = await this.storage.get(['showMazeAlert', 'mazeAlertTime']);
-      return {
-        show: result.showMazeAlert || false,
-        time: result.mazeAlertTime || null
-      };
-    } catch (error) {
-      this.logger.error('Failed to get maze alert state:', error);
-      return { show: false, time: null };
-    }
-  }
 
   // =============================================================================
   // INITIALIZATION & SETUP

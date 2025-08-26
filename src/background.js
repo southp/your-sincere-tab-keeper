@@ -560,9 +560,6 @@ async function showMazeExistsNotification() {
     generalLogger.log('Showed maze exists notification');
   } catch (error) {
     generalLogger.error('Failed to show maze exists notification:', error);
-    // Fallback: Set a flag that the popup can check
-    const store = usageDataStore();
-    await store.setMazeAlert(true);
   }
 }
 

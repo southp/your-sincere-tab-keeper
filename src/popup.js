@@ -37,7 +37,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   await loadStats();
   await checkCurrentTabs();
   await checkForActiveMaze();
-  await checkForMazeAlert();
+  await checkForExistingMaze();
   displayRandomTip();
   setupEventListeners();
 });
@@ -228,25 +228,18 @@ function showError(message) {
 }
 
 /**
- * Check for maze alert notifications
+ * Check for existing maze session and show notification if needed
  */
-async function checkForMazeAlert() {
+async function checkForExistingMaze() {
   try {
     const store = usageDataStore();
-    const alert = await store.getMazeAlert();
+    const session = await store.getMazeSession();
     
-    if (alert.show && alert.time) {
-      // Check if alert is recent (within last 5 seconds)
-      const timeDiff = Date.now() - alert.time;
-      if (timeDiff < 5000) {
-        showSpeechBubble('You already have a maze to solve! 🧩', 'Focus on completing the current maze first.');
-        
-        // Clear the alert flag
-        await store.setMazeAlert(false);
-      }
+    if (session && session.tabId) {
+      showSpeechBubble('You already have a maze to solve! 🧩', 'Focus on completing the current maze first.');
     }
   } catch (error) {
-    popupLogger.error('Error checking for maze alert:', error);
+    popupLogger.error('Error checking for existing maze:', error);
   }
 }
 
@@ -344,6 +337,6 @@ function showSpeechBubble(title, message) {
 setInterval(async () => {
   await checkCurrentTabs();
   await checkForActiveMaze();
-  await checkForMazeAlert();
+  await checkForExistingMaze();
 }, 2000);
 
