@@ -394,5 +394,35 @@
   },
   "settingsSaveFailed": {
     "message": "儲存設定失敗。請再試一次。"
+  },
+  "changeLimitSolveMaze": {
+    "message": "變更分頁限制（解謎）"
+  },
+  "yourTabJourney": {
+    "message": "📊 您的分頁之旅"
+  },
+  "yourInsights": {
+    "message": "💡 您的洞察"
+  },
+  "about": {
+    "message": "ℹ️ 關於"
+  },
+  "ourPhilosophy": {
+    "message": "我們的理念"
+  },
+  "keyFeatures": {
+    "message": "主要功能"
+  },
+  "version": {
+    "message": "版本："
+  },
+  "license": {
+    "message": "授權："
+  },
+  "defaultInsight": {
+    "message": "繼續努力！您正在建立良好的習慣。"
+  },
+  "loadingTrendData": {
+    "message": "載入趨勢資料中..."
   }
 }

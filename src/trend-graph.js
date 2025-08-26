@@ -237,43 +237,43 @@ class TrendGraph extends HTMLElement {
         <div class="graph-header">
           <h3 class="graph-title">
             <span>📈</span>
-            Usage Trends
+            ${chrome.i18n.getMessage('usageTrends')}
           </h3>
           
           <div class="graph-controls">
             <div class="control-group">
-              <label>Period:</label>
-              <button class="control-btn period-btn active" data-period="current-month">This Month</button>
-              <button class="control-btn period-btn" data-period="last-30-days">Last 30 Days</button>
-              <button class="control-btn period-btn" data-period="last-90-days">Last 90 Days</button>
+              <label>${chrome.i18n.getMessage('period')}</label>
+              <button class="control-btn period-btn active" data-period="current-month">${chrome.i18n.getMessage('thisMonth')}</button>
+              <button class="control-btn period-btn" data-period="last-30-days">${chrome.i18n.getMessage('last30Days')}</button>
+              <button class="control-btn period-btn" data-period="last-90-days">${chrome.i18n.getMessage('last90Days')}</button>
             </div>
             
             <div class="control-group">
-              <label>View:</label>
-              <button class="control-btn granularity-btn active" data-granularity="daily">Daily</button>
-              <button class="control-btn granularity-btn" data-granularity="weekly">Weekly</button>
-              <button class="control-btn granularity-btn" data-granularity="monthly">Monthly</button>
+              <label>${chrome.i18n.getMessage('view')}</label>
+              <button class="control-btn granularity-btn active" data-granularity="daily">${chrome.i18n.getMessage('daily')}</button>
+              <button class="control-btn granularity-btn" data-granularity="weekly">${chrome.i18n.getMessage('weekly')}</button>
+              <button class="control-btn granularity-btn" data-granularity="monthly">${chrome.i18n.getMessage('monthly')}</button>
             </div>
           </div>
         </div>
 
         <div class="chart-container">
-          <div class="loading">Loading trend data...</div>
+          <div class="loading">${chrome.i18n.getMessage('loadingTrendData') || 'Loading trend data...'}</div>
           <div class="tooltip"></div>
         </div>
 
         <div class="legend">
           <div class="legend-item">
             <div class="legend-color" style="background-color: ${this.colors.mazes}"></div>
-            <span>Mazes Solved</span>
+            <span>${chrome.i18n.getMessage('mazesSolved')}</span>
           </div>
           <div class="legend-item">
             <div class="legend-color" style="background-color: ${this.colors.tabLimit}"></div>
-            <span>Tab Limit</span>
+            <span>${chrome.i18n.getMessage('tabLimitHeading')}</span>
           </div>
           <div class="legend-item">
             <div class="legend-color" style="background-color: ${this.colors.blocked}"></div>
-            <span>Tabs Blocked</span>
+            <span>${chrome.i18n.getMessage('tabsBlocked')}</span>
           </div>
         </div>
       </div>

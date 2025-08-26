@@ -394,5 +394,35 @@
   },
   "settingsSaveFailed": {
     "message": "Failed to save settings. Please try again."
+  },
+  "changeLimitSolveMaze": {
+    "message": "Change Tab Limit (Solve Maze)"
+  },
+  "yourTabJourney": {
+    "message": "📊 Your Tab Journey"
+  },
+  "yourInsights": {
+    "message": "💡 Your Insights"
+  },
+  "about": {
+    "message": "ℹ️ About"
+  },
+  "ourPhilosophy": {
+    "message": "Our Philosophy"
+  },
+  "keyFeatures": {
+    "message": "Key Features"
+  },
+  "version": {
+    "message": "Version:"
+  },
+  "license": {
+    "message": "License:"
+  },
+  "defaultInsight": {
+    "message": "Keep going! You're building great habits."
+  },
+  "loadingTrendData": {
+    "message": "Loading trend data..."
   }
 }
