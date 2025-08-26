@@ -678,6 +678,23 @@ export class TabManager {
       this.mazeTabId = addedTabId;
       this.tabLogger.log('Updated maze tab reference:', removedTabId, '→', addedTabId);
     }
+    
+    // Transfer maze completion tracking
+    const removedCompletionKey = `maze_completed_tab_${removedTabId}`;
+    const addedCompletionKey = `maze_completed_tab_${addedTabId}`;
+    if (this.completedMazeSessions.has(removedCompletionKey)) {
+      this.completedMazeSessions.delete(removedCompletionKey);
+      this.completedMazeSessions.add(addedCompletionKey);
+      this.mazeLogger.log('Transferred maze completion tracking:', removedTabId, '→', addedTabId);
+      
+      // Also update sessionStorage if possible
+      try {
+        sessionStorage.removeItem(removedCompletionKey);
+        sessionStorage.setItem(addedCompletionKey, 'true');
+      } catch (error) {
+        this.mazeLogger.error('Error transferring completion marker in sessionStorage:', error);
+      }
+    }
   }
 
   /**

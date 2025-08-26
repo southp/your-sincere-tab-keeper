@@ -807,6 +807,13 @@ describe('TabManager', () => {
 
   describe('getStats', () => {
     test('returns complete statistics', async () => {      
+      // Mock the current date to match our test data
+      const originalDate = global.Date;
+      const mockDate = new originalDate('2025-08-25T10:30:00.000Z');
+      global.Date = jest.fn(() => mockDate);
+      global.Date.now = jest.fn(() => mockDate.getTime());
+      global.Date.prototype = originalDate.prototype;
+
       // Mock all the calls that UsageDataStore.getExtendedStatistics makes
       // The calls are made in parallel so we need to set up all the expected data
       const basicStats = {
@@ -840,6 +847,9 @@ describe('TabManager', () => {
         dailyTabLimits: {},
         dailyBlockedAttempts: {}
       });
+
+      // Restore original Date
+      global.Date = originalDate;
     });
 
     test('handles missing stats with defaults', async () => {
@@ -988,6 +998,57 @@ describe('TabManager', () => {
       expect(tabManager.blockedUrls.has(oldTabId)).toBe(false);
       expect(tabManager.blockedUrls.has(newTabId)).toBe(true);
       expect(tabManager.blockedUrls.get(newTabId)).toBe('http://multi-state.com');
+    });
+
+    test('transfers maze completion tracking state', () => {
+      const oldTabId = 400;
+      const newTabId = 500;
+      
+      // Set up completion tracking for old tab
+      tabManager.completedMazeSessions.add(`maze_completed_tab_${oldTabId}`);
+      
+      // Mock sessionStorage
+      const mockSessionStorage = {
+        removeItem: jest.fn(),
+        setItem: jest.fn()
+      };
+      global.sessionStorage = mockSessionStorage;
+
+      tabManager.onTabReplaced(newTabId, oldTabId);
+
+      // Old completion tracking should be removed
+      expect(tabManager.completedMazeSessions.has(`maze_completed_tab_${oldTabId}`)).toBe(false);
+      // New completion tracking should be added
+      expect(tabManager.completedMazeSessions.has(`maze_completed_tab_${newTabId}`)).toBe(true);
+      
+      // sessionStorage should be updated
+      expect(mockSessionStorage.removeItem).toHaveBeenCalledWith(`maze_completed_tab_${oldTabId}`);
+      expect(mockSessionStorage.setItem).toHaveBeenCalledWith(`maze_completed_tab_${newTabId}`, 'true');
+      
+      delete global.sessionStorage;
+    });
+
+    test('handles sessionStorage error during completion tracking transfer', () => {
+      const oldTabId = 600;
+      const newTabId = 700;
+      
+      tabManager.completedMazeSessions.add(`maze_completed_tab_${oldTabId}`);
+      
+      // Mock sessionStorage that throws errors
+      const mockSessionStorage = {
+        removeItem: jest.fn(() => { throw new Error('sessionStorage error'); }),
+        setItem: jest.fn(() => { throw new Error('sessionStorage error'); })
+      };
+      global.sessionStorage = mockSessionStorage;
+
+      // Should not throw
+      expect(() => tabManager.onTabReplaced(newTabId, oldTabId)).not.toThrow();
+      
+      // In-memory state should still transfer correctly
+      expect(tabManager.completedMazeSessions.has(`maze_completed_tab_${oldTabId}`)).toBe(false);
+      expect(tabManager.completedMazeSessions.has(`maze_completed_tab_${newTabId}`)).toBe(true);
+      
+      delete global.sessionStorage;
     });
   });
 
