@@ -424,5 +424,29 @@
   },
   "loadingTrendData": {
     "message": "Loading trend data..."
+  },
+  "motivation1": {
+    "message": "Every maze solved is a step toward more mindful browsing! 🌟"
+  },
+  "motivation2": {
+    "message": "Your focus is growing stronger with each challenge! 💪"
+  },
+  "motivation3": {
+    "message": "Building better habits, one maze at a time! 🎯"
+  },
+  "motivation4": {
+    "message": "Patience and persistence will guide you through! 🧭"
+  },
+  "motivation5": {
+    "message": "Each wall you navigate brings clarity to your goals! 🔍"
+  },
+  "motivation6": {
+    "message": "Mindful browsing starts with mindful problem-solving! 🧠"
+  },
+  "motivation7": {
+    "message": "You're training your brain for better digital habits! 🏋️‍♂️"
+  },
+  "motivation8": {
+    "message": "Every step in the maze is a step toward awareness! 👣"
   }
 }

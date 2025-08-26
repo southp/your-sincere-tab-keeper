@@ -424,5 +424,29 @@
   },
   "loadingTrendData": {
     "message": "載入趨勢資料中..."
+  },
+  "motivation1": {
+    "message": "每個解謎都是邁向更專注瀏覽的一步！🌟"
+  },
+  "motivation2": {
+    "message": "您的專注力在每個挑戰中變得更強！💪"
+  },
+  "motivation3": {
+    "message": "一次一個迷宮，建立更好的習慣！🎯"
+  },
+  "motivation4": {
+    "message": "耐心與堅持會引導您渡過難關！🧭"
+  },
+  "motivation5": {
+    "message": "您導航的每堵牆都讓目標更清晰！🔍"
+  },
+  "motivation6": {
+    "message": "專注瀏覽始於專注解題！🧠"
+  },
+  "motivation7": {
+    "message": "您正在訓練大腦養成更好的數位習慣！🏋️‍♂️"
+  },
+  "motivation8": {
+    "message": "迷宮中的每一步都是邁向覺察的一步！👣"
   }
 }

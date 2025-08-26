@@ -59,24 +59,24 @@ const COLORS = {
 // Difficulty settings - streamlined progression
 // Note: All sizes must be odd for proper maze generation algorithm
 const DIFFICULTY_SETTINGS = [
-  { name: 'Beginner', size: 5, description: 'Perfect for getting started' },
-  { name: 'Easy', size: 9, description: 'A gentle challenge' },
-  { name: 'Medium', size: 13, description: 'Getting more interesting' },
-  { name: 'Hard', size: 19, description: 'Now we\'re talking!' },
-  { name: 'Expert', size: 25, description: 'For the determined' },
-  { name: 'Master', size: 31, description: 'Serious commitment required' }
+  { name: chrome.i18n.getMessage('difficultyBeginner'), size: 5, description: chrome.i18n.getMessage('difficultyBeginnerDesc') },
+  { name: chrome.i18n.getMessage('difficultyEasy'), size: 9, description: chrome.i18n.getMessage('difficultyEasyDesc') },
+  { name: chrome.i18n.getMessage('difficultyMedium'), size: 13, description: chrome.i18n.getMessage('difficultyMediumDesc') },
+  { name: chrome.i18n.getMessage('difficultyHard'), size: 19, description: chrome.i18n.getMessage('difficultyHardDesc') },
+  { name: chrome.i18n.getMessage('difficultyExpert'), size: 25, description: chrome.i18n.getMessage('difficultyExpertDesc') },
+  { name: chrome.i18n.getMessage('difficultyMaster'), size: 31, description: chrome.i18n.getMessage('difficultyMasterDesc') }
 ];
 
 // Motivational messages
 const MOTIVATION_MESSAGES = [
-  "Every maze solved is a step toward more mindful browsing! 🌟",
-  "Your focus is growing stronger with each challenge! 💪",
-  "Building better habits, one maze at a time! 🎯",
-  "Patience and persistence will guide you through! 🧭",
-  "Each wall you navigate brings clarity to your goals! 🔍",
-  "Mindful browsing starts with mindful problem-solving! 🧠",
-  "You're training your brain for better digital habits! 🏋️‍♂️",
-  "Every step in the maze is a step toward awareness! 👣"
+  chrome.i18n.getMessage('motivation1'),
+  chrome.i18n.getMessage('motivation2'),
+  chrome.i18n.getMessage('motivation3'),
+  chrome.i18n.getMessage('motivation4'),
+  chrome.i18n.getMessage('motivation5'),
+  chrome.i18n.getMessage('motivation6'),
+  chrome.i18n.getMessage('motivation7'),
+  chrome.i18n.getMessage('motivation8')
 ];
 
 
