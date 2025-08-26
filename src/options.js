@@ -3,8 +3,8 @@
  * Handles settings, onboarding, and statistics display
  */
 
-import { TAB_LIMITS, LIMIT_DESCRIPTIONS } from './constants.js';
-import { renderLimitButtons, setupLimitButtonListeners, updateLimitDescription } from './ui-utils.js';
+import { TAB_LIMITS, getTabLimitDescription } from './constants.js';
+import { renderLimitButtons, setupLimitButtonListeners, updateLimitDescription, initializeI18n } from './ui-utils.js';
 import { Logger } from './debug.js';
 import { usageDataStore } from './usage-data-store.js';
 import './trend-graph.js';
@@ -39,6 +39,7 @@ let selectedLimit = TAB_LIMITS.DEFAULT;
 
 // Initialize options page
 document.addEventListener('DOMContentLoaded', async () => {
+  initializeI18n();
   updateRangeText();
   await checkOnboardingStatus();
   await loadCurrentSettings();

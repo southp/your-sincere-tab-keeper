@@ -3,10 +3,24 @@
  * Common functions for generating and managing UI elements
  */
 
-import { TAB_LIMITS, LIMIT_DESCRIPTIONS } from './constants.js';
+import { TAB_LIMITS, getTabLimitDescription } from './constants.js';
 import { Logger } from './debug.js';
 
 const uiLogger = new Logger('UI-UTILS');
+
+/**
+ * Initialize internationalization for HTML elements
+ * Finds all elements with data-i18n attribute and replaces their text content
+ */
+export function initializeI18n() {
+  document.querySelectorAll('[data-i18n]').forEach(element => {
+    const messageKey = element.getAttribute('data-i18n');
+    const message = chrome.i18n.getMessage(messageKey);
+    if (message) {
+      element.textContent = message;
+    }
+  });
+}
 
 /**
  * Generate limit buttons HTML dynamically
@@ -73,7 +87,7 @@ export function setupLimitButtonListeners(containerSelector, onLimitChange) {
  */
 export function updateLimitDescription(elementId, limit) {
   const element = document.getElementById(elementId);
-  if (element && LIMIT_DESCRIPTIONS[limit]) {
-    element.textContent = LIMIT_DESCRIPTIONS[limit];
+  if (element) {
+    element.textContent = getTabLimitDescription(limit);
   }
 }

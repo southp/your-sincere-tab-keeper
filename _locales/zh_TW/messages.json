@@ -1,0 +1,398 @@
+{
+  "extensionName": {
+    "message": "你的誠摯分頁管理員"
+  },
+  "extensionDescription": {
+    "message": "一個透過有趣的迷宮遊戲來限制開啟分頁數量的 Chrome 擴充功能 - 幫助你過上最好的分頁生活，一次一個迷宮。"
+  },
+  "actionDefaultTitle": {
+    "message": "你的誠摯分頁管理員"
+  },
+  "popupTitle": {
+    "message": "你的誠摯分頁管理員"
+  },
+  "popupTagline": {
+    "message": "過上你最好的分頁生活，一次一個迷宮"
+  },
+  "currentTabLimit": {
+    "message": "目前分頁限制："
+  },
+  "openTabs": {
+    "message": "開啟的分頁："
+  },
+  "mazesSolved": {
+    "message": "已解迷宮"
+  },
+  "tabsBlocked": {
+    "message": "已阻擋分頁"
+  },
+  "updateTabLimit": {
+    "message": "更新分頁限制"
+  },
+  "viewFullStats": {
+    "message": "查看完整統計"
+  },
+  "youHaveAMazeToSolve": {
+    "message": "你有一個迷宮要解！"
+  },
+  "alreadyHaveAMaze": {
+    "message": "你已經有一個迷宮要解決了！🧩"
+  },
+  "focusOnCurrentMaze": {
+    "message": "專心完成目前的迷宮。"
+  },
+  "tip1": {
+    "message": "💡 提示：關閉未使用的分頁以保持專注！"
+  },
+  "tip2": {
+    "message": "🎯 提示：嘗試設定較低的限制來培養更好的習慣！"
+  },
+  "tip3": {
+    "message": "🧠 提示：每個迷宮都讓你更專心地瀏覽！"
+  },
+  "tip4": {
+    "message": "⭐ 提示：質量重於數量 - 只保留你需要的分頁！"
+  },
+  "tip5": {
+    "message": "🌟 提示：未來的你會感謝現在減少分頁的決定！"
+  },
+  "tip6": {
+    "message": "🚀 提示：較少的分頁 = 更好的瀏覽器效能！"
+  },
+  "tip7": {
+    "message": "💪 提示：每個解決的迷宮都是邁向更好習慣的一步！"
+  },
+  "tip8": {
+    "message": "🎨 提示：乾淨的分頁列是乾淨的心靈！"
+  },
+  "failedToLoadStats": {
+    "message": "載入統計資料失敗"
+  },
+  "failedToConnect": {
+    "message": "連接擴充功能失敗"
+  },
+  "failedToStartUpdate": {
+    "message": "啟動限制更新程序失敗"
+  },
+  "failedToOpenStats": {
+    "message": "開啟統計頁面失敗"
+  },
+  "optionsTitle": {
+    "message": "你的誠摯分頁管理員 - 設定"
+  },
+  "welcomeHeading": {
+    "message": "🎉 歡迎使用你的誠摯分頁管理員！"
+  },
+  "welcomeIntro": {
+    "message": "感謝你安裝你的誠摯分頁管理員！這個擴充功能透過限制開啟的分頁數量來幫助你建立更好的瀏覽習慣。"
+  },
+  "howItWorksHeading": {
+    "message": "運作方式："
+  },
+  "howItWorks1": {
+    "message": "🎯 設定 2-8 的分頁限制"
+  },
+  "howItWorks2": {
+    "message": "🧩 當你超過限制時，解決迷宮以開啟新分頁"
+  },
+  "howItWorks3": {
+    "message": "📈 追蹤你的進度並建立專心的瀏覽習慣"
+  },
+  "howItWorks4": {
+    "message": "🚫 沒有逃避選項 - 只有解除安裝才能停用限制"
+  },
+  "chooseLimitHeading": {
+    "message": "選擇你的初始分頁限制："
+  },
+  "startMyTabJourney": {
+    "message": "開始我的分頁之旅"
+  },
+  "currentSettingsHeading": {
+    "message": "⚙️ 目前設定"
+  },
+  "tabLimitHeading": {
+    "message": "分頁限制"
+  },
+  "tabLimitDescription": {
+    "message": "開啟分頁的目前限制"
+  },
+  "changeTabLimit": {
+    "message": "變更分頁限制（解決迷宮）"
+  },
+  "yourTabJourneyHeading": {
+    "message": "📊 你的分頁之旅"
+  },
+  "totalMazesSolved": {
+    "message": "總解決迷宮數"
+  },
+  "totalMazesDescription": {
+    "message": "每個迷宮都讓你更接近專心瀏覽"
+  },
+  "tabsBlockedLabel": {
+    "message": "已阻擋分頁"
+  },
+  "tabsBlockedDescription": {
+    "message": "開啟新分頁前的反思時刻"
+  },
+  "daysActive": {
+    "message": "活躍天數"
+  },
+  "daysActiveDescription": {
+    "message": "一天一天地建立更好的習慣"
+  },
+  "todaysMazes": {
+    "message": "今日迷宮"
+  },
+  "todaysMazesDescription": {
+    "message": "今天解決的迷宮"
+  },
+  "yourInsightsHeading": {
+    "message": "💡 你的洞察"
+  },
+  "aboutHeading": {
+    "message": "ℹ️ 關於"
+  },
+  "aboutDescription": {
+    "message": "你的誠摯分頁管理員旨在幫助你反思瀏覽習慣，與科技建立更專心的關係。"
+  },
+  "philosophyHeading": {
+    "message": "我們的理念"
+  },
+  "philosophyText": {
+    "message": "我們相信小小的阻力能帶來大大的改變。透過在你超過分頁限制時加入有趣的迷宮遊戲，我們幫助你暫停並考慮是否真的需要那個新分頁。"
+  },
+  "keyFeaturesHeading": {
+    "message": "主要功能"
+  },
+  "feature1": {
+    "message": "🎯 可自訂的分頁限制 (2-8)"
+  },
+  "feature2": {
+    "message": "🧩 漸進式迷宮難度"
+  },
+  "feature3": {
+    "message": "📊 詳細的使用統計"
+  },
+  "feature4": {
+    "message": "🔒 沒有繞過選項（致力於成長）"
+  },
+  "feature5": {
+    "message": "🕵️ 完整的無痕模式支援"
+  },
+  "feature6": {
+    "message": "💾 本地儲存（無雲端同步）"
+  },
+  "versionInfo": {
+    "message": "版本：1.0.0"
+  },
+  "licenseInfo": {
+    "message": "授權：MIT"
+  },
+  "footerText": {
+    "message": "用 ❤️ 為專心瀏覽而製作"
+  },
+  "resetStatistics": {
+    "message": "重設統計"
+  },
+  "exportData": {
+    "message": "匯出資料"
+  },
+  "mazeTitle": {
+    "message": "你的誠摯分頁管理員 - 迷宮挑戰"
+  },
+  "solveMazeToOpen": {
+    "message": "解決這個迷宮以開啟你的新分頁！"
+  },
+  "solveMazeToUpdate": {
+    "message": "解決這個迷宮以更新你的分頁限制！"
+  },
+  "difficulty": {
+    "message": "難度："
+  },
+  "size": {
+    "message": "大小："
+  },
+  "timer": {
+    "message": "計時器："
+  },
+  "today": {
+    "message": "今天"
+  },
+  "allTime": {
+    "message": "全部時間"
+  },
+  "controlsHint": {
+    "message": "使用 ↑←↓→ 或 WASD 鍵移動"
+  },
+  "congratulations": {
+    "message": "恭喜！"
+  },
+  "mazeSolved": {
+    "message": "你解決了迷宮！正在載入你要求的頁面..."
+  },
+  "motivationFooter": {
+    "message": "每個解決的迷宮都是邁向更專心瀏覽的一步！🌟"
+  },
+  "updateLimitModalTitle": {
+    "message": "🎯 更新你的分頁限制"
+  },
+  "updateLimitModalDescription": {
+    "message": "解決迷宮做得很好！現在選擇你的新分頁限制："
+  },
+  "setNewLimit": {
+    "message": "設定新限制"
+  },
+  "keepCurrentLimit": {
+    "message": "保持目前限制"
+  },
+  "difficultyBeginner": {
+    "message": "初學者"
+  },
+  "difficultyBeginnerDesc": {
+    "message": "很適合入門"
+  },
+  "difficultyEasy": {
+    "message": "簡單"
+  },
+  "difficultyEasyDesc": {
+    "message": "溫和的挑戰"
+  },
+  "difficultyMedium": {
+    "message": "中等"
+  },
+  "difficultyMediumDesc": {
+    "message": "變得更有趣了"
+  },
+  "difficultyHard": {
+    "message": "困難"
+  },
+  "difficultyHardDesc": {
+    "message": "現在有點意思了！"
+  },
+  "difficultyExpert": {
+    "message": "專家"
+  },
+  "difficultyExpertDesc": {
+    "message": "給有決心的人"
+  },
+  "difficultyMaster": {
+    "message": "大師"
+  },
+  "difficultyMasterDesc": {
+    "message": "需要認真的承諾"
+  },
+  "tabLimitDesc2": {
+    "message": "極簡模式 - 非常適合專注的工作時段"
+  },
+  "tabLimitDesc3": {
+    "message": "專注瀏覽 - 適合研究和深度工作"
+  },
+  "tabLimitDesc4": {
+    "message": "平衡方式 - 受控制的多工處理"
+  },
+  "tabLimitDesc5": {
+    "message": "推薦用於平衡瀏覽"
+  },
+  "tabLimitDesc6": {
+    "message": "適度彈性 - 適合大多數使用者"
+  },
+  "tabLimitDesc7": {
+    "message": "寬鬆限制 - 仍能保持意識"
+  },
+  "tabLimitDesc8": {
+    "message": "寬鬆許可 - 溫和指導"
+  },
+  "blobPageTitle": {
+    "message": "你的誠摯分頁管理員"
+  },
+  "whoaThere": {
+    "message": "等等！🧩"
+  },
+  "alreadyHaveAMazeMessage": {
+    "message": "你已經有一個迷宮要解決了！"
+  },
+  "focusOnThatOne": {
+    "message": "先專心解決那一個。"
+  },
+  "completeCurrentMaze": {
+    "message": "先完成你目前的迷宮！"
+  },
+  "tabWillCloseIn": {
+    "message": "這個分頁將在 $1 秒後關閉...",
+    "placeholders": {
+      "1": {
+        "content": "$1",
+        "example": "5"
+      }
+    }
+  },
+  "notificationTitle": {
+    "message": "你的誠摯分頁管理員"
+  },
+  "notificationMessage": {
+    "message": "你已經有一個迷宮要解決了！🧩"
+  },
+  "notificationContext": {
+    "message": "在開啟新分頁之前，先專注於目前的迷宮。"
+  },
+  "usageTrends": {
+    "message": "使用趨勢"
+  },
+  "period": {
+    "message": "期間："
+  },
+  "thisMonth": {
+    "message": "本月"
+  },
+  "last30Days": {
+    "message": "過去 30 天"
+  },
+  "last90Days": {
+    "message": "過去 90 天"
+  },
+  "view": {
+    "message": "檢視："
+  },
+  "daily": {
+    "message": "每日"
+  },
+  "weekly": {
+    "message": "每週"
+  },
+  "monthly": {
+    "message": "每月"
+  },
+  "noDataAvailable": {
+    "message": "選定期間內沒有可用資料"
+  },
+  "errorMessage": {
+    "message": "錯誤：$1",
+    "placeholders": {
+      "1": {
+        "content": "$1",
+        "example": "連接失敗"
+      }
+    }
+  },
+  "confirmResetStats": {
+    "message": "你確定要重設所有統計資料嗎？此動作無法復原。"
+  },
+  "statsResetSuccess": {
+    "message": "統計資料重設成功！"
+  },
+  "statsResetFailed": {
+    "message": "重設統計資料失敗。"
+  },
+  "dataExportSuccess": {
+    "message": "統計資料匯出成功！"
+  },
+  "dataExportFailed": {
+    "message": "匯出統計資料失敗。"
+  },
+  "tabLimitSetSuccess": {
+    "message": "分頁限制設定成功！你的旅程現在開始。"
+  },
+  "settingsSaveFailed": {
+    "message": "儲存設定失敗。請再試一次。"
+  }
+}

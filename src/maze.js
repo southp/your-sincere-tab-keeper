@@ -3,8 +3,8 @@
  * A challenging maze game with Chrome Dino aesthetic
  */
 
-import { TAB_LIMITS, LIMIT_DESCRIPTIONS } from './constants.js';
-import { renderLimitButtons, setupLimitButtonListeners, updateLimitDescription } from './ui-utils.js';
+import { TAB_LIMITS, getTabLimitDescription } from './constants.js';
+import { renderLimitButtons, setupLimitButtonListeners, updateLimitDescription, initializeI18n } from './ui-utils.js';
 import { Logger } from './debug.js';
 import { MazeModel, WALL, PATH, PLAYER, GOAL } from './maze-model.js';
 import { getRandomTip } from './productivity-tips.js';
@@ -82,6 +82,9 @@ const MOTIVATION_MESSAGES = [
 
 // Initialize game when DOM is loaded
 document.addEventListener('DOMContentLoaded', async () => {
+  // Initialize internationalization
+  initializeI18n();
+  
   // Load maze session data from storage first
   await loadMazeSessionData();
   

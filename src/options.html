@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Your Sincere Tab Keeper - Settings</title>
+  <title data-i18n="optionsTitle">Your Sincere Tab Keeper - Settings</title>
   <link rel="stylesheet" href="options.css">
 </head>
 <body>
@@ -11,33 +11,33 @@
     <header class="header">
       <div class="logo">
         <div class="tab-icon">📑</div>
-        <h1>Your Sincere Tab Keeper</h1>
+        <h1 data-i18n="popupTitle">Your Sincere Tab Keeper</h1>
       </div>
-      <div class="tagline">Living your best tab life, one maze at a time</div>
+      <div class="tagline" data-i18n="popupTagline">Living your best tab life, one maze at a time</div>
     </header>
 
     <!-- Onboarding Section (shown only on first install) -->
     <section id="onboardingSection" class="section onboarding" style="display: none;">
       <div class="card">
-        <h2>🎉 Welcome to Your Sincere Tab Keeper!</h2>
+        <h2 data-i18n="welcomeHeading">🎉 Welcome to Your Sincere Tab Keeper!</h2>
         
         <div class="onboarding-content">
           <div class="intro-text">
-            <p>Thank you for installing Your Sincere Tab Keeper! This extension helps you build better browsing habits by limiting your open tabs.</p>
+            <p data-i18n="welcomeIntro">Thank you for installing Your Sincere Tab Keeper! This extension helps you build better browsing habits by limiting your open tabs.</p>
             
             <div class="how-it-works">
-              <h3>How it works:</h3>
+              <h3 data-i18n="howItWorksHeading">How it works:</h3>
               <ul>
                 <li data-range-text>🎯 Set a tab limit between {{RANGE}}</li>
-                <li>🧩 When you exceed the limit, solve a maze to open the new tab</li>
-                <li>📈 Track your progress and build mindful browsing habits</li>
-                <li>🚫 No escape hatches - only uninstalling disables the limit</li>
+                <li data-i18n="howItWorks2">🧩 When you exceed the limit, solve a maze to open the new tab</li>
+                <li data-i18n="howItWorks3">📈 Track your progress and build mindful browsing habits</li>
+                <li data-i18n="howItWorks4">🚫 No escape hatches - only uninstalling disables the limit</li>
               </ul>
             </div>
           </div>
 
           <div class="limit-selector">
-            <h3>Choose your initial tab limit:</h3>
+            <h3 data-i18n="chooseLimitHeading">Choose your initial tab limit:</h3>
             <div class="limit-options" id="onboardingLimitOptions">
               <!-- Buttons will be generated dynamically -->
             </div>
@@ -47,7 +47,7 @@
           </div>
 
           <div class="onboarding-actions">
-            <button id="completeOnboardingBtn" class="primary-btn">
+            <button id="completeOnboardingBtn" class="primary-btn" data-i18n="startMyTabJourney">
               Start My Tab Journey
             </button>
           </div>
@@ -58,12 +58,12 @@
     <!-- Main Settings Section -->
     <section id="settingsSection" class="section">
       <div class="card">
-        <h2>⚙️ Current Settings</h2>
+        <h2 data-i18n="currentSettingsHeading">⚙️ Current Settings</h2>
         
         <div class="setting-item">
           <div class="setting-info">
-            <h3>Tab Limit</h3>
-            <p>Current limit for open tabs</p>
+            <h3 data-i18n="tabLimitHeading">Tab Limit</h3>
+            <p data-i18n="tabLimitDescription">Current limit for open tabs</p>
           </div>
           <div class="setting-value">
             <span class="current-limit" id="currentTabLimit">5</span>
@@ -73,7 +73,7 @@
         <div class="setting-actions">
           <button id="changeLimitBtn" class="secondary-btn">
             <span class="btn-icon">🧩</span>
-            Change Tab Limit (Solve Maze)
+            <span data-i18n="changeLimitSolveMaze">Change Tab Limit (Solve Maze)</span>
           </button>
         </div>
       </div>
@@ -82,31 +82,31 @@
     <!-- Statistics Section -->
     <section id="statsSection" class="section">
       <div class="card">
-        <h2>📊 Your Tab Journey</h2>
+        <h2 data-i18n="yourTabJourney">📊 Your Tab Journey</h2>
         
         <div class="stats-grid">
           <div class="stat-card">
             <div class="stat-number" id="totalMazesCompleted">0</div>
-            <div class="stat-label">Total Mazes Solved</div>
-            <div class="stat-description">Every maze brings you closer to mindful browsing</div>
+            <div class="stat-label" data-i18n="totalMazesSolved">Total Mazes Solved</div>
+            <div class="stat-description" data-i18n="totalMazesDescription">Every maze brings you closer to mindful browsing</div>
           </div>
 
           <div class="stat-card">
             <div class="stat-number" id="totalBlockedAttempts">0</div>
-            <div class="stat-label">Tabs Blocked</div>
-            <div class="stat-description">Moments of reflection before opening new tabs</div>
+            <div class="stat-label" data-i18n="tabsBlocked">Tabs Blocked</div>
+            <div class="stat-description" data-i18n="tabsBlockedDescription">Moments of reflection before opening new tabs</div>
           </div>
 
           <div class="stat-card">
             <div class="stat-number" id="daysActive">0</div>
-            <div class="stat-label">Days Active</div>
-            <div class="stat-description">Building better habits one day at a time</div>
+            <div class="stat-label" data-i18n="daysActive">Days Active</div>
+            <div class="stat-description" data-i18n="daysActiveDescription">Building better habits one day at a time</div>
           </div>
 
           <div class="stat-card">
             <div class="stat-number" id="currentStreak">0</div>
-            <div class="stat-label">Today's Mazes</div>
-            <div class="stat-description">Mazes solved today</div>
+            <div class="stat-label" data-i18n="todaysMazes">Today's Mazes</div>
+            <div class="stat-description" data-i18n="todaysMazesDescription">Mazes solved today</div>
           </div>
         </div>
 
@@ -114,11 +114,11 @@
         <trend-graph></trend-graph>
 
         <div class="insights">
-          <h3>💡 Your Insights</h3>
+          <h3 data-i18n="yourInsights">💡 Your Insights</h3>
           <div id="insightsList" class="insights-list">
             <div class="insight-item">
               <span class="insight-icon">🎯</span>
-              <span class="insight-text">Keep going! You're building great habits.</span>
+              <span class="insight-text" data-i18n="defaultInsight">Keep going! You're building great habits.</span>
             </div>
           </div>
         </div>
@@ -128,31 +128,31 @@
     <!-- About Section -->
     <section id="aboutSection" class="section">
       <div class="card">
-        <h2>ℹ️ About</h2>
+        <h2 data-i18n="about">ℹ️ About</h2>
         
         <div class="about-content">
-          <p><strong>Your Sincere Tab Keeper</strong> is designed to help you reflect on your browsing habits and build a more mindful relationship with technology.</p>
+          <p data-i18n="aboutDescription"><strong>Your Sincere Tab Keeper</strong> is designed to help you reflect on your browsing habits and build a more mindful relationship with technology.</p>
           
           <div class="philosophy">
-            <h3>Our Philosophy</h3>
-            <p>We believe that small friction can lead to big changes. By adding a playful maze game when you exceed your tab limit, we help you pause and consider whether you really need that new tab.</p>
+            <h3 data-i18n="ourPhilosophy">Our Philosophy</h3>
+            <p data-i18n="philosophyText">We believe that small friction can lead to big changes. By adding a playful maze game when you exceed your tab limit, we help you pause and consider whether you really need that new tab.</p>
           </div>
 
           <div class="features">
-            <h3>Key Features</h3>
+            <h3 data-i18n="keyFeatures">Key Features</h3>
             <ul>
               <li data-range-text>🎯 Customizable tab limits ({{RANGE}})</li>
-              <li>🧩 Progressive maze difficulty</li>
-              <li>📊 Detailed usage statistics</li>
-              <li>🔒 No bypass options (commitment to growth)</li>
-              <li>🕵️ Full incognito support</li>
-              <li>💾 Local storage (no cloud sync)</li>
+              <li data-i18n="feature2">🧩 Progressive maze difficulty</li>
+              <li data-i18n="feature3">📊 Detailed usage statistics</li>
+              <li data-i18n="feature4">🔒 No bypass options (commitment to growth)</li>
+              <li data-i18n="feature5">🕵️ Full incognito support</li>
+              <li data-i18n="feature6">💾 Local storage (no cloud sync)</li>
             </ul>
           </div>
 
           <div class="version-info">
-            <p><strong>Version:</strong> 1.0.0</p>
-            <p><strong>License:</strong> MIT</p>
+            <p><strong data-i18n="version">Version:</strong> 1.0.0</p>
+            <p><strong data-i18n="license">License:</strong> MIT</p>
           </div>
         </div>
       </div>
@@ -160,11 +160,11 @@
 
     <footer class="footer">
       <div class="footer-content">
-        <p>Made with ❤️ for mindful browsing</p>
+        <p data-i18n="footerText">Made with ❤️ for mindful browsing</p>
         <div class="footer-links">
-          <a href="#" id="resetStatsBtn">Reset Statistics</a>
+          <a href="#" id="resetStatsBtn" data-i18n="resetStatistics">Reset Statistics</a>
           <span class="separator">•</span>
-          <a href="#" id="exportStatsBtn">Export Data</a>
+          <a href="#" id="exportStatsBtn" data-i18n="exportData">Export Data</a>
         </div>
       </div>
     </footer>

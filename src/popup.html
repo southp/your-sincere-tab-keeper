@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Your Sincere Tab Keeper</title>
+  <title data-i18n="popupTitle">Your Sincere Tab Keeper</title>
   <link rel="stylesheet" href="popup.css">
 </head>
 <body>
@@ -11,19 +11,19 @@
     <header class="popup-header">
       <div class="logo">
         <div class="tab-icon">📑</div>
-        <h1>Your Sincere Tab Keeper</h1>
+        <h1 data-i18n="popupTitle">Your Sincere Tab Keeper</h1>
       </div>
-      <div class="tagline">Living your best tab life, one maze at a time</div>
+      <div class="tagline" data-i18n="popupTagline">Living your best tab life, one maze at a time</div>
     </header>
 
     <main class="popup-content">
       <div class="status-section">
         <div class="current-limit">
-          <span class="label">Current Tab Limit:</span>
+          <span class="label" data-i18n="currentTabLimit">Current Tab Limit:</span>
           <span class="limit-value" id="currentLimit">5</span>
         </div>
         <div class="tab-count">
-          <span class="label">Open Tabs:</span>
+          <span class="label" data-i18n="openTabs">Open Tabs:</span>
           <span class="count-value" id="tabCount">-</span>
         </div>
       </div>
@@ -31,29 +31,29 @@
       <div class="stats-preview">
         <div class="stat-item">
           <span class="stat-number" id="mazesCompleted">0</span>
-          <span class="stat-label">Mazes Solved</span>
+          <span class="stat-label" data-i18n="mazesSolved">Mazes Solved</span>
         </div>
         <div class="stat-item">
           <span class="stat-number" id="blockedAttempts">0</span>
-          <span class="stat-label">Tabs Blocked</span>
+          <span class="stat-label" data-i18n="tabsBlocked">Tabs Blocked</span>
         </div>
       </div>
 
       <div class="actions">
         <button id="updateLimitBtn" class="primary-btn">
           <span class="btn-icon">🧩</span>
-          Update Tab Limit
+          <span data-i18n="updateTabLimit">Update Tab Limit</span>
         </button>
         <button id="viewStatsBtn" class="secondary-btn">
           <span class="btn-icon">📊</span>
-          View Full Stats
+          <span data-i18n="viewFullStats">View Full Stats</span>
         </button>
       </div>
 
       <div class="maze-status" id="mazeStatus" style="display: none;">
         <div class="maze-alert">
           <span class="alert-icon">🎯</span>
-          <span class="alert-text">You have a maze to solve!</span>
+          <span class="alert-text" data-i18n="youHaveAMazeToSolve">You have a maze to solve!</span>
         </div>
       </div>
     </main>

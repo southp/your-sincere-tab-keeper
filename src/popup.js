@@ -6,6 +6,7 @@
 import { Logger } from './debug.js';
 import { isSpecialTab, isMazeTab } from './utils.js';
 import { usageDataStore } from './usage-data-store.js';
+import { initializeI18n } from './ui-utils.js';
 
 // Create scoped logger for popup functionality
 const popupLogger = new Logger('POPUP');
@@ -22,18 +23,19 @@ const dailyTipEl = document.getElementById('dailyTip');
 
 // Tips array for random display
 const tips = [
-  "💡 Tip: Close unused tabs to stay focused!",
-  "🎯 Tip: Try setting a lower limit to build better habits!",
-  "🧠 Tip: Each maze makes you more mindful of your browsing!",
-  "⭐ Tip: Quality over quantity - keep only tabs you need!",
-  "🌟 Tip: Your future self will thank you for fewer tabs!",
-  "🚀 Tip: Less tabs = better browser performance!",
-  "💪 Tip: Every maze solved is a step toward better habits!",
-  "🎨 Tip: A clean tab bar is a clean mind!"
+  chrome.i18n.getMessage('tip1'),
+  chrome.i18n.getMessage('tip2'),
+  chrome.i18n.getMessage('tip3'),
+  chrome.i18n.getMessage('tip4'),
+  chrome.i18n.getMessage('tip5'),
+  chrome.i18n.getMessage('tip6'),
+  chrome.i18n.getMessage('tip7'),
+  chrome.i18n.getMessage('tip8')
 ];
 
 // Initialize popup when DOM is loaded
 document.addEventListener('DOMContentLoaded', async () => {
+  initializeI18n();
   await loadStats();
   await checkCurrentTabs();
   await checkForActiveMaze();
@@ -41,6 +43,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   displayRandomTip();
   setupEventListeners();
 });
+
 
 /**
  * Load and display extension statistics
@@ -55,11 +58,11 @@ async function loadStats() {
       blockedAttemptsEl.textContent = response.blockedAttempts;
     } else {
       popupLogger.error('Failed to load stats:', response?.error);
-      showError('Failed to load statistics');
+      showError(chrome.i18n.getMessage('failedToLoadStats'));
     }
   } catch (error) {
     popupLogger.error('Error loading stats:', error);
-    showError('Failed to connect to extension');
+    showError(chrome.i18n.getMessage('failedToConnect'));
   }
 }
 
@@ -166,7 +169,7 @@ async function handleUpdateLimit() {
     
   } catch (error) {
     popupLogger.error('Error creating maze tab for limit update:', error);
-    showError('Failed to start limit update process');
+    showError(chrome.i18n.getMessage('failedToStartUpdate'));
   } finally {
     updateLimitBtn.classList.remove('loading');
     updateLimitBtn.disabled = false;
@@ -189,7 +192,7 @@ async function handleViewStats() {
     
   } catch (error) {
     popupLogger.error('Error opening options page:', error);
-    showError('Failed to open statistics page');
+    showError(chrome.i18n.getMessage('failedToOpenStats'));
   } finally {
     viewStatsBtn.classList.remove('loading');
     viewStatsBtn.disabled = false;
@@ -236,7 +239,7 @@ async function checkForExistingMaze() {
     const session = await store.getMazeSession();
     
     if (session && session.tabId) {
-      showSpeechBubble('You already have a maze to solve! 🧩', 'Focus on completing the current maze first.');
+      showSpeechBubble(chrome.i18n.getMessage('alreadyHaveAMaze'), chrome.i18n.getMessage('focusOnCurrentMaze'));
     }
   } catch (error) {
     popupLogger.error('Error checking for existing maze:', error);

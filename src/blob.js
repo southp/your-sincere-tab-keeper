@@ -3,8 +3,14 @@
  */
 
 import { Logger } from './debug.js';
+import { initializeI18n } from './ui-utils.js';
 
 const blobLogger = new Logger('BLOB');
+
+// Initialize i18n when DOM is loaded
+document.addEventListener('DOMContentLoaded', () => {
+  initializeI18n();
+});
 
 // Countdown and auto-close
 let timeLeft = 6;

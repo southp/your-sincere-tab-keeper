@@ -1,0 +1,398 @@
+{
+  "extensionName": {
+    "message": "Your Sincere Tab Keeper"
+  },
+  "extensionDescription": {
+    "message": "A Chrome extension that limits open tabs with playful maze games - helping you live your best tab life, one maze at a time."
+  },
+  "actionDefaultTitle": {
+    "message": "Your Sincere Tab Keeper"
+  },
+  "popupTitle": {
+    "message": "Your Sincere Tab Keeper"
+  },
+  "popupTagline": {
+    "message": "Living your best tab life, one maze at a time"
+  },
+  "currentTabLimit": {
+    "message": "Current Tab Limit:"
+  },
+  "openTabs": {
+    "message": "Open Tabs:"
+  },
+  "mazesSolved": {
+    "message": "Mazes Solved"
+  },
+  "tabsBlocked": {
+    "message": "Tabs Blocked"
+  },
+  "updateTabLimit": {
+    "message": "Update Tab Limit"
+  },
+  "viewFullStats": {
+    "message": "View Full Stats"
+  },
+  "youHaveAMazeToSolve": {
+    "message": "You have a maze to solve!"
+  },
+  "alreadyHaveAMaze": {
+    "message": "You already have a maze to solve! 🧩"
+  },
+  "focusOnCurrentMaze": {
+    "message": "Focus on completing the current maze first."
+  },
+  "tip1": {
+    "message": "💡 Tip: Close unused tabs to stay focused!"
+  },
+  "tip2": {
+    "message": "🎯 Tip: Try setting a lower limit to build better habits!"
+  },
+  "tip3": {
+    "message": "🧠 Tip: Each maze makes you more mindful of your browsing!"
+  },
+  "tip4": {
+    "message": "⭐ Tip: Quality over quantity - keep only tabs you need!"
+  },
+  "tip5": {
+    "message": "🌟 Tip: Your future self will thank you for fewer tabs!"
+  },
+  "tip6": {
+    "message": "🚀 Tip: Less tabs = better browser performance!"
+  },
+  "tip7": {
+    "message": "💪 Tip: Every maze solved is a step toward better habits!"
+  },
+  "tip8": {
+    "message": "🎨 Tip: A clean tab bar is a clean mind!"
+  },
+  "failedToLoadStats": {
+    "message": "Failed to load statistics"
+  },
+  "failedToConnect": {
+    "message": "Failed to connect to extension"
+  },
+  "failedToStartUpdate": {
+    "message": "Failed to start limit update process"
+  },
+  "failedToOpenStats": {
+    "message": "Failed to open statistics page"
+  },
+  "optionsTitle": {
+    "message": "Your Sincere Tab Keeper - Settings"
+  },
+  "welcomeHeading": {
+    "message": "🎉 Welcome to Your Sincere Tab Keeper!"
+  },
+  "welcomeIntro": {
+    "message": "Thank you for installing Your Sincere Tab Keeper! This extension helps you build better browsing habits by limiting your open tabs."
+  },
+  "howItWorksHeading": {
+    "message": "How it works:"
+  },
+  "howItWorks1": {
+    "message": "🎯 Set a tab limit between 2-8"
+  },
+  "howItWorks2": {
+    "message": "🧩 When you exceed the limit, solve a maze to open the new tab"
+  },
+  "howItWorks3": {
+    "message": "📈 Track your progress and build mindful browsing habits"
+  },
+  "howItWorks4": {
+    "message": "🚫 No escape hatches - only uninstalling disables the limit"
+  },
+  "chooseLimitHeading": {
+    "message": "Choose your initial tab limit:"
+  },
+  "startMyTabJourney": {
+    "message": "Start My Tab Journey"
+  },
+  "currentSettingsHeading": {
+    "message": "⚙️ Current Settings"
+  },
+  "tabLimitHeading": {
+    "message": "Tab Limit"
+  },
+  "tabLimitDescription": {
+    "message": "Current limit for open tabs"
+  },
+  "changeTabLimit": {
+    "message": "Change Tab Limit (Solve Maze)"
+  },
+  "yourTabJourneyHeading": {
+    "message": "📊 Your Tab Journey"
+  },
+  "totalMazesSolved": {
+    "message": "Total Mazes Solved"
+  },
+  "totalMazesDescription": {
+    "message": "Every maze brings you closer to mindful browsing"
+  },
+  "tabsBlockedLabel": {
+    "message": "Tabs Blocked"
+  },
+  "tabsBlockedDescription": {
+    "message": "Moments of reflection before opening new tabs"
+  },
+  "daysActive": {
+    "message": "Days Active"
+  },
+  "daysActiveDescription": {
+    "message": "Building better habits one day at a time"
+  },
+  "todaysMazes": {
+    "message": "Today's Mazes"
+  },
+  "todaysMazesDescription": {
+    "message": "Mazes solved today"
+  },
+  "yourInsightsHeading": {
+    "message": "💡 Your Insights"
+  },
+  "aboutHeading": {
+    "message": "ℹ️ About"
+  },
+  "aboutDescription": {
+    "message": "Your Sincere Tab Keeper is designed to help you reflect on your browsing habits and build a more mindful relationship with technology."
+  },
+  "philosophyHeading": {
+    "message": "Our Philosophy"
+  },
+  "philosophyText": {
+    "message": "We believe that small friction can lead to big changes. By adding a playful maze game when you exceed your tab limit, we help you pause and consider whether you really need that new tab."
+  },
+  "keyFeaturesHeading": {
+    "message": "Key Features"
+  },
+  "feature1": {
+    "message": "🎯 Customizable tab limits (2-8)"
+  },
+  "feature2": {
+    "message": "🧩 Progressive maze difficulty"
+  },
+  "feature3": {
+    "message": "📊 Detailed usage statistics"
+  },
+  "feature4": {
+    "message": "🔒 No bypass options (commitment to growth)"
+  },
+  "feature5": {
+    "message": "🕵️ Full incognito support"
+  },
+  "feature6": {
+    "message": "💾 Local storage (no cloud sync)"
+  },
+  "versionInfo": {
+    "message": "Version: 1.0.0"
+  },
+  "licenseInfo": {
+    "message": "License: MIT"
+  },
+  "footerText": {
+    "message": "Made with ❤️ for mindful browsing"
+  },
+  "resetStatistics": {
+    "message": "Reset Statistics"
+  },
+  "exportData": {
+    "message": "Export Data"
+  },
+  "mazeTitle": {
+    "message": "Your Sincere Tab Keeper - Maze Challenge"
+  },
+  "solveMazeToOpen": {
+    "message": "Solve this maze to open your new tab!"
+  },
+  "solveMazeToUpdate": {
+    "message": "Solve this maze to update your tab limit!"
+  },
+  "difficulty": {
+    "message": "Difficulty:"
+  },
+  "size": {
+    "message": "Size:"
+  },
+  "timer": {
+    "message": "Timer:"
+  },
+  "today": {
+    "message": "Today"
+  },
+  "allTime": {
+    "message": "All Time"
+  },
+  "controlsHint": {
+    "message": "Use ↑←↓→ or WASD keys to move"
+  },
+  "congratulations": {
+    "message": "Congratulations!"
+  },
+  "mazeSolved": {
+    "message": "You solved the maze! Loading your requested page..."
+  },
+  "motivationFooter": {
+    "message": "Every maze solved is a step toward more mindful browsing! 🌟"
+  },
+  "updateLimitModalTitle": {
+    "message": "🎯 Update Your Tab Limit"
+  },
+  "updateLimitModalDescription": {
+    "message": "Great job solving the maze! Now choose your new tab limit:"
+  },
+  "setNewLimit": {
+    "message": "Set New Limit"
+  },
+  "keepCurrentLimit": {
+    "message": "Keep Current Limit"
+  },
+  "difficultyBeginner": {
+    "message": "Beginner"
+  },
+  "difficultyBeginnerDesc": {
+    "message": "Perfect for getting started"
+  },
+  "difficultyEasy": {
+    "message": "Easy"
+  },
+  "difficultyEasyDesc": {
+    "message": "A gentle challenge"
+  },
+  "difficultyMedium": {
+    "message": "Medium"
+  },
+  "difficultyMediumDesc": {
+    "message": "Getting more interesting"
+  },
+  "difficultyHard": {
+    "message": "Hard"
+  },
+  "difficultyHardDesc": {
+    "message": "Now we're talking!"
+  },
+  "difficultyExpert": {
+    "message": "Expert"
+  },
+  "difficultyExpertDesc": {
+    "message": "For the determined"
+  },
+  "difficultyMaster": {
+    "message": "Master"
+  },
+  "difficultyMasterDesc": {
+    "message": "Serious commitment required"
+  },
+  "tabLimitDesc2": {
+    "message": "Minimalist mode - perfect for focused work sessions"
+  },
+  "tabLimitDesc3": {
+    "message": "Focused browsing - ideal for research and deep work"
+  },
+  "tabLimitDesc4": {
+    "message": "Balanced approach - controlled multitasking"
+  },
+  "tabLimitDesc5": {
+    "message": "Recommended for balanced browsing"
+  },
+  "tabLimitDesc6": {
+    "message": "Moderate flexibility - good for most users"
+  },
+  "tabLimitDesc7": {
+    "message": "Relaxed limits - still maintains awareness"
+  },
+  "tabLimitDesc8": {
+    "message": "Generous allowance - gentle guidance"
+  },
+  "blobPageTitle": {
+    "message": "Your Sincere Tab Keeper"
+  },
+  "whoaThere": {
+    "message": "Whoa there! 🧩"
+  },
+  "alreadyHaveAMazeMessage": {
+    "message": "You already have a maze to solve!"
+  },
+  "focusOnThatOne": {
+    "message": "Focus on that one first."
+  },
+  "completeCurrentMaze": {
+    "message": "Complete your current maze first!"
+  },
+  "tabWillCloseIn": {
+    "message": "This tab will close in $1 seconds...",
+    "placeholders": {
+      "1": {
+        "content": "$1",
+        "example": "5"
+      }
+    }
+  },
+  "notificationTitle": {
+    "message": "Your Sincere Tab Keeper"
+  },
+  "notificationMessage": {
+    "message": "You already have a maze to solve! 🧩"
+  },
+  "notificationContext": {
+    "message": "Focus on the current maze before opening new tabs."
+  },
+  "usageTrends": {
+    "message": "Usage Trends"
+  },
+  "period": {
+    "message": "Period:"
+  },
+  "thisMonth": {
+    "message": "This Month"
+  },
+  "last30Days": {
+    "message": "Last 30 Days"
+  },
+  "last90Days": {
+    "message": "Last 90 Days"
+  },
+  "view": {
+    "message": "View:"
+  },
+  "daily": {
+    "message": "Daily"
+  },
+  "weekly": {
+    "message": "Weekly"
+  },
+  "monthly": {
+    "message": "Monthly"
+  },
+  "noDataAvailable": {
+    "message": "No data available for the selected period"
+  },
+  "errorMessage": {
+    "message": "Error: $1",
+    "placeholders": {
+      "1": {
+        "content": "$1",
+        "example": "Connection failed"
+      }
+    }
+  },
+  "confirmResetStats": {
+    "message": "Are you sure you want to reset all statistics? This action cannot be undone."
+  },
+  "statsResetSuccess": {
+    "message": "Statistics reset successfully!"
+  },
+  "statsResetFailed": {
+    "message": "Failed to reset statistics."
+  },
+  "dataExportSuccess": {
+    "message": "Statistics exported successfully!"
+  },
+  "dataExportFailed": {
+    "message": "Failed to export statistics."
+  },
+  "tabLimitSetSuccess": {
+    "message": "Tab limit set successfully! Your journey begins now."
+  },
+  "settingsSaveFailed": {
+    "message": "Failed to save settings. Please try again."
+  }
+}
