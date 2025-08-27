@@ -404,8 +404,8 @@ function showCompletionMessage() {
   const overlayContent = document.querySelector('#mazeOverlay .overlay-content');
   overlayContent.innerHTML = `
     <div class="success-icon">🎉</div>
-    <h3>Congratulations!</h3>
-    <p class="completion-message">You solved the maze! Here's a productivity tip while we redirect you:</p>
+    <h3>${chrome.i18n.getMessage('congratulations')}</h3>
+    <p class="completion-message">${chrome.i18n.getMessage('mazeCompletionWithTip')}</p>
     <div class="productivity-tip">
       <h4>💡 ${tip.title}</h4>
       <p>${tip.message}</p>
@@ -519,7 +519,9 @@ async function setupLimitSelector() {
   const updateConfirmButton = (newSelectedLimit) => {
     const isUnchanged = newSelectedLimit === currentLimit;
     confirmBtn.disabled = isUnchanged;
-    confirmBtn.textContent = isUnchanged ? 'Current Limit Selected' : `Set Limit to ${newSelectedLimit}`;
+    confirmBtn.textContent = isUnchanged ? 
+      chrome.i18n.getMessage('currentLimitSelected') : 
+      chrome.i18n.getMessage('setLimitTo', [newSelectedLimit.toString()]);
   };
   
   // Set up button event listeners using shared utility
@@ -571,7 +573,7 @@ async function setupLimitSelector() {
       
     } catch (error) {
       mazeLogger.error('Error updating tab limit:', error);
-      alert('Failed to update tab limit. Please try again.');
+      alert(chrome.i18n.getMessage('failedToUpdateTabLimit'));
     } finally {
       confirmBtn.classList.remove('loading');
       confirmBtn.disabled = false;

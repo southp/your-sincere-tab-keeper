@@ -228,12 +228,12 @@ async function generateInsights() {
       if (successRate >= 80) {
         insights.push({
           icon: '✨',
-          text: `${successRate}% maze completion rate - you're committed to your goals!`
+          text: chrome.i18n.getMessage('insightHighCompletionRate', [successRate.toString()])
         });
       } else if (successRate < 50) {
         insights.push({
           icon: '💭',
-          text: 'Consider if closing the maze tab means you didn\'t really need that new tab after all.'
+          text: chrome.i18n.getMessage('insightLowCompletionRate')
         });
       }
     }
@@ -242,7 +242,7 @@ async function generateInsights() {
     if (insights.length === 0) {
       insights.push({
         icon: '🎯',
-        text: 'Keep going! You\'re building great habits one tab at a time.'
+        text: chrome.i18n.getMessage('defaultInsight')
       });
     }
     
@@ -375,7 +375,7 @@ async function handleChangeLimit() {
  * Handle statistics reset
  */
 async function handleResetStats() {
-  if (!confirm('Are you sure you want to reset all statistics? This action cannot be undone.')) {
+  if (!confirm(chrome.i18n.getMessage('confirmResetStats'))) {
     return;
   }
   

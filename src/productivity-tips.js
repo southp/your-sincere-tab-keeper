@@ -3,56 +3,31 @@
  * Gentle nudges toward better tab management and focus
  */
 
-export const PRODUCTIVITY_TIPS = [
-  {
-    title: "The 2-Minute Rule",
-    message: "If a task takes less than 2 minutes, do it immediately instead of opening a new tab to 'remember' it later."
-  },
-  {
-    title: "One Tab, One Task",
-    message: "Focus on completing one task before opening another tab. Your brain works better with single-tasking."
-  },
-  {
-    title: "Bookmark, Don't Hoard",
-    message: "That interesting article can be bookmarked for later. You don't need to keep 20 tabs open 'just in case'."
-  },
-  {
-    title: "The Tab Audit",
-    message: "Every hour, ask yourself: 'Which of these tabs am I actually using right now?' Close the rest."
-  },
-  {
-    title: "Time-Box Your Browsing",
-    message: "Set a 25-minute timer for focused work. When it rings, then you can check those other tabs."
-  },
-  {
-    title: "Write It Down",
-    message: "Keep a notepad for quick thoughts instead of opening tabs as 'reminders'. Your future self will thank you."
-  },
-  {
-    title: "The Fresh Start",
-    message: "Close all tabs at the end of each day. Tomorrow's work deserves a clean, focused environment."
-  },
-  {
-    title: "Quality Over Quantity",
-    message: "Three focused tabs accomplish more than thirty distracted ones. Choose mindfully."
-  },
-  {
-    title: "Digital Minimalism",
-    message: "Your browser is a tool, not a storage system. Use it intentionally, not habitually."
-  },
-  {
-    title: "The Power of Focus",
-    message: "Deep work happens in distraction-free environments. Fewer tabs = more accomplished goals."
-  }
+const PRODUCTIVITY_TIP_KEYS = [
+  { titleKey: 'tip1Title', messageKey: 'tip1Message' },
+  { titleKey: 'tip2Title', messageKey: 'tip2Message' },
+  { titleKey: 'tip3Title', messageKey: 'tip3Message' },
+  { titleKey: 'tip4Title', messageKey: 'tip4Message' },
+  { titleKey: 'tip5Title', messageKey: 'tip5Message' },
+  { titleKey: 'tip6Title', messageKey: 'tip6Message' },
+  { titleKey: 'tip7Title', messageKey: 'tip7Message' },
+  { titleKey: 'tip8Title', messageKey: 'tip8Message' },
+  { titleKey: 'tip9Title', messageKey: 'tip9Message' },
+  { titleKey: 'tip10Title', messageKey: 'tip10Message' }
 ];
 
 /**
  * Get a random productivity tip
- * @returns {Object} Random tip with title and message
+ * @returns {Object} Random tip with localized title and message
  */
 export function getRandomTip() {
-  const randomIndex = Math.floor(Math.random() * PRODUCTIVITY_TIPS.length);
-  return PRODUCTIVITY_TIPS[randomIndex];
+  const randomIndex = Math.floor(Math.random() * PRODUCTIVITY_TIP_KEYS.length);
+  const tipKeys = PRODUCTIVITY_TIP_KEYS[randomIndex];
+  
+  return {
+    title: chrome.i18n.getMessage(tipKeys.titleKey),
+    message: chrome.i18n.getMessage(tipKeys.messageKey)
+  };
 }
 
 /**

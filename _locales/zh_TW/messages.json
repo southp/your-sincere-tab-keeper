@@ -425,6 +425,9 @@
   "loadingTrendData": {
     "message": "載入趨勢資料中..."
   },
+  "mazeCompletionWithTip": {
+    "message": "您解開了迷宮！這裡是重定向時的生產力提示："
+  },
   "motivation1": {
     "message": "每個解謎都是邁向更專注瀏覽的一步！🌟"
   },
@@ -454,5 +457,92 @@
   },
   "mazeCompletedDescription": {
     "message": "您已經解決了這個迷宮。請使用瀏覽器的導覽功能繼續瀏覽。"
+  },
+  "tip1Title": {
+    "message": "兩分鐘法則"
+  },
+  "tip1Message": {
+    "message": "如果一項任務需要少於兩分鐘完成，請立即完成它，而不是開新分頁來「記住」稍後再做。"
+  },
+  "tip2Title": {
+    "message": "一個分頁，一項任務"
+  },
+  "tip2Message": {
+    "message": "專注於完成一項任務後再開啟另一個分頁。您的大腦在單一任務處理時工作得更好。"
+  },
+  "tip3Title": {
+    "message": "收藏而非囤積"
+  },
+  "tip3Message": {
+    "message": "有趣的文章可以加入書籤稍後閱讀。您不需要「以防萬一」而保持20個分頁開啟。"
+  },
+  "tip4Title": {
+    "message": "分頁審計"
+  },
+  "tip4Message": {
+    "message": "每小時問問自己：「這些分頁中，我現在實際在使用哪一個？」關閉其餘的。"
+  },
+  "tip5Title": {
+    "message": "瀏覽時間盒"
+  },
+  "tip5Message": {
+    "message": "為專注工作設定25分鐘計時器。響鈴時，您才可以查看其他分頁。"
+  },
+  "tip6Title": {
+    "message": "寫下來"
+  },
+  "tip6Message": {
+    "message": "保持記事本記錄快速想法，而不是開啟分頁作為「提醒」。未來的您會感謝您。"
+  },
+  "tip7Title": {
+    "message": "全新開始"
+  },
+  "tip7Message": {
+    "message": "每天結束時關閉所有分頁。明天的工作值得一個乾淨、專注的環境。"
+  },
+  "tip8Title": {
+    "message": "質量勝過數量"
+  },
+  "tip8Message": {
+    "message": "三個專注的分頁比三十個分心的分頁完成更多事情。請謹慎選擇。"
+  },
+  "tip9Title": {
+    "message": "數位極簡主義"
+  },
+  "tip9Message": {
+    "message": "您的瀏覽器是工具，不是存儲系統。請有意識地使用它，而不是習慣性地使用。"
+  },
+  "tip10Title": {
+    "message": "專注的力量"
+  },
+  "tip10Message": {
+    "message": "深度工作發生在無干擾的環境中。更少的分頁 = 更多完成的目標。"
+  },
+  "failedToUpdateTabLimit": {
+    "message": "更新分頁限制失敗。請再試一次。"
+  },
+  "currentLimitSelected": {
+    "message": "已選擇目前限制"
+  },
+  "setLimitTo": {
+    "message": "設定限制為 $1",
+    "placeholders": {
+      "1": {
+        "content": "$1",
+        "example": "5"
+      }
+    }
+  },
+  "insightHighCompletionRate": {
+    "message": "$1% 迷宮完成率 - 你對目標很有承諾！",
+    "placeholders": {
+      "1": {
+        "content": "$1",
+        "example": "85"
+      }
+    }
+  },
+  "insightLowCompletionRate": {
+    "message": "請考慮關閉迷宮分頁是否意味著你其實並不需要那個新分頁。"
   }
 }

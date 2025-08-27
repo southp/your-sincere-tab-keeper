@@ -425,6 +425,9 @@
   "loadingTrendData": {
     "message": "Loading trend data..."
   },
+  "mazeCompletionWithTip": {
+    "message": "You solved the maze! Here's a productivity tip while we redirect you:"
+  },
   "motivation1": {
     "message": "Every maze solved is a step toward more mindful browsing! 🌟"
   },
@@ -454,5 +457,92 @@
   },
   "mazeCompletedDescription": {
     "message": "You've already solved this maze. Use your browser's navigation to continue."
+  },
+  "tip1Title": {
+    "message": "The 2-Minute Rule"
+  },
+  "tip1Message": {
+    "message": "If a task takes less than 2 minutes, do it immediately instead of opening a new tab to 'remember' it later."
+  },
+  "tip2Title": {
+    "message": "One Tab, One Task"
+  },
+  "tip2Message": {
+    "message": "Focus on completing one task before opening another tab. Your brain works better with single-tasking."
+  },
+  "tip3Title": {
+    "message": "Bookmark, Don't Hoard"
+  },
+  "tip3Message": {
+    "message": "That interesting article can be bookmarked for later. You don't need to keep 20 tabs open 'just in case'."
+  },
+  "tip4Title": {
+    "message": "The Tab Audit"
+  },
+  "tip4Message": {
+    "message": "Every hour, ask yourself: 'Which of these tabs am I actually using right now?' Close the rest."
+  },
+  "tip5Title": {
+    "message": "Time-Box Your Browsing"
+  },
+  "tip5Message": {
+    "message": "Set a 25-minute timer for focused work. When it rings, then you can check those other tabs."
+  },
+  "tip6Title": {
+    "message": "Write It Down"
+  },
+  "tip6Message": {
+    "message": "Keep a notepad for quick thoughts instead of opening tabs as 'reminders'. Your future self will thank you."
+  },
+  "tip7Title": {
+    "message": "The Fresh Start"
+  },
+  "tip7Message": {
+    "message": "Close all tabs at the end of each day. Tomorrow's work deserves a clean, focused environment."
+  },
+  "tip8Title": {
+    "message": "Quality Over Quantity"
+  },
+  "tip8Message": {
+    "message": "Three focused tabs accomplish more than thirty distracted ones. Choose mindfully."
+  },
+  "tip9Title": {
+    "message": "Digital Minimalism"
+  },
+  "tip9Message": {
+    "message": "Your browser is a tool, not a storage system. Use it intentionally, not habitually."
+  },
+  "tip10Title": {
+    "message": "The Power of Focus"
+  },
+  "tip10Message": {
+    "message": "Deep work happens in distraction-free environments. Fewer tabs = more accomplished goals."
+  },
+  "failedToUpdateTabLimit": {
+    "message": "Failed to update tab limit. Please try again."
+  },
+  "currentLimitSelected": {
+    "message": "Current Limit Selected"
+  },
+  "setLimitTo": {
+    "message": "Set Limit to $1",
+    "placeholders": {
+      "1": {
+        "content": "$1",
+        "example": "5"
+      }
+    }
+  },
+  "insightHighCompletionRate": {
+    "message": "$1% maze completion rate - you're committed to your goals!",
+    "placeholders": {
+      "1": {
+        "content": "$1",
+        "example": "85"
+      }
+    }
+  },
+  "insightLowCompletionRate": {
+    "message": "Consider if closing the maze tab means you didn't really need that new tab after all."
   }
 }

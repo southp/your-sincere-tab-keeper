@@ -752,7 +752,7 @@ class TrendGraph extends HTMLElement {
 
   showNoData() {
     const chartContainer = this.shadowRoot.querySelector('.chart-container');
-    chartContainer.innerHTML = '<div class="no-data-message">No data available for the selected period</div>';
+    chartContainer.innerHTML = `<div class="no-data-message">${chrome.i18n.getMessage('noDataAvailable')}</div>`;
   }
 
   showError(message) {
