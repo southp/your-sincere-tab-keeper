@@ -7,6 +7,7 @@ import { Logger } from './debug.js';
 import { TabManager } from './tab-manager.js';
 import { isSpecialTab, isMazeTab } from './utils.js';
 import { isDevelopment } from './env.js';
+import { setLocaleOverride } from './ui-utils.js';
 
 // Create scoped loggers for service worker functionality
 const initLogger = new Logger('SERVICE-WORKER-INIT');
@@ -295,6 +296,31 @@ async function setupDebugUtilities() {
       }
     },
 
+    // Locale testing helpers
+    setLocale: async (locale) => {
+      try {
+        const result = await setLocaleOverride(locale);
+        if (result) {
+          generalLogger.log(`🌍 Locale override set to: ${locale || 'default'}`);
+          generalLogger.log('💡 Refresh any open extension pages to see changes');
+        }
+        return result;
+      } catch (error) {
+        generalLogger.error('Failed to set locale override:', error);
+        return false;
+      }
+    },
+
+    getAvailableLocales: () => {
+      const locales = ['en', 'zh_TW'];
+      console.log('🌍 Available locales:');
+      locales.forEach(locale => {
+        const name = locale === 'en' ? 'English' : 'Traditional Chinese (zh_TW)';
+        console.log(`  ${locale} - ${name}`);
+      });
+      return locales;
+    },
+
     // Help function
     help: () => {
       console.log(`
@@ -316,13 +342,20 @@ Testing Helpers:
   debugTabKeeper.simulateTabLimit(n)   - Set tab limit for testing
   debugTabKeeper.forceBlock(url)       - Check if URL would be blocked
 
+Localization Testing:
+  debugTabKeeper.setLocale('zh_TW')    - Test Traditional Chinese
+  debugTabKeeper.setLocale('en')       - Test English
+  debugTabKeeper.setLocale()           - Reset to browser default
+  debugTabKeeper.setLocale(null)       - Reset to browser default (same as above)
+  debugTabKeeper.getAvailableLocales() - List available locales
+
 Utilities:
   debugTabKeeper.help()            - Show this help message
 
 Example Usage:
   debugTabKeeper.getState()
   debugTabKeeper.getAllTabs().then(console.table)
-  debugTabKeeper.tabManager.shouldAllowNewTab({url: 'https://example.com'})
+  debugTabKeeper.setLocale('zh_TW')  // Test Chinese localization
   debugTabKeeper.simulateTabLimit(3)
       `);
     }

@@ -5,8 +5,138 @@
 
 import { TAB_LIMITS, getTabLimitDescription } from './constants.js';
 import { Logger } from './debug.js';
+import { isDevelopment } from './env.js';
 
 const uiLogger = new Logger('UI-UTILS');
+
+// Development-only locale override system
+let localeOverride = null;
+let alternateMessages = {};
+
+/**
+ * Development-only function to override locale for i18n testing
+ * @param {string} locale - Locale to use (e.g., 'en', 'zh_TW') or null/undefined to disable
+ */
+export async function setLocaleOverride(locale) {
+  if (!(await isDevelopment())) {
+    console.warn('Locale override is only available in development mode');
+    return false;
+  }
+  
+  if (locale === null || locale === undefined || locale === 'default') {
+    localeOverride = null;
+    alternateMessages = {};
+    
+    // Use Chrome storage API instead of localStorage for service worker compatibility
+    try {
+      await chrome.storage.local.remove('debugLocaleOverride');
+    } catch (error) {
+      // Fallback to localStorage if available (for content scripts/pages)
+      if (typeof localStorage !== 'undefined') {
+        localStorage.removeItem('debugLocaleOverride');
+      }
+    }
+    
+    console.log('🌍 Locale override disabled - using browser default');
+    
+    // Refresh i18n on current page if DOM is available
+    if (typeof document !== 'undefined') {
+      initializeI18n();
+    }
+    return true;
+  }
+  
+  try {
+    // Validate locale and load messages
+    const messagesUrl = chrome.runtime.getURL(`_locales/${locale}/messages.json`);
+    const response = await fetch(messagesUrl);
+    
+    if (!response.ok) {
+      throw new Error(`Locale '${locale}' not found`);
+    }
+    
+    alternateMessages = await response.json();
+    localeOverride = locale;
+    
+    // Use Chrome storage API instead of localStorage for service worker compatibility
+    try {
+      await chrome.storage.local.set({ debugLocaleOverride: locale });
+    } catch (error) {
+      // Fallback to localStorage if available (for content scripts/pages)
+      if (typeof localStorage !== 'undefined') {
+        localStorage.setItem('debugLocaleOverride', locale);
+      }
+    }
+    
+    console.log(`🌍 Locale override set to: ${locale}`);
+    console.log(`📝 Loaded ${Object.keys(alternateMessages).length} message keys`);
+    
+    // Refresh i18n on current page if DOM is available
+    if (typeof document !== 'undefined') {
+      initializeI18n();
+    }
+    return true;
+    
+  } catch (error) {
+    console.error(`Failed to set locale override to '${locale}':`, error);
+    return false;
+  }
+}
+
+/**
+ * Enhanced chrome.i18n.getMessage with development locale override support
+ * @param {string} messageName - Message key
+ * @param {string|Array} substitutions - Optional substitutions
+ * @returns {string} Localized message
+ */
+export function getI18nMessage(messageName, substitutions) {
+  // Use override locale if active in development
+  if (localeOverride && alternateMessages[messageName]) {
+    const messageData = alternateMessages[messageName];
+    let message = messageData.message || messageData;
+    
+    // Handle substitutions
+    if (substitutions) {
+      const subs = Array.isArray(substitutions) ? substitutions : [substitutions];
+      subs.forEach((sub, index) => {
+        message = message.replace(new RegExp(`\\$${index + 1}`, 'g'), sub);
+        message = message.replace(new RegExp(`\\$\\{${index}\\}`, 'g'), sub);
+      });
+    }
+    
+    return message;
+  }
+  
+  // Fallback to standard Chrome i18n
+  return chrome.i18n.getMessage(messageName, substitutions);
+}
+
+/**
+ * Initialize locale override from storage (for persistence across page loads)
+ */
+async function initializeLocaleOverride() {
+  if (!(await isDevelopment())) return;
+  
+  let savedLocale = null;
+  
+  // Try Chrome storage API first (for service worker compatibility)
+  try {
+    const result = await chrome.storage.local.get('debugLocaleOverride');
+    savedLocale = result.debugLocaleOverride;
+  } catch (error) {
+    // Fallback to localStorage if available (for content scripts/pages)
+    if (typeof localStorage !== 'undefined') {
+      savedLocale = localStorage.getItem('debugLocaleOverride');
+    }
+  }
+  
+  if (savedLocale) {
+    await setLocaleOverride(savedLocale);
+  }
+}
+
+// Initialize on module load
+initializeLocaleOverride();
 
 /**
  * Initialize internationalization for HTML elements
@@ -15,9 +145,16 @@ const uiLogger = new Logger('UI-UTILS');
 export function initializeI18n() {
   document.querySelectorAll('[data-i18n]').forEach(element => {
     const messageKey = element.getAttribute('data-i18n');
-    const message = chrome.i18n.getMessage(messageKey);
+    const message = getI18nMessage(messageKey);
     if (message) {
       element.textContent = message;
+    }
+  });
+
+  // Also refresh TrendGraph components that use shadow DOM
+  document.querySelectorAll('trend-graph').forEach(trendGraph => {
+    if (typeof trendGraph.refreshLocalization === 'function') {
+      trendGraph.refreshLocalization();
     }
   });
 }

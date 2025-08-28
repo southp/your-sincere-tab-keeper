@@ -4,7 +4,7 @@
  */
 
 import { TAB_LIMITS, getTabLimitDescription } from './constants.js';
-import { renderLimitButtons, setupLimitButtonListeners, updateLimitDescription, initializeI18n } from './ui-utils.js';
+import { renderLimitButtons, setupLimitButtonListeners, updateLimitDescription, initializeI18n, getI18nMessage } from './ui-utils.js';
 import { Logger } from './debug.js';
 import { MazeModel, WALL, PATH, PLAYER, GOAL } from './maze-model.js';
 import { getRandomTip } from './productivity-tips.js';
@@ -58,26 +58,30 @@ const COLORS = {
 
 // Difficulty settings - streamlined progression
 // Note: All sizes must be odd for proper maze generation algorithm
-const DIFFICULTY_SETTINGS = [
-  { name: chrome.i18n.getMessage('difficultyBeginner'), size: 5, description: chrome.i18n.getMessage('difficultyBeginnerDesc') },
-  { name: chrome.i18n.getMessage('difficultyEasy'), size: 9, description: chrome.i18n.getMessage('difficultyEasyDesc') },
-  { name: chrome.i18n.getMessage('difficultyMedium'), size: 13, description: chrome.i18n.getMessage('difficultyMediumDesc') },
-  { name: chrome.i18n.getMessage('difficultyHard'), size: 19, description: chrome.i18n.getMessage('difficultyHardDesc') },
-  { name: chrome.i18n.getMessage('difficultyExpert'), size: 25, description: chrome.i18n.getMessage('difficultyExpertDesc') },
-  { name: chrome.i18n.getMessage('difficultyMaster'), size: 31, description: chrome.i18n.getMessage('difficultyMasterDesc') }
-];
+function getDifficultySettings() {
+  return [
+    { name: getI18nMessage('difficultyBeginner'), size: 5, description: getI18nMessage('difficultyBeginnerDesc') },
+    { name: getI18nMessage('difficultyEasy'), size: 9, description: getI18nMessage('difficultyEasyDesc') },
+    { name: getI18nMessage('difficultyMedium'), size: 13, description: getI18nMessage('difficultyMediumDesc') },
+    { name: getI18nMessage('difficultyHard'), size: 19, description: getI18nMessage('difficultyHardDesc') },
+    { name: getI18nMessage('difficultyExpert'), size: 25, description: getI18nMessage('difficultyExpertDesc') },
+    { name: getI18nMessage('difficultyMaster'), size: 31, description: getI18nMessage('difficultyMasterDesc') }
+  ];
+}
 
 // Motivational messages
-const MOTIVATION_MESSAGES = [
-  chrome.i18n.getMessage('motivation1'),
-  chrome.i18n.getMessage('motivation2'),
-  chrome.i18n.getMessage('motivation3'),
-  chrome.i18n.getMessage('motivation4'),
-  chrome.i18n.getMessage('motivation5'),
-  chrome.i18n.getMessage('motivation6'),
-  chrome.i18n.getMessage('motivation7'),
-  chrome.i18n.getMessage('motivation8')
-];
+function getMotivationMessages() {
+  return [
+    getI18nMessage('motivation1'),
+    getI18nMessage('motivation2'),
+    getI18nMessage('motivation3'),
+    getI18nMessage('motivation4'),
+    getI18nMessage('motivation5'),
+    getI18nMessage('motivation6'),
+    getI18nMessage('motivation7'),
+    getI18nMessage('motivation8')
+  ];
+}
 
 /**
  * Check if this is a completed maze session that user navigated back to
@@ -249,8 +253,9 @@ async function initializeGame() {
   
   // Use stored difficulty as fallback, but prioritize calculated difficulty
   calculatedDifficulty = Math.max(difficulty, calculatedDifficulty);
-  currentDifficulty = Math.min(calculatedDifficulty, DIFFICULTY_SETTINGS.length - 1);
-  const difficultySettings = DIFFICULTY_SETTINGS[currentDifficulty];
+  const difficultySettings = getDifficultySettings();
+  currentDifficulty = Math.min(calculatedDifficulty, difficultySettings.length - 1);
+  const currentDifficultySettings = difficultySettings[currentDifficulty];
   
   mazeLogger.log('Difficulty calculation:', { 
     action,
@@ -261,7 +266,7 @@ async function initializeGame() {
   });
   
   // Initialize maze model with difficulty settings
-  mazeModel.initialize(difficultySettings);
+  mazeModel.initialize(currentDifficultySettings);
   isHandlingCompletion = false; // Reset completion handler flag
   
   // Calculate responsive canvas size after model is initialized
@@ -275,7 +280,7 @@ async function initializeGame() {
   });
   
   // Update UI
-  difficultyLevelEl.textContent = difficultySettings.name;
+  difficultyLevelEl.textContent = currentDifficultySettings.name;
   mazeSizeEl.textContent = `${mazeModel.size}x${mazeModel.size}`;
   
   // Start timer
@@ -283,7 +288,8 @@ async function initializeGame() {
   startTimer();
   
   // Set random motivation message
-  const randomMessage = MOTIVATION_MESSAGES[Math.floor(Math.random() * MOTIVATION_MESSAGES.length)];
+  const motivationMessages = getMotivationMessages();
+  const randomMessage = motivationMessages[Math.floor(Math.random() * motivationMessages.length)];
   motivationMessageEl.textContent = randomMessage;
   
   // Initial render
@@ -404,8 +410,8 @@ function showCompletionMessage() {
   const overlayContent = document.querySelector('#mazeOverlay .overlay-content');
   overlayContent.innerHTML = `
     <div class="success-icon">🎉</div>
-    <h3>${chrome.i18n.getMessage('congratulations')}</h3>
-    <p class="completion-message">${chrome.i18n.getMessage('mazeCompletionWithTip')}</p>
+    <h3>${getI18nMessage('congratulations')}</h3>
+    <p class="completion-message">${getI18nMessage('mazeCompletionWithTip')}</p>
     <div class="productivity-tip">
       <h4>💡 ${tip.title}</h4>
       <p>${tip.message}</p>
@@ -520,8 +526,8 @@ async function setupLimitSelector() {
     const isUnchanged = newSelectedLimit === currentLimit;
     confirmBtn.disabled = isUnchanged;
     confirmBtn.textContent = isUnchanged ? 
-      chrome.i18n.getMessage('currentLimitSelected') : 
-      chrome.i18n.getMessage('setLimitTo', [newSelectedLimit.toString()]);
+      getI18nMessage('currentLimitSelected') : 
+      getI18nMessage('setLimitTo', [newSelectedLimit.toString()]);
   };
   
   // Set up button event listeners using shared utility
@@ -573,7 +579,7 @@ async function setupLimitSelector() {
       
     } catch (error) {
       mazeLogger.error('Error updating tab limit:', error);
-      alert(chrome.i18n.getMessage('failedToUpdateTabLimit'));
+      alert(getI18nMessage('failedToUpdateTabLimit'));
     } finally {
       confirmBtn.classList.remove('loading');
       confirmBtn.disabled = false;
@@ -697,13 +703,14 @@ async function setupMazeDebugUtilities() {
     
     // Difficulty manipulation
     setDifficulty: async (newDifficulty) => {
-      if (newDifficulty < 0 || newDifficulty >= DIFFICULTY_SETTINGS.length) {
-        console.error(`❌ Invalid difficulty. Must be 0-${DIFFICULTY_SETTINGS.length - 1}`);
+      const allDifficultySettings = getDifficultySettings();
+      if (newDifficulty < 0 || newDifficulty >= allDifficultySettings.length) {
+        console.error(`❌ Invalid difficulty. Must be 0-${allDifficultySettings.length - 1}`);
         return;
       }
       
       currentDifficulty = newDifficulty;
-      const difficultySettings = DIFFICULTY_SETTINGS[currentDifficulty];
+      const difficultySettings = allDifficultySettings[currentDifficulty];
       
       // Regenerate maze with new difficulty
       mazeModel.initialize(difficultySettings);
@@ -828,7 +835,7 @@ async function setupMazeDebugUtilities() {
     },
     
     regenerate: () => {
-      const difficultySettings = DIFFICULTY_SETTINGS[currentDifficulty];
+      const difficultySettings = getDifficultySettings()[currentDifficulty];
       mazeModel.initialize(difficultySettings);
       updateCanvasSize();
       renderMaze(mazeModel);

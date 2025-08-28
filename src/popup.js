@@ -6,7 +6,7 @@
 import { Logger } from './debug.js';
 import { isSpecialTab, isMazeTab } from './utils.js';
 import { usageDataStore } from './usage-data-store.js';
-import { initializeI18n } from './ui-utils.js';
+import { initializeI18n, getI18nMessage } from './ui-utils.js';
 
 // Create scoped logger for popup functionality
 const popupLogger = new Logger('POPUP');
@@ -23,14 +23,14 @@ const dailyTipEl = document.getElementById('dailyTip');
 
 // Tips array for random display
 const tips = [
-  chrome.i18n.getMessage('tip1'),
-  chrome.i18n.getMessage('tip2'),
-  chrome.i18n.getMessage('tip3'),
-  chrome.i18n.getMessage('tip4'),
-  chrome.i18n.getMessage('tip5'),
-  chrome.i18n.getMessage('tip6'),
-  chrome.i18n.getMessage('tip7'),
-  chrome.i18n.getMessage('tip8')
+  getI18nMessage('tip1'),
+  getI18nMessage('tip2'),
+  getI18nMessage('tip3'),
+  getI18nMessage('tip4'),
+  getI18nMessage('tip5'),
+  getI18nMessage('tip6'),
+  getI18nMessage('tip7'),
+  getI18nMessage('tip8')
 ];
 
 // Initialize popup when DOM is loaded
@@ -58,11 +58,11 @@ async function loadStats() {
       blockedAttemptsEl.textContent = response.blockedAttempts;
     } else {
       popupLogger.error('Failed to load stats:', response?.error);
-      showError(chrome.i18n.getMessage('failedToLoadStats'));
+      showError(getI18nMessage('failedToLoadStats'));
     }
   } catch (error) {
     popupLogger.error('Error loading stats:', error);
-    showError(chrome.i18n.getMessage('failedToConnect'));
+    showError(getI18nMessage('failedToConnect'));
   }
 }
 
@@ -169,7 +169,7 @@ async function handleUpdateLimit() {
     
   } catch (error) {
     popupLogger.error('Error creating maze tab for limit update:', error);
-    showError(chrome.i18n.getMessage('failedToStartUpdate'));
+    showError(getI18nMessage('failedToStartUpdate'));
   } finally {
     updateLimitBtn.classList.remove('loading');
     updateLimitBtn.disabled = false;
@@ -192,7 +192,7 @@ async function handleViewStats() {
     
   } catch (error) {
     popupLogger.error('Error opening options page:', error);
-    showError(chrome.i18n.getMessage('failedToOpenStats'));
+    showError(getI18nMessage('failedToOpenStats'));
   } finally {
     viewStatsBtn.classList.remove('loading');
     viewStatsBtn.disabled = false;
@@ -239,7 +239,7 @@ async function checkForExistingMaze() {
     const session = await store.getMazeSession();
     
     if (session && session.tabId) {
-      showSpeechBubble(chrome.i18n.getMessage('alreadyHaveAMaze'), chrome.i18n.getMessage('focusOnCurrentMaze'));
+      showSpeechBubble(getI18nMessage('alreadyHaveAMaze'), getI18nMessage('focusOnCurrentMaze'));
     }
   } catch (error) {
     popupLogger.error('Error checking for existing maze:', error);

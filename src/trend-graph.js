@@ -3,6 +3,8 @@
  * Displays daily maze solved, tab limit, and tabs blocked trends
  */
 
+import { getI18nMessage } from './ui-utils.js';
+
 class TrendGraph extends HTMLElement {
   static get observedAttributes() {
     return ['data-period', 'data-granularity'];
@@ -67,6 +69,13 @@ class TrendGraph extends HTMLElement {
       };
       this.updateChart();
     }
+  }
+
+  // Method to refresh localized text
+  refreshLocalization() {
+    this.render();
+    this.setupEventListeners();
+    this.updateChart();
   }
 
   render() {
@@ -237,43 +246,43 @@ class TrendGraph extends HTMLElement {
         <div class="graph-header">
           <h3 class="graph-title">
             <span>📈</span>
-            ${chrome.i18n.getMessage('usageTrends')}
+            ${getI18nMessage('usageTrends')}
           </h3>
           
           <div class="graph-controls">
             <div class="control-group">
-              <label>${chrome.i18n.getMessage('period')}</label>
-              <button class="control-btn period-btn active" data-period="current-month">${chrome.i18n.getMessage('thisMonth')}</button>
-              <button class="control-btn period-btn" data-period="last-30-days">${chrome.i18n.getMessage('last30Days')}</button>
-              <button class="control-btn period-btn" data-period="last-90-days">${chrome.i18n.getMessage('last90Days')}</button>
+              <label>${getI18nMessage('period')}</label>
+              <button class="control-btn period-btn active" data-period="current-month">${getI18nMessage('thisMonth')}</button>
+              <button class="control-btn period-btn" data-period="last-30-days">${getI18nMessage('last30Days')}</button>
+              <button class="control-btn period-btn" data-period="last-90-days">${getI18nMessage('last90Days')}</button>
             </div>
             
             <div class="control-group">
-              <label>${chrome.i18n.getMessage('view')}</label>
-              <button class="control-btn granularity-btn active" data-granularity="daily">${chrome.i18n.getMessage('daily')}</button>
-              <button class="control-btn granularity-btn" data-granularity="weekly">${chrome.i18n.getMessage('weekly')}</button>
-              <button class="control-btn granularity-btn" data-granularity="monthly">${chrome.i18n.getMessage('monthly')}</button>
+              <label>${getI18nMessage('view')}</label>
+              <button class="control-btn granularity-btn active" data-granularity="daily">${getI18nMessage('daily')}</button>
+              <button class="control-btn granularity-btn" data-granularity="weekly">${getI18nMessage('weekly')}</button>
+              <button class="control-btn granularity-btn" data-granularity="monthly">${getI18nMessage('monthly')}</button>
             </div>
           </div>
         </div>
 
         <div class="chart-container">
-          <div class="loading">${chrome.i18n.getMessage('loadingTrendData') || 'Loading trend data...'}</div>
+          <div class="loading">${getI18nMessage('loadingTrendData') || 'Loading trend data...'}</div>
           <div class="tooltip"></div>
         </div>
 
         <div class="legend">
           <div class="legend-item">
             <div class="legend-color" style="background-color: ${this.colors.mazes}"></div>
-            <span>${chrome.i18n.getMessage('mazesSolved')}</span>
+            <span>${getI18nMessage('mazesSolved')}</span>
           </div>
           <div class="legend-item">
             <div class="legend-color" style="background-color: ${this.colors.tabLimit}"></div>
-            <span>${chrome.i18n.getMessage('tabLimitHeading')}</span>
+            <span>${getI18nMessage('tabLimitHeading')}</span>
           </div>
           <div class="legend-item">
             <div class="legend-color" style="background-color: ${this.colors.blocked}"></div>
-            <span>${chrome.i18n.getMessage('tabsBlocked')}</span>
+            <span>${getI18nMessage('tabsBlocked')}</span>
           </div>
         </div>
       </div>
@@ -752,7 +761,7 @@ class TrendGraph extends HTMLElement {
 
   showNoData() {
     const chartContainer = this.shadowRoot.querySelector('.chart-container');
-    chartContainer.innerHTML = `<div class="no-data-message">${chrome.i18n.getMessage('noDataAvailable')}</div>`;
+    chartContainer.innerHTML = `<div class="no-data-message">${getI18nMessage('noDataAvailable')}</div>`;
   }
 
   showError(message) {

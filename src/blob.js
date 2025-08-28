@@ -3,7 +3,7 @@
  */
 
 import { Logger } from './debug.js';
-import { initializeI18n } from './ui-utils.js';
+import { initializeI18n, getI18nMessage } from './ui-utils.js';
 
 const blobLogger = new Logger('BLOB');
 
@@ -14,7 +14,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // Initialize the countdown message
   const closeTimerMessageEl = document.getElementById('closeTimerMessage');
   if (closeTimerMessageEl) {
-    closeTimerMessageEl.textContent = chrome.i18n.getMessage('tabWillCloseIn', ['6']);
+    closeTimerMessageEl.textContent = getI18nMessage('tabWillCloseIn', ['6']);
   }
 });
 
@@ -25,11 +25,11 @@ const closeTimerMessageEl = document.getElementById('closeTimerMessage');
 // Update countdown every second
 const countdown = setInterval(() => {
     timeLeft--;
-    closeTimerMessageEl.textContent = chrome.i18n.getMessage('tabWillCloseIn', [timeLeft.toString()]);
+    closeTimerMessageEl.textContent = getI18nMessage('tabWillCloseIn', [timeLeft.toString()]);
     
     if (timeLeft <= 0) {
         clearInterval(countdown);
-        closeTimerMessageEl.textContent = chrome.i18n.getMessage('tabWillCloseIn', ['0']);
+        closeTimerMessageEl.textContent = getI18nMessage('tabWillCloseIn', ['0']);
         
         // Try multiple methods to close the tab
         try {

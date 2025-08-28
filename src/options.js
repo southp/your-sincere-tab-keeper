@@ -4,7 +4,7 @@
  */
 
 import { TAB_LIMITS, getTabLimitDescription } from './constants.js';
-import { renderLimitButtons, setupLimitButtonListeners, updateLimitDescription, initializeI18n } from './ui-utils.js';
+import { renderLimitButtons, setupLimitButtonListeners, updateLimitDescription, initializeI18n, getI18nMessage } from './ui-utils.js';
 import { Logger } from './debug.js';
 import { usageDataStore } from './usage-data-store.js';
 import './trend-graph.js';
@@ -228,12 +228,12 @@ async function generateInsights() {
       if (successRate >= 80) {
         insights.push({
           icon: '✨',
-          text: chrome.i18n.getMessage('insightHighCompletionRate', [successRate.toString()])
+          text: getI18nMessage('insightHighCompletionRate', [successRate.toString()])
         });
       } else if (successRate < 50) {
         insights.push({
           icon: '💭',
-          text: chrome.i18n.getMessage('insightLowCompletionRate')
+          text: getI18nMessage('insightLowCompletionRate')
         });
       }
     }
@@ -242,7 +242,7 @@ async function generateInsights() {
     if (insights.length === 0) {
       insights.push({
         icon: '🎯',
-        text: chrome.i18n.getMessage('defaultInsight')
+        text: getI18nMessage('defaultInsight')
       });
     }
     
@@ -375,7 +375,7 @@ async function handleChangeLimit() {
  * Handle statistics reset
  */
 async function handleResetStats() {
-  if (!confirm(chrome.i18n.getMessage('confirmResetStats'))) {
+  if (!confirm(getI18nMessage('confirmResetStats'))) {
     return;
   }
   

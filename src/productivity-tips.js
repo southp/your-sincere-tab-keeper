@@ -3,6 +3,8 @@
  * Gentle nudges toward better tab management and focus
  */
 
+import { getI18nMessage } from './ui-utils.js';
+
 const PRODUCTIVITY_TIP_KEYS = [
   { titleKey: 'tip1Title', messageKey: 'tip1Message' },
   { titleKey: 'tip2Title', messageKey: 'tip2Message' },
@@ -25,8 +27,8 @@ export function getRandomTip() {
   const tipKeys = PRODUCTIVITY_TIP_KEYS[randomIndex];
   
   return {
-    title: chrome.i18n.getMessage(tipKeys.titleKey),
-    message: chrome.i18n.getMessage(tipKeys.messageKey)
+    title: getI18nMessage(tipKeys.titleKey),
+    message: getI18nMessage(tipKeys.messageKey)
   };
 }
 
