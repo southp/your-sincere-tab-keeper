@@ -182,9 +182,6 @@
   "feature6": {
     "message": "💾 本地儲存（無雲端同步）"
   },
-  "versionInfo": {
-    "message": "版本：1.0.0"
-  },
   "licenseInfo": {
     "message": "授權：MIT"
   },

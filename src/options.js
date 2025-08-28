@@ -41,6 +41,7 @@ let selectedLimit = TAB_LIMITS.DEFAULT;
 document.addEventListener('DOMContentLoaded', async () => {
   initializeI18n();
   updateRangeText();
+  loadVersionNumber();
   await checkOnboardingStatus();
   await loadCurrentSettings();
   await loadStatistics();
@@ -48,6 +49,21 @@ document.addEventListener('DOMContentLoaded', async () => {
   setupEventListeners();
   generateInsights();
 });
+
+/**
+ * Load and display version number from manifest
+ */
+function loadVersionNumber() {
+  try {
+    const manifest = chrome.runtime.getManifest();
+    const versionElement = document.getElementById('versionNumber');
+    if (versionElement && manifest.version) {
+      versionElement.textContent = manifest.version;
+    }
+  } catch (error) {
+    optionsLogger.error('Failed to load version number:', error);
+  }
+}
 
 /**
  * Update range text elements dynamically

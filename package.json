@@ -5,10 +5,11 @@
   "main": "src/background.js",
   "type": "module",
   "scripts": {
-    "build": "vite build && node scripts/build.js",
+    "build": "npm run sync-version && vite build && node scripts/build.js",
     "build:clean": "rm -rf dist && npm run build",
     "zip": "cd dist && zip -r ../extension.zip . -x '*.DS_Store' '*.git*'",
     "validate": "node scripts/validate.js",
+    "sync-version": "node scripts/sync-version.js",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage"
