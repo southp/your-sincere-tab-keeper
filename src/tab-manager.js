@@ -230,7 +230,10 @@ export class TabManager {
         this.tabLogger.log('Successfully redirected tab to maze');
         
         // Log limit hit for analytics
-        await this.logLimitHitTimestamp();
+        await this.incrementStat('blockedAttempts');
+        await this.incrementTodayBlockedCount();
+        const store = usageDataStore();
+        await store.logLimitHitTimestamp();
       } catch (redirectError) {
         this.tabLogger.error('Failed to redirect tab to maze:', redirectError);
         // Clean up stored URL on failure
@@ -670,20 +673,6 @@ export class TabManager {
     }
   }
 
-  /**
-   * Log limit hit timestamp for analytics
-   */
-  async logLimitHitTimestamp() {
-    try {
-      await this.incrementStat('blockedAttempts');
-      await this.incrementTodayBlockedCount();
-      const store = usageDataStore();
-      const timestamp = await store.setTimestamp('lastLimitHit');
-      this.storageLogger.log('Logged limit hit timestamp:', timestamp);
-    } catch (error) {
-      this.storageLogger.error('Error logging limit hit timestamp:', error);
-    }
-  }
 
   /**
    * Increment a statistic in storage
