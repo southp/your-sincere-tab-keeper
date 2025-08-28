@@ -544,5 +544,8 @@
   },
   "insightLowCompletionRate": {
     "message": "請考慮關閉迷宮分頁是否意味著你其實並不需要那個新分頁。"
+  },
+  "completeCurrentMazeFirst": {
+    "message": "請先完成你目前的迷宮！"
   }
 }

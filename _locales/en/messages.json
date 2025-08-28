@@ -544,5 +544,8 @@
   },
   "insightLowCompletionRate": {
     "message": "Consider if closing the maze tab means you didn't really need that new tab after all."
+  },
+  "completeCurrentMazeFirst": {
+    "message": "Complete your current maze first!"
   }
 }
