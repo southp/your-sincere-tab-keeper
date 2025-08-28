@@ -575,6 +575,156 @@ describe('UsageDataStore', () => {
         expect(setCall.lastAction).toBeLessThanOrEqual(Date.now());
       });
     });
+
+    describe('getLimitHitTimestamps', () => {
+      it('should return timestamps array', async () => {
+        const timestamps = [1000, 2000, 3000];
+        mockStorage.get.mockResolvedValue({ limitHitTimestamps: timestamps });
+        
+        const result = await store.getLimitHitTimestamps();
+        
+        expect(result).toEqual(timestamps);
+        expect(mockStorage.get).toHaveBeenCalledWith(['limitHitTimestamps']);
+      });
+
+      it('should return empty array if no timestamps', async () => {
+        mockStorage.get.mockResolvedValue({});
+        
+        const result = await store.getLimitHitTimestamps();
+        
+        expect(result).toEqual([]);
+      });
+
+      it('should handle storage errors gracefully', async () => {
+        const error = new Error('Storage error');
+        mockStorage.get.mockRejectedValue(error);
+        
+        const result = await store.getLimitHitTimestamps();
+        
+        expect(result).toEqual([]);
+      });
+    });
+
+    describe('calculatePeakActivityHour', () => {
+      it('should return null if less than 10 timestamps', async () => {
+        const timestamps = Array.from({ length: 9 }, (_, i) => 
+          new Date(2023, 0, 1, 10, 0, 0).getTime() + (i * 60000) // 9 timestamps at 10 AM
+        );
+        mockStorage.get.mockResolvedValue({ limitHitTimestamps: timestamps });
+        
+        const result = await store.calculatePeakActivityHour();
+        
+        expect(result).toBeNull();
+      });
+
+      it('should calculate peak hour correctly with sufficient data', async () => {
+        // Create timestamps: 5 at 10 AM, 8 at 2 PM, 3 at 6 PM
+        const timestamps = [
+          ...Array.from({ length: 5 }, () => new Date(2023, 0, 1, 10, 0, 0).getTime()),
+          ...Array.from({ length: 8 }, () => new Date(2023, 0, 1, 14, 0, 0).getTime()),
+          ...Array.from({ length: 3 }, () => new Date(2023, 0, 1, 18, 0, 0).getTime())
+        ];
+        mockStorage.get.mockResolvedValue({ limitHitTimestamps: timestamps });
+        
+        const result = await store.calculatePeakActivityHour();
+        
+        expect(result).toEqual({
+          hour: 14,
+          count: 8,
+          totalHits: 16
+        });
+      });
+
+      it('should handle ties by returning first hour with max count', async () => {
+        // Create equal hits at 10 AM and 2 PM
+        const timestamps = [
+          ...Array.from({ length: 5 }, () => new Date(2023, 0, 1, 10, 0, 0).getTime()),
+          ...Array.from({ length: 5 }, () => new Date(2023, 0, 1, 14, 0, 0).getTime())
+        ];
+        mockStorage.get.mockResolvedValue({ limitHitTimestamps: timestamps });
+        
+        const result = await store.calculatePeakActivityHour();
+        
+        expect(result.hour).toBe(10); // First occurrence should win
+        expect(result.count).toBe(5);
+      });
+
+      it('should handle midnight hour correctly', async () => {
+        const timestamps = Array.from({ length: 10 }, () => 
+          new Date(2023, 0, 1, 0, 0, 0).getTime()
+        );
+        mockStorage.get.mockResolvedValue({ limitHitTimestamps: timestamps });
+        
+        const result = await store.calculatePeakActivityHour();
+        
+        expect(result.hour).toBe(0);
+        expect(result.count).toBe(10);
+        expect(result.totalHits).toBe(10);
+      });
+
+      it('should handle storage errors gracefully', async () => {
+        const error = new Error('Storage error');
+        mockStorage.get.mockRejectedValue(error);
+        
+        const result = await store.calculatePeakActivityHour();
+        
+        expect(result).toBeNull();
+      });
+    });
+
+
+    describe('getExtendedStatistics integration', () => {
+      it('should include peak activity hour in extended stats', async () => {
+        // Mock basic stats
+        mockStorage.get.mockImplementation(async (keys) => {
+          if (keys.includes('limitHitTimestamps')) {
+            return {
+              limitHitTimestamps: Array.from({ length: 15 }, () => 
+                new Date(2023, 0, 1, 14, 0, 0).getTime()
+              )
+            };
+          }
+          return {
+            mazesCompleted: 10,
+            blockedAttempts: 15,
+            tabLimit: 5,
+            installDate: Date.now(),
+            dailyMazes: {},
+            dailyTabLimits: {},
+            dailyBlockedAttempts: {}
+          };
+        });
+
+        const result = await store.getExtendedStatistics();
+
+        expect(result.peakActivityHour).toEqual({
+          hour: 14,
+          count: 15,
+          totalHits: 15
+        });
+      });
+
+      it('should handle null peak activity in extended stats', async () => {
+        mockStorage.get.mockImplementation(async (keys) => {
+          if (keys.includes('limitHitTimestamps')) {
+            return { limitHitTimestamps: [] }; // Insufficient data
+          }
+          return {
+            mazesCompleted: 10,
+            blockedAttempts: 15,
+            tabLimit: 5,
+            installDate: Date.now(),
+            dailyMazes: {},
+            dailyTabLimits: {},
+            dailyBlockedAttempts: {}
+          };
+        });
+
+        const result = await store.getExtendedStatistics();
+
+        expect(result.peakActivityHour).toBeNull();
+      });
+    });
   });
 
 
@@ -646,6 +796,7 @@ describe('UsageDataStore', () => {
       expect(result).toEqual({
         ...basicStats,
         dailyMazesCompleted: 5,
+        peakActivityHour: null, // No timestamps, so null
         ...dailyData
       });
     });

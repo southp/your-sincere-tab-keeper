@@ -146,6 +146,15 @@
   "todaysMazesDescription": {
     "message": "Mazes solved today"
   },
+  "peakActivityLabel": {
+    "message": "Peak Activity"
+  },
+  "peakActivityDescription": {
+    "message": "When you're most likely to hit your limit"
+  },
+  "peakActivityInsufficientData": {
+    "message": "Not enough data yet"
+  },
   "yourInsightsHeading": {
     "message": "💡 Your Insights"
   },

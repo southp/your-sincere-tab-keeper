@@ -4,7 +4,7 @@
  */
 
 import { TAB_LIMITS, getTabLimitDescription } from './constants.js';
-import { renderLimitButtons, setupLimitButtonListeners, updateLimitDescription, initializeI18n, getI18nMessage } from './ui-utils.js';
+import { renderLimitButtons, setupLimitButtonListeners, updateLimitDescription, initializeI18n, getI18nMessage, formatHourRange } from './ui-utils.js';
 import { Logger } from './debug.js';
 import { usageDataStore } from './usage-data-store.js';
 import './trend-graph.js';
@@ -28,6 +28,7 @@ const totalMazesCompletedEl = document.getElementById('totalMazesCompleted');
 const totalBlockedAttemptsEl = document.getElementById('totalBlockedAttempts');
 const daysActiveEl = document.getElementById('daysActive');
 const currentStreakEl = document.getElementById('currentStreak');
+const peakActivityTimeEl = document.getElementById('peakActivityTime');
 const insightsListEl = document.getElementById('insightsList');
 
 // Footer elements
@@ -64,6 +65,7 @@ function loadVersionNumber() {
     optionsLogger.error('Failed to load version number:', error);
   }
 }
+
 
 /**
  * Update range text elements dynamically
@@ -152,6 +154,13 @@ async function loadStatistics() {
       const installDate = response.installDate || Date.now();
       const daysActive = Math.floor((Date.now() - installDate) / (1000 * 60 * 60 * 24));
       daysActiveEl.textContent = Math.max(1, daysActive);
+      
+      // Handle peak activity time
+      if (response.peakActivityHour) {
+        peakActivityTimeEl.textContent = formatHourRange(response.peakActivityHour.hour);
+      } else {
+        peakActivityTimeEl.textContent = getI18nMessage('peakActivityInsufficientData');
+      }
       
     } else {
       optionsLogger.error('Failed to load statistics:', response?.error);

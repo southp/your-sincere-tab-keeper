@@ -283,15 +283,17 @@ class UsageDataStore {
    */
   async getExtendedStatistics() {
     try {
-      const [basicStats, dailyData, todayMazeCount] = await Promise.all([
+      const [basicStats, dailyData, todayMazeCount, peakActivity] = await Promise.all([
         this.getStatistics(),
         this.getDailyTrackingData(),
-        this.getTodayMazeCount()
+        this.getTodayMazeCount(),
+        this.calculatePeakActivityHour()
       ]);
 
       return {
         ...basicStats,
         dailyMazesCompleted: todayMazeCount,
+        peakActivityHour: peakActivity,
         ...dailyData
       };
     } catch (error) {
@@ -384,6 +386,64 @@ class UsageDataStore {
       throw error;
     }
   }
+
+  /**
+   * Get all limit hit timestamps for analysis
+   */
+  async getLimitHitTimestamps() {
+    try {
+      const result = await this.storage.get(['limitHitTimestamps']);
+      return result.limitHitTimestamps || [];
+    } catch (error) {
+      this.logger.error('Failed to get limit hit timestamps:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Calculate peak activity hour from limit hit timestamps
+   * Returns null if insufficient data (less than 10 hits)
+   */
+  async calculatePeakActivityHour() {
+    try {
+      const timestamps = await this.getLimitHitTimestamps();
+      
+      // Need at least 10 data points for meaningful analysis
+      if (timestamps.length < 10) {
+        return null;
+      }
+
+      // Count hits by hour (0-23)
+      const hourCounts = new Array(24).fill(0);
+      
+      timestamps.forEach(timestamp => {
+        const date = new Date(timestamp);
+        const hour = date.getHours();
+        hourCounts[hour]++;
+      });
+
+      // Find hour with most hits
+      let maxCount = 0;
+      let peakHour = 0;
+      
+      hourCounts.forEach((count, hour) => {
+        if (count > maxCount) {
+          maxCount = count;
+          peakHour = hour;
+        }
+      });
+
+      return {
+        hour: peakHour,
+        count: maxCount,
+        totalHits: timestamps.length
+      };
+    } catch (error) {
+      this.logger.error('Failed to calculate peak activity hour:', error);
+      return null;
+    }
+  }
+
 
 
   // =============================================================================

@@ -228,3 +228,22 @@ export function updateLimitDescription(elementId, limit) {
     element.textContent = getTabLimitDescription(limit);
   }
 }
+
+/**
+ * Format hour as readable time range (e.g., "2-3 PM")
+ * @param {number} hour - Hour in 24-hour format (0-23)
+ * @returns {string} Formatted time range
+ */
+export function formatHourRange(hour) {
+  const startHour = hour;
+  const endHour = (hour + 1) % 24;
+  
+  const formatHour = (h) => {
+    if (h === 0) return '12 AM';
+    if (h < 12) return `${h} AM`;
+    if (h === 12) return '12 PM';
+    return `${h - 12} PM`;
+  };
+  
+  return `${formatHour(startHour)}-${formatHour(endHour)}`;
+}

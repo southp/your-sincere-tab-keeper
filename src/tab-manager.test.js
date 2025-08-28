@@ -843,6 +843,7 @@ describe('TabManager', () => {
         tabLimit: 4, // TabManager overrides this
         dailyMazesCompleted: 2,
         installDate: 1234567890,
+        peakActivityHour: null, // No limit hit timestamps, so null
         dailyMazes: { '2025-08-25': 2 },
         dailyTabLimits: {},
         dailyBlockedAttempts: {}

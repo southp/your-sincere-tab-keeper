@@ -146,6 +146,15 @@
   "todaysMazesDescription": {
     "message": "今天解決的迷宮"
   },
+  "peakActivityLabel": {
+    "message": "高峰時段"
+  },
+  "peakActivityDescription": {
+    "message": "您最常觸及限制的時間"
+  },
+  "peakActivityInsufficientData": {
+    "message": "資料量尚不足"
+  },
   "yourInsightsHeading": {
     "message": "💡 你的洞察"
   },
