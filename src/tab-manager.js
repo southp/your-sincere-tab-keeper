@@ -48,60 +48,9 @@ export class TabManager {
            String(today.getDate()).padStart(2, '0');
   }
 
-  /**
-   * Get or initialize today's maze completion count
-   */
-  async getTodayMazeCount() {
-    try {
-      const store = usageDataStore();
-      return await store.getTodayMazeCount();
-    } catch (error) {
-      this.storageLogger.error('Failed to get today\'s maze count:', error);
-      return 0;
-    }
-  }
 
-  /**
-   * Increment today's maze completion count
-   */
-  async incrementTodayMazeCount() {
-    try {
-      const store = usageDataStore();
-      this.dailyMazesCompleted = await store.incrementTodayMazeCount();
-      
-      this.storageLogger.log(`Incremented today's maze count to ${this.dailyMazesCompleted}`);
-    } catch (error) {
-      this.storageLogger.error('Failed to increment today\'s maze count:', error);
-    }
-  }
 
-  /**
-   * Record today's tab limit for trend tracking
-   */
-  async recordTodayTabLimit() {
-    try {
-      const store = usageDataStore();
-      await store.recordTodayTabLimit(this.tabLimit);
-      
-      this.storageLogger.log(`Recorded today's tab limit: ${this.tabLimit}`);
-    } catch (error) {
-      this.storageLogger.error('Failed to record today\'s tab limit:', error);
-    }
-  }
 
-  /**
-   * Increment today's blocked attempts count
-   */
-  async incrementTodayBlockedCount() {
-    try {
-      const store = usageDataStore();
-      const newCount = await store.incrementTodayBlockedCount();
-      
-      this.storageLogger.log(`Incremented today's blocked count to ${newCount}`);
-    } catch (error) {
-      this.storageLogger.error('Failed to increment today\'s blocked count:', error);
-    }
-  }
 
   /**
    * Initialize the tab manager with settings from storage
@@ -118,11 +67,11 @@ export class TabManager {
       this.storageLogger.log('Initialized install date');
 
       // Load today's maze completion count
-      this.dailyMazesCompleted = await this.getTodayMazeCount();
+      this.dailyMazesCompleted = await store.getTodayMazeCount();
       this.storageLogger.log('Loaded today\'s maze count:', this.dailyMazesCompleted);
 
       // Record today's tab limit for trend tracking
-      await this.recordTodayTabLimit();
+      await store.recordTodayTabLimit(this.tabLimit);
 
       // Initialize tab state based on currently open tabs
       await this.initializeTabState();
@@ -230,9 +179,9 @@ export class TabManager {
         this.tabLogger.log('Successfully redirected tab to maze');
         
         // Log limit hit for analytics
-        await this.incrementStat('blockedAttempts');
-        await this.incrementTodayBlockedCount();
         const store = usageDataStore();
+        await store.incrementStatistic('blockedAttempts');
+        await store.incrementTodayBlockedCount();
         await store.logLimitHitTimestamp();
       } catch (redirectError) {
         this.tabLogger.error('Failed to redirect tab to maze:', redirectError);
@@ -293,8 +242,9 @@ export class TabManager {
       }
       
       // Increment completion counters
-      await this.incrementTodayMazeCount();
-      await this.incrementStat('mazesCompleted');
+      const store = usageDataStore();
+      this.dailyMazesCompleted = await store.incrementTodayMazeCount();
+      await store.incrementStatistic('mazesCompleted');
       
       // Mark this tab as permanently unblocked for its lifetime
       this.unblockedTabs.add(tabId);
@@ -499,7 +449,7 @@ export class TabManager {
       this.tabLimit = newLimit;
       const store = usageDataStore();
       await store.setTabLimit(newLimit);
-      await this.recordTodayTabLimit();
+      await store.recordTodayTabLimit(this.tabLimit);
       this.generalLogger.log('Tab limit updated from', oldLimit, 'to:', newLimit);
       
       if (newLimit < oldLimit) {
@@ -522,8 +472,8 @@ export class TabManager {
       if (newLimit && newLimit >= TAB_LIMITS.MIN && newLimit <= TAB_LIMITS.MAX) {
         this.tabLimit = newLimit;
         const store = usageDataStore();
-      await store.setTabLimit(newLimit);
-        await this.recordTodayTabLimit();
+        await store.setTabLimit(newLimit);
+        await store.recordTodayTabLimit(this.tabLimit);
         this.generalLogger.log('Onboarding completed with tab limit:', newLimit);
       }
     } catch (error) {
@@ -674,16 +624,4 @@ export class TabManager {
   }
 
 
-  /**
-   * Increment a statistic in storage
-   */
-  async incrementStat(statName) {
-    try {
-      const store = usageDataStore();
-      const newValue = await store.incrementStatistic(statName);
-      this.storageLogger.log(`Incremented ${statName} to:`, newValue);
-    } catch (error) {
-      this.storageLogger.error(`Error incrementing ${statName}:`, error);
-    }
-  }
 }

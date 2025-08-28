@@ -216,6 +216,12 @@ describe('UsageDataStore', () => {
         expect(mockStorage.set).toHaveBeenCalledWith({ newStat: 1 });
         expect(result).toBe(1);
       });
+
+      it('should handle storage errors', async () => {
+        mockStorage.get.mockRejectedValue(new Error('Storage error'));
+        
+        await expect(store.incrementStatistic('testStat')).rejects.toThrow('Storage error');
+      });
     });
 
     describe('incrementMazesCompleted', () => {
@@ -285,6 +291,14 @@ describe('UsageDataStore', () => {
         
         expect(result).toBe(0);
       });
+
+      it('should handle storage errors gracefully', async () => {
+        mockStorage.get.mockRejectedValue(new Error('Storage error'));
+        
+        const result = await store.getTodayMazeCount();
+        
+        expect(result).toBe(0);
+      });
     });
 
     describe('incrementTodayMazeCount', () => {
@@ -309,6 +323,44 @@ describe('UsageDataStore', () => {
           dailyMazes: { '2024-03-15': 1 }
         });
         expect(result).toBe(1);
+      });
+
+      it('should preserve other days when incrementing today', async () => {
+        const dailyMazes = {
+          '2024-03-10': 8,
+          '2024-03-11': 12,
+          '2024-03-12': 6,
+          '2024-03-13': 9,
+          '2024-03-14': 5
+        };
+        mockStorage.get.mockResolvedValue({ dailyMazes });
+        
+        const result = await store.incrementTodayMazeCount();
+        
+        expect(mockStorage.set).toHaveBeenCalledWith({
+          dailyMazes: {
+            '2024-03-10': 8,   // All preserved
+            '2024-03-11': 12,
+            '2024-03-12': 6,
+            '2024-03-13': 9,
+            '2024-03-14': 5,
+            '2024-03-15': 1    // New entry for today
+          }
+        });
+        expect(result).toBe(1);
+      });
+
+      it('should handle storage get errors gracefully', async () => {
+        mockStorage.get.mockRejectedValue(new Error('Storage error'));
+        
+        await expect(store.incrementTodayMazeCount()).rejects.toThrow('Storage error');
+      });
+
+      it('should handle storage set errors gracefully', async () => {
+        mockStorage.get.mockResolvedValue({ dailyMazes: {} });
+        mockStorage.set.mockRejectedValue(new Error('Storage set error'));
+        
+        await expect(store.incrementTodayMazeCount()).rejects.toThrow('Storage set error');
       });
     });
 
@@ -336,6 +388,68 @@ describe('UsageDataStore', () => {
           dailyBlockedAttempts: { '2024-03-15': 3 }
         });
         expect(result).toBe(3);
+      });
+    });
+
+    describe('cross-day behavior', () => {
+      it('should handle different days independently for maze counts', async () => {
+        // Mock getTodayKey to simulate different days
+        const originalGetTodayKey = store.getTodayKey;
+        
+        // Test March 15th
+        store.getTodayKey = () => '2024-03-15';
+        mockStorage.get.mockResolvedValue({
+          dailyMazes: { '2024-03-15': 5 }
+        });
+        
+        let count = await store.getTodayMazeCount();
+        expect(count).toBe(5);
+        
+        // Switch to March 16th
+        store.getTodayKey = () => '2024-03-16';
+        
+        count = await store.getTodayMazeCount();
+        expect(count).toBe(0); // Should be 0 for the new day
+        
+        // Restore original method
+        store.getTodayKey = originalGetTodayKey;
+      });
+
+      it('should create separate entries when incrementing on different days', async () => {
+        const originalGetTodayKey = store.getTodayKey;
+        
+        // Start with March 15th
+        store.getTodayKey = () => '2024-03-15';
+        mockStorage.get.mockResolvedValue({
+          dailyMazes: { '2024-03-15': 3 }
+        });
+        
+        await store.incrementTodayMazeCount();
+        
+        expect(mockStorage.set).toHaveBeenCalledWith({
+          dailyMazes: { '2024-03-15': 4 }
+        });
+        
+        // Switch to next day (March 16th)
+        store.getTodayKey = () => '2024-03-16';
+        
+        // Mock the storage to return the updated data from previous day
+        mockStorage.get.mockResolvedValue({
+          dailyMazes: { '2024-03-15': 4 }
+        });
+        
+        await store.incrementTodayMazeCount();
+        
+        // Should create a new entry for the new day
+        expect(mockStorage.set).toHaveBeenLastCalledWith({
+          dailyMazes: {
+            '2024-03-15': 4,  // Previous day preserved
+            '2024-03-16': 1   // New day starts at 1
+          }
+        });
+        
+        // Restore original method
+        store.getTodayKey = originalGetTodayKey;
       });
     });
 

@@ -1042,29 +1042,6 @@ describe('TabManager', () => {
   });
 
 
-  describe('incrementStat', () => {
-    test('increments existing stat', async () => {
-      mockChrome.storage.local.get.mockResolvedValue({ testStat: 5 });
-
-      await tabManager.incrementStat('testStat');
-
-      expect(mockChrome.storage.local.set).toHaveBeenCalledWith({ testStat: 6 });
-    });
-
-    test('creates new stat from zero', async () => {
-      mockChrome.storage.local.get.mockResolvedValue({});
-
-      await tabManager.incrementStat('newStat');
-
-      expect(mockChrome.storage.local.set).toHaveBeenCalledWith({ newStat: 1 });
-    });
-
-    test('handles storage errors', async () => {
-      mockChrome.storage.local.get.mockRejectedValue(new Error('Storage error'));
-
-      await expect(tabManager.incrementStat('testStat')).resolves.not.toThrow();
-    });
-  });
 
   describe('Integration Tests', () => {
     test('complete tab limiting workflow', async () => {
@@ -1145,128 +1122,7 @@ describe('TabManager', () => {
       });
     });
 
-    describe('getTodayMazeCount', () => {
-      test('returns 0 when no daily data exists', async () => {
-        mockChrome.storage.local.get.mockResolvedValue({});
-        
-        const count = await tabManager.getTodayMazeCount();
-        expect(count).toBe(0);
-      });
 
-      test('returns 0 when today has no data', async () => {
-        mockChrome.storage.local.get.mockResolvedValue({
-          dailyMazes: {
-            '2024-03-14': 5, // Yesterday
-            '2024-03-16': 3  // Tomorrow
-          }
-        });
-        
-        const count = await tabManager.getTodayMazeCount();
-        expect(count).toBe(0);
-      });
-
-      test('returns correct count for today', async () => {
-        mockChrome.storage.local.get.mockResolvedValue({
-          dailyMazes: {
-            '2024-03-14': 5,  // Yesterday
-            '2024-03-15': 7,  // Today
-            '2024-03-16': 3   // Tomorrow
-          }
-        });
-        
-        const count = await tabManager.getTodayMazeCount();
-        expect(count).toBe(7);
-      });
-
-      test('handles storage error gracefully', async () => {
-        mockChrome.storage.local.get.mockRejectedValue(new Error('Storage error'));
-        
-        const count = await tabManager.getTodayMazeCount();
-        expect(count).toBe(0);
-      });
-    });
-
-    describe('incrementTodayMazeCount', () => {
-      test('creates new daily entry when none exists', async () => {
-        mockChrome.storage.local.get.mockResolvedValue({});
-        mockChrome.storage.local.set.mockResolvedValue();
-        
-        await tabManager.incrementTodayMazeCount();
-        
-        expect(tabManager.dailyMazesCompleted).toBe(1);
-        expect(mockChrome.storage.local.set).toHaveBeenCalledWith({
-          dailyMazes: {
-            '2024-03-15': 1
-          }
-        });
-      });
-
-      test('increments existing daily count', async () => {
-        mockChrome.storage.local.get.mockResolvedValue({
-          dailyMazes: {
-            '2024-03-14': 5,  // Yesterday
-            '2024-03-15': 3,  // Today
-            '2024-03-16': 2   // Tomorrow
-          }
-        });
-        mockChrome.storage.local.set.mockResolvedValue();
-        
-        await tabManager.incrementTodayMazeCount();
-        
-        expect(tabManager.dailyMazesCompleted).toBe(4);
-        expect(mockChrome.storage.local.set).toHaveBeenCalledWith({
-          dailyMazes: {
-            '2024-03-14': 5,  // Preserved
-            '2024-03-15': 4,  // Incremented
-            '2024-03-16': 2   // Preserved
-          }
-        });
-      });
-
-      test('preserves other days when incrementing today', async () => {
-        mockChrome.storage.local.get.mockResolvedValue({
-          dailyMazes: {
-            '2024-03-10': 8,
-            '2024-03-11': 12,
-            '2024-03-12': 6,
-            '2024-03-13': 9,
-            '2024-03-14': 5
-          }
-        });
-        mockChrome.storage.local.set.mockResolvedValue();
-        
-        await tabManager.incrementTodayMazeCount();
-        
-        expect(mockChrome.storage.local.set).toHaveBeenCalledWith({
-          dailyMazes: {
-            '2024-03-10': 8,   // All preserved
-            '2024-03-11': 12,
-            '2024-03-12': 6,
-            '2024-03-13': 9,
-            '2024-03-14': 5,
-            '2024-03-15': 1    // New entry for today
-          }
-        });
-      });
-
-      test('handles storage error gracefully', async () => {
-        mockChrome.storage.local.get.mockRejectedValue(new Error('Storage error'));
-        
-        // Should not throw
-        await expect(tabManager.incrementTodayMazeCount()).resolves.not.toThrow();
-        
-        // Daily count should remain 0 since it couldn't increment
-        expect(tabManager.dailyMazesCompleted).toBe(0);
-      });
-
-      test('handles storage set error gracefully', async () => {
-        mockChrome.storage.local.get.mockResolvedValue({});
-        mockChrome.storage.local.set.mockRejectedValue(new Error('Storage set error'));
-        
-        // Should not throw
-        await expect(tabManager.incrementTodayMazeCount()).resolves.not.toThrow();
-      });
-    });
 
     describe('initialization with daily data', () => {
       test('loads today\'s maze count on initialization', async () => {
@@ -1300,57 +1156,6 @@ describe('TabManager', () => {
       });
     });
 
-    describe('cross-day behavior', () => {
-      test('different days have independent counts', async () => {
-        // Test March 15th
-        mockChrome.storage.local.get.mockResolvedValue({
-          dailyMazes: {
-            '2024-03-15': 5
-          }
-        });
-        
-        let count = await tabManager.getTodayMazeCount();
-        expect(count).toBe(5);
-        
-        // Switch to March 16th
-        setMockDate('2024-03-16T10:30:00.000Z');
-        
-        count = await tabManager.getTodayMazeCount();
-        expect(count).toBe(0); // Should be 0 for the new day
-      });
-
-      test('incrementing on different days creates separate entries', async () => {
-        // Start with some existing data
-        mockChrome.storage.local.get.mockResolvedValue({
-          dailyMazes: {
-            '2024-03-15': 3
-          }
-        });
-        
-        await tabManager.incrementTodayMazeCount();
-        expect(tabManager.dailyMazesCompleted).toBe(4);
-        
-        // Switch to next day
-        setMockDate('2024-03-16T10:30:00.000Z');
-        
-        // Mock the storage to return the updated data from previous day
-        mockChrome.storage.local.get.mockResolvedValue({
-          dailyMazes: {
-            '2024-03-15': 4  // Previous day's final count
-          }
-        });
-        
-        await tabManager.incrementTodayMazeCount();
-        
-        // Should create a new entry for the new day
-        expect(mockChrome.storage.local.set).toHaveBeenLastCalledWith({
-          dailyMazes: {
-            '2024-03-15': 4,  // Previous day preserved
-            '2024-03-16': 1   // New day starts at 1
-          }
-        });
-      });
-    });
 
     describe('integration with maze completion', () => {
       test('handleMazeCompleted increments daily count', async () => {
