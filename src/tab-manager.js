@@ -357,13 +357,6 @@ export class TabManager {
       const completionKey = `maze_completed_tab_${tabId}`;
       this.completedMazeSessions.add(completionKey);
       this.mazeLogger.log('Marked maze as completed for tab:', tabId);
-      
-      // Store in sessionStorage as well for persistence across page reloads
-      try {
-        sessionStorage.setItem(completionKey, 'true');
-      } catch (error) {
-        this.mazeLogger.error('Error storing completion marker in sessionStorage:', error);
-      }
     }
   }
 
@@ -375,23 +368,8 @@ export class TabManager {
     
     const completionKey = `maze_completed_tab_${tabId}`;
     
-    // Check in-memory state first
-    if (this.completedMazeSessions.has(completionKey)) {
-      return true;
-    }
-    
-    // Check sessionStorage as fallback
-    try {
-      const isCompleted = sessionStorage.getItem(completionKey) === 'true';
-      if (isCompleted) {
-        // Sync back to in-memory state
-        this.completedMazeSessions.add(completionKey);
-      }
-      return isCompleted;
-    } catch (error) {
-      this.mazeLogger.error('Error checking completion marker in sessionStorage:', error);
-      return false;
-    }
+    // Check in-memory state - service worker is authoritative source
+    return this.completedMazeSessions.has(completionKey);
   }
 
   /**
@@ -401,13 +379,6 @@ export class TabManager {
     if (tabId) {
       const completionKey = `maze_completed_tab_${tabId}`;
       this.completedMazeSessions.delete(completionKey);
-      
-      try {
-        sessionStorage.removeItem(completionKey);
-      } catch (error) {
-        this.mazeLogger.error('Error removing completion marker from sessionStorage:', error);
-      }
-      
       this.mazeLogger.log('Cleared maze completion marker for tab:', tabId);
     }
   }
@@ -686,14 +657,6 @@ export class TabManager {
       this.completedMazeSessions.delete(removedCompletionKey);
       this.completedMazeSessions.add(addedCompletionKey);
       this.mazeLogger.log('Transferred maze completion tracking:', removedTabId, '→', addedTabId);
-      
-      // Also update sessionStorage if possible
-      try {
-        sessionStorage.removeItem(removedCompletionKey);
-        sessionStorage.setItem(addedCompletionKey, 'true');
-      } catch (error) {
-        this.mazeLogger.error('Error transferring completion marker in sessionStorage:', error);
-      }
     }
   }
 
