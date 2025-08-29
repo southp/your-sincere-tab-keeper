@@ -20,7 +20,7 @@
     "productivity",
     "maze-game"
   ],
-  "author": "Your Sincere Tab Keeper Team",
+  "author": "James Tien",
   "license": "MIT",
   "devDependencies": {
     "@babel/core": "^7.28.3",
