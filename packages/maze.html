@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title data-i18n="mazeTitle">Your Sincere Tab Keeper - Maze Challenge</title>
+  <script type="module" crossorigin src="/maze.js"></script>
+  <link rel="modulepreload" crossorigin href="/shared/modulepreload-polyfill-YP0FEG5d.js">
+  <link rel="modulepreload" crossorigin href="/shared/ui-utils-cCs8MwE4.js">
+  <link rel="modulepreload" crossorigin href="/shared/shared-utils-afphZS3f.js">
+  <link rel="modulepreload" crossorigin href="/shared/data-store-7O9iVAM3.js">
+  <link rel="stylesheet" crossorigin href="/maze.css">
+</head>
+<body>
+  <div class="maze-container">
+    <header class="maze-header">
+      <div class="logo">
+        <div class="tab-icon">📑</div>
+        <h1 data-i18n="popupTitle">Your Sincere Tab Keeper</h1>
+      </div>
+      <div class="challenge-text">
+        <span id="challengeMessage" data-i18n="solveMazeToOpen">Solve this maze to open your new tab!</span>
+      </div>
+    </header>
+
+    <main class="maze-grid">
+      <div class="maze-info">
+        <div class="info-item">
+          <span class="info-label" data-i18n="difficulty">Difficulty:</span>
+          <span class="info-value" id="difficultyLevel">Beginner</span>
+        </div>
+        <div class="info-item">
+          <span class="info-label" data-i18n="size">Size:</span>
+          <span class="info-value" id="mazeSize">15x15</span>
+        </div>
+      </div>
+
+      <div class="stats-timer">
+        <div class="info-item">
+          <span class="info-label" data-i18n="timer">Timer:</span>
+          <span class="info-value" id="timer">00:00</span>
+        </div>
+        <div class="stats-preview">
+          <div class="stat">
+            <span class="stat-number" id="dailyMazes">0</span>
+            <span class="stat-label" data-i18n="today">Today</span>
+          </div>
+          <div class="stat">
+            <span class="stat-number" id="totalMazes">0</span>
+            <span class="stat-label" data-i18n="allTime">All Time</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="maze-wrapper">
+        <canvas id="mazeCanvas"></canvas>
+        <div class="controls-ambient">
+          <div class="controls-hint" data-i18n="controlsHint">Use ↑←↓→ or WASD keys to move</div>
+        </div>
+        <div class="maze-overlay" id="mazeOverlay" style="display: none;">
+          <div class="overlay-content">
+            <div class="success-icon">🎉</div>
+            <h3 data-i18n="congratulations">Congratulations!</h3>
+            <p data-i18n="mazeSolved">You solved the maze! Loading your requested page...</p>
+            <div class="loading-spinner"></div>
+          </div>
+        </div>
+      </div>
+
+      <footer class="motivation-text">
+        <p id="motivationMessage" data-i18n="motivationFooter">Every maze solved is a step toward more mindful browsing! 🌟</p>
+      </footer>
+    </main>
+  </div>
+
+  <!-- Completed Maze Message (shown when user navigates back to completed maze) -->
+  <div id="completedMazeMessage" class="completed-maze-container" style="display: none;">
+    <div class="completed-message">
+      <div class="completed-icon">✅</div>
+      <h2 data-i18n="mazeAlreadyCompleted">Maze Already Completed!</h2>
+      <p data-i18n="mazeCompletedDescription">You've already solved this maze. Use your browser's navigation to continue.</p>
+    </div>
+  </div>
+
+  <!-- Update Limit Modal (shown when action=updateLimit) -->
+  <div id="updateLimitModal" class="modal" style="display: none;">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 data-i18n="updateLimitModalTitle">🎯 Update Your Tab Limit</h2>
+        <p data-i18n="updateLimitModalDescription">Great job solving the maze! Now choose your new tab limit:</p>
+      </div>
+      
+      <div class="limit-selector">
+        <div class="limit-options" id="limitOptions">
+          <!-- Buttons will be generated dynamically -->
+        </div>
+        <div class="limit-description">
+          <p id="modalLimitDescription">Balanced approach - controlled multitasking</p>
+        </div>
+      </div>
+
+      <div class="modal-actions">
+        <button id="confirmLimitBtn" class="primary-btn" data-i18n="setNewLimit">
+          Set New Limit
+        </button>
+        <button id="cancelLimitBtn" class="secondary-btn" data-i18n="keepCurrentLimit">
+          Keep Current Limit
+        </button>
+      </div>
+    </div>
+  </div>
+
+</body>
+</html>
+

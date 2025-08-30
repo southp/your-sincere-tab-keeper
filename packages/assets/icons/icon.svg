@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128">
+  <!-- Background circle -->
+  <circle cx="64" cy="64" r="60" fill="#667eea" stroke="#764ba2" stroke-width="4"/>
+  
+  <!-- Tab representation -->
+  <rect x="20" y="35" width="88" height="58" rx="8" fill="#f7f7f7" stroke="#333" stroke-width="2"/>
+  
+  <!-- Tab dividers -->
+  <line x1="45" y1="35" x2="45" y2="93" stroke="#ddd" stroke-width="1"/>
+  <line x1="70" y1="35" x2="70" y2="93" stroke="#ddd" stroke-width="1"/>
+  <line x1="95" y1="35" x2="95" y2="93" stroke="#ddd" stroke-width="1"/>
+  
+  <!-- Maze pattern overlay -->
+  <g fill="#4ecdc4" opacity="0.7">
+    <rect x="25" y="40" width="3" height="8"/>
+    <rect x="30" y="45" width="8" height="3"/>
+    <rect x="42" y="40" width="3" height="12"/>
+    <rect x="50" y="50" width="12" height="3"/>
+    <rect x="75" y="42" width="3" height="10"/>
+    <rect x="85" y="47" width="8" height="3"/>
+    <rect x="95" y="40" width="3" height="15"/>
+  </g>
+  
+  <!-- Central maze icon -->
+  <circle cx="64" cy="64" r="12" fill="#ff6b6b"/>
+  <circle cx="64" cy="64" r="8" fill="#fff"/>
+  <text x="64" y="69" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" fill="#333">🧩</text>
+</svg>
+

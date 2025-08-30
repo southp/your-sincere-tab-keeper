@@ -7,6 +7,8 @@
   "scripts": {
     "build": "npm run sync-version && vite build && node scripts/build.js",
     "build:clean": "rm -rf dist && npm run build",
+    "pack": "node scripts/package.js",
+    "pack:clean": "rm -rf dist packages && npm run pack",
     "zip": "cd dist && zip -r ../extension.zip . -x '*.DS_Store' '*.git*'",
     "validate": "node scripts/validate.js",
     "sync-version": "node scripts/sync-version.js",
@@ -36,6 +38,7 @@
     "eslint-plugin-n": "^17.21.3",
     "eslint-plugin-promise": "^7.2.1",
     "jest": "^29.7.0",
+    "terser": "^5.43.1",
     "vite": "^5.0.0"
   },
   "jest": {
