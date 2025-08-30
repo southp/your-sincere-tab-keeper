@@ -3,7 +3,7 @@
  * Handles settings, onboarding, and statistics display
  */
 
-import { TAB_LIMITS, getTabLimitDescription } from './constants.js';
+import { TAB_LIMITS } from './constants.js';
 import { renderLimitButtons, setupLimitButtonListeners, updateLimitDescription, initializeI18n, getI18nMessage, formatHourRange } from './ui-utils.js';
 import { Logger } from './debug.js';
 import { usageDataStore } from './usage-data-store.js';
@@ -18,10 +18,8 @@ const statsSection = document.getElementById('statsSection');
 const aboutSection = document.getElementById('aboutSection');
 const footer = document.querySelector('.footer');
 const currentTabLimitEl = document.getElementById('currentTabLimit');
-const limitButtons = document.querySelectorAll('.limit-btn');
 const completeOnboardingBtn = document.getElementById('completeOnboardingBtn');
 const changeLimitBtn = document.getElementById('changeLimitBtn');
-const limitDescriptionEl = document.getElementById('limitDescription');
 
 // Statistics elements
 const totalMazesCompletedEl = document.getElementById('totalMazesCompleted');
@@ -80,7 +78,7 @@ function updateRangeText() {
 /**
  * Check if this is the first time opening options (onboarding)
  */
-async function checkOnboardingStatus() {
+function checkOnboardingStatus() {
   const urlParams = new URLSearchParams(window.location.search);
   const isOnboarding = urlParams.get('onboarding') === 'true';
 
@@ -400,7 +398,8 @@ async function handleChangeLimit() {
  * Handle statistics reset
  */
 async function handleResetStats() {
-  if (!confirm(getI18nMessage('confirmResetStats'))) {
+  // eslint-disable-next-line no-alert
+  if (!confirm(getI18nMessage('confirmResetStats'))) { // Intentional: Confirmation required for destructive action
     return;
   }
 
@@ -461,7 +460,7 @@ async function handleExportStats() {
 /**
  * Show tab closure confirmation dialog
  */
-async function showTabClosureConfirmation(currentCount, newLimit, tabsToClose) {
+function showTabClosureConfirmation(currentCount, newLimit, tabsToClose) {
   return new Promise((resolve) => {
     // Create modal overlay
     const overlay = document.createElement('div');

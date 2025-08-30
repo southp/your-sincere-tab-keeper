@@ -547,7 +547,7 @@ class TrendGraph extends HTMLElement {
     return svg;
   }
 
-  addGridLines(svg, chartWidth, chartHeight, margin, maxValue) {
+  addGridLines(svg, chartWidth, chartHeight, margin) {
     const gridGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g');
 
     // Horizontal grid lines
@@ -599,7 +599,7 @@ class TrendGraph extends HTMLElement {
       circle.setAttribute('stroke-width', '1');
 
       // Make points interactive with HTML tooltip
-      circle.addEventListener('mouseenter', (e) => {
+      circle.addEventListener('mouseenter', () => {
         circle.setAttribute('r', '5');
         circle.setAttribute('stroke-width', '2');
 
@@ -618,7 +618,6 @@ class TrendGraph extends HTMLElement {
         const cy = parseFloat(circle.getAttribute('cy'));
         const containerRect = this.shadowRoot.querySelector('.chart-container');
         const containerWidth = containerRect.offsetWidth;
-        const containerHeight = containerRect.offsetHeight;
 
         // Calculate tooltip dimensions (approximate)
         const tooltipWidth = 200; // estimated width
@@ -648,7 +647,7 @@ class TrendGraph extends HTMLElement {
         tooltip.style.top = `${top}px`;
       });
 
-      circle.addEventListener('mousemove', (e) => {
+      circle.addEventListener('mousemove', () => {
         if (tooltip.classList.contains('visible')) {
           // Update positioning on mouse move using same smart logic
           const cx = parseFloat(circle.getAttribute('cx'));

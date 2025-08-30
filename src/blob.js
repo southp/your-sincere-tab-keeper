@@ -35,7 +35,7 @@ const countdown = setInterval(() => {
     try {
       // Method 1: Use chrome.tabs API through background script
       chrome.runtime.sendMessage({ type: 'CLOSE_BLOB_TAB' });
-    } catch (error) {
+    } catch {
       blobLogger.log('Chrome API close failed, trying window.close()');
       // Method 2: Standard window.close()
       window.close();

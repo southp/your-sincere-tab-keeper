@@ -22,7 +22,7 @@ async function build() {
     console.log('🧹 Cleaning previous build...');
     try {
       await fs.rm(join(rootDir, 'dist'), { recursive: true, force: true });
-    } catch (error) {
+    } catch {
       // Ignore if dist doesn't exist
     }
 
@@ -206,7 +206,7 @@ async function flattenHtmlFiles() {
         await fs.rmdir(srcPath);
         console.log('   ✓ Removed empty src directory');
       }
-    } catch (error) {
+    } catch {
       // Ignore if directory not empty or doesn't exist
     }
 
@@ -269,7 +269,7 @@ async function cleanupDevFiles() {
   for (const file of devFiles) {
     try {
       await fs.rm(join(distPath, file), { recursive: true, force: true });
-    } catch (error) {
+    } catch {
       // Ignore if file doesn't exist
     }
   }
@@ -304,7 +304,7 @@ async function validateBuild() {
     try {
       await fs.access(join(distPath, file));
       console.log(`   ✓ ${file} exists`);
-    } catch (error) {
+    } catch {
       throw new Error(`Required file missing: ${file}`);
     }
   }

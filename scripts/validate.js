@@ -41,7 +41,7 @@ async function validateStructure() {
 
   try {
     await fs.access(distPath);
-  } catch (error) {
+  } catch {
     throw new Error('dist/ directory not found. Run npm run build first.');
   }
 
@@ -63,7 +63,7 @@ async function validateStructure() {
     try {
       await fs.access(join(distPath, file));
       console.log(`   ✓ ${file}`);
-    } catch (error) {
+    } catch {
       throw new Error(`Required file missing: ${file}`);
     }
   }
@@ -81,7 +81,7 @@ async function validateManifest() {
   let manifest;
   try {
     manifest = JSON.parse(manifestContent);
-  } catch (error) {
+  } catch {
     throw new Error('manifest.json is not valid JSON');
   }
 

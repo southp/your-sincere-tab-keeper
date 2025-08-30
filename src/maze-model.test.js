@@ -4,7 +4,7 @@
  */
 
 import { describe, test, expect, beforeEach, jest } from '@jest/globals';
-import { MazeModel, WALL, PATH, PLAYER, GOAL } from './maze-model.js';
+import { MazeModel, WALL, PATH, GOAL } from './maze-model.js';
 
 describe('MazeModel', () => {
   let maze;

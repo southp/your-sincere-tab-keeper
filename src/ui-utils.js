@@ -19,6 +19,7 @@ let alternateMessages = {};
  */
 export async function setLocaleOverride(locale) {
   if (!(await isDevelopment())) {
+    // eslint-disable-next-line no-console
     console.warn('Locale override is only available in development mode');
     return false;
   }
@@ -30,13 +31,14 @@ export async function setLocaleOverride(locale) {
     // Use Chrome storage API instead of localStorage for service worker compatibility
     try {
       await chrome.storage.local.remove('debugLocaleOverride');
-    } catch (error) {
+    } catch {
       // Fallback to localStorage if available (for content scripts/pages)
       if (typeof localStorage !== 'undefined') {
         localStorage.removeItem('debugLocaleOverride');
       }
     }
 
+    // eslint-disable-next-line no-console
     console.log('🌍 Locale override disabled - using browser default');
 
     // Refresh i18n on current page if DOM is available
@@ -61,14 +63,16 @@ export async function setLocaleOverride(locale) {
     // Use Chrome storage API instead of localStorage for service worker compatibility
     try {
       await chrome.storage.local.set({ debugLocaleOverride: locale });
-    } catch (error) {
+    } catch {
       // Fallback to localStorage if available (for content scripts/pages)
       if (typeof localStorage !== 'undefined') {
         localStorage.setItem('debugLocaleOverride', locale);
       }
     }
 
+    // eslint-disable-next-line no-console
     console.log(`🌍 Locale override set to: ${locale}`);
+    // eslint-disable-next-line no-console
     console.log(`📝 Loaded ${Object.keys(alternateMessages).length} message keys`);
 
     // Refresh i18n on current page if DOM is available
@@ -78,6 +82,7 @@ export async function setLocaleOverride(locale) {
     return true;
 
   } catch (error) {
+    // eslint-disable-next-line no-console
     console.error(`Failed to set locale override to '${locale}':`, error);
     return false;
   }
@@ -123,7 +128,7 @@ async function initializeLocaleOverride() {
   try {
     const result = await chrome.storage.local.get('debugLocaleOverride');
     savedLocale = result.debugLocaleOverride;
-  } catch (error) {
+  } catch {
     // Fallback to localStorage if available (for content scripts/pages)
     if (typeof localStorage !== 'undefined') {
       savedLocale = localStorage.getItem('debugLocaleOverride');

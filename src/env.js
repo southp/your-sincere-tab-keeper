@@ -43,7 +43,7 @@ async function detectEnvironment() {
     } else {
       return Environment.PRODUCTION;
     }
-  } catch (error) {
+  } catch {
     // Fallback to manifest-based detection if management API fails
     try {
       const manifest = chrome.runtime.getManifest();
@@ -55,7 +55,7 @@ async function detectEnvironment() {
       } else {
         return Environment.DEVELOPMENT;
       }
-    } catch (manifestError) {
+    } catch {
       // If Chrome APIs are not available, we're likely in a test environment
       return Environment.TEST;
     }

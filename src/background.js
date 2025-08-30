@@ -178,10 +178,12 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       tabManager.focusMazeTab();
       break;
     case 'CHECK_MAZE_COMPLETED':
+    {
       // Check if maze is completed for the requesting tab
       const isCompleted = tabManager.isMazeCompleted(sender.tab.id);
       sendResponse({ isCompleted });
       return true; // Keep message channel open for response
+    }
     case 'CLOSE_BLOB_TAB':
       handleCloseBlobTab(sender.tab.id);
       break;
@@ -254,8 +256,8 @@ async function setupDebugUtilities() {
     },
 
     // Stats inspection
-    getStats: async () => {
-      return await tabManager.getExtensionStats();
+    getStats: () => {
+      return tabManager.getExtensionStats();
     },
 
     // State management helpers
@@ -313,9 +315,11 @@ async function setupDebugUtilities() {
 
     getAvailableLocales: () => {
       const locales = ['en', 'zh_TW'];
+      // eslint-disable-next-line no-console
       console.log('🌍 Available locales:');
       locales.forEach(locale => {
         const name = locale === 'en' ? 'English' : 'Traditional Chinese (zh_TW)';
+        // eslint-disable-next-line no-console
         console.log(`  ${locale} - ${name}`);
       });
       return locales;
@@ -323,6 +327,7 @@ async function setupDebugUtilities() {
 
     // Help function
     help: () => {
+      // eslint-disable-next-line no-console
       console.log(`
 🔧 Tab Keeper Debug Utilities
 ==============================
@@ -363,6 +368,7 @@ Example Usage:
 
   // Show initial help message
   setTimeout(() => {
+    // eslint-disable-next-line no-console
     console.log('🔧 Tab Keeper debugging utilities loaded! Type debugTabKeeper.help() for usage.');
   }, 1000);
 }

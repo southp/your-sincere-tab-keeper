@@ -150,15 +150,15 @@ class UsageDataStore {
   /**
    * Increment mazes completed count
    */
-  async incrementMazesCompleted() {
-    return await this.incrementStatistic('mazesCompleted');
+  incrementMazesCompleted() {
+    return this.incrementStatistic('mazesCompleted');
   }
 
   /**
    * Increment blocked attempts count
    */
-  async incrementBlockedAttempts() {
-    return await this.incrementStatistic('blockedAttempts');
+  incrementBlockedAttempts() {
+    return this.incrementStatistic('blockedAttempts');
   }
 
   /**

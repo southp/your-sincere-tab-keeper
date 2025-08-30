@@ -2,6 +2,9 @@
  * Debug logging utility with environment-aware log levels
  */
 
+/* eslint-disable no-console, promise/always-return */
+// Logger class uses intentional fire-and-forget promise chains for non-blocking logging
+
 import { isDevelopment, isTest } from './env.js';
 
 const LogLevel = {

@@ -179,10 +179,10 @@ export class TabManager {
         this.tabLogger.log('Successfully redirected tab to maze');
 
         // Log limit hit for analytics
-        const store = usageDataStore();
-        await store.incrementStatistic('blockedAttempts');
-        await store.incrementTodayBlockedCount();
-        await store.logLimitHitTimestamp();
+        const analyticsStore = usageDataStore();
+        await analyticsStore.incrementStatistic('blockedAttempts');
+        await analyticsStore.incrementTodayBlockedCount();
+        await analyticsStore.logLimitHitTimestamp();
       } catch (redirectError) {
         this.tabLogger.error('Failed to redirect tab to maze:', redirectError);
         // Clean up stored URL on failure

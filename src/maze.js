@@ -3,10 +3,10 @@
  * A challenging maze game with Chrome Dino aesthetic
  */
 
-import { TAB_LIMITS, getTabLimitDescription } from './constants.js';
+import { TAB_LIMITS } from './constants.js';
 import { renderLimitButtons, setupLimitButtonListeners, updateLimitDescription, initializeI18n, getI18nMessage } from './ui-utils.js';
 import { Logger } from './debug.js';
-import { MazeModel, WALL, PATH, PLAYER, GOAL } from './maze-model.js';
+import { MazeModel, WALL, PATH, GOAL } from './maze-model.js';
 import { getRandomTip } from './productivity-tips.js';
 import { isDevelopment } from './env.js';
 import { usageDataStore } from './usage-data-store.js';
@@ -38,12 +38,6 @@ const dailyMazesEl = document.getElementById('dailyMazes');
 const totalMazesEl = document.getElementById('totalMazes');
 const mazeOverlay = document.getElementById('mazeOverlay');
 
-// Update limit modal elements
-const updateLimitModal = document.getElementById('updateLimitModal');
-const limitButtons = document.querySelectorAll('.limit-btn');
-const modalLimitDescription = document.getElementById('modalLimitDescription');
-const confirmLimitBtn = document.getElementById('confirmLimitBtn');
-const cancelLimitBtn = document.getElementById('cancelLimitBtn');
 
 
 // Colors (Chrome Dino inspired)
@@ -190,9 +184,6 @@ function updateCanvasSize() {
  */
 async function loadMazeSessionData() {
   try {
-    // Generate a unique session key based on current tab
-    const sessionKey = `mazeSession_${Date.now()}`;
-
     // Try to get existing session data
     const store = usageDataStore();
     const sessionData = await store.getMazeSession();
@@ -579,7 +570,8 @@ async function setupLimitSelector() {
 
     } catch (error) {
       mazeLogger.error('Error updating tab limit:', error);
-      alert(getI18nMessage('failedToUpdateTabLimit'));
+      // eslint-disable-next-line no-alert
+      alert(getI18nMessage('failedToUpdateTabLimit')); // Intentional: User needs immediate error feedback
     } finally {
       confirmBtn.classList.remove('loading');
       confirmBtn.disabled = false;
@@ -688,6 +680,7 @@ async function setupMazeDebugUtilities() {
   mazeLogger.log('🔧 Maze debug utilities enabled for development');
 
   // Expose maze debugging utilities
+  /* eslint-disable no-console */
   globalThis.debugMaze = {
     // Core maze inspection
     mazeModel: mazeModel,
@@ -702,7 +695,7 @@ async function setupMazeDebugUtilities() {
     }),
 
     // Difficulty manipulation
-    setDifficulty: async (newDifficulty) => {
+    setDifficulty: (newDifficulty) => {
       const allDifficultySettings = getDifficultySettings();
       if (newDifficulty < 0 || newDifficulty >= allDifficultySettings.length) {
         console.error(`❌ Invalid difficulty. Must be 0-${allDifficultySettings.length - 1}`);
@@ -753,7 +746,6 @@ async function setupMazeDebugUtilities() {
     // Path finding helpers
     findPath: () => {
       // Simple pathfinding to show solution
-      const path = [];
       const visited = new Set();
       const queue = [{ ...mazeModel.playerPos, path: [{ ...mazeModel.playerPos }] }];
 
@@ -790,7 +782,7 @@ async function setupMazeDebugUtilities() {
 
     // Visual helpers
     highlightPath: () => {
-      const path = debugMaze.findPath();
+      const path = globalThis.debugMaze.findPath();
       if (!path) {
         console.log('❌ No path found to goal');
         return;
@@ -799,25 +791,25 @@ async function setupMazeDebugUtilities() {
       console.log(`🗺️ Path to goal (${path.length} steps):`, path);
 
       // Visual highlight on canvas
-      const ctx = canvas.getContext('2d');
-      ctx.strokeStyle = '#ffff00';
-      ctx.lineWidth = 3;
-      ctx.beginPath();
+      const pathCtx = canvas.getContext('2d');
+      pathCtx.strokeStyle = '#ffff00';
+      pathCtx.lineWidth = 3;
+      pathCtx.beginPath();
 
       for (let i = 0; i < path.length - 1; i++) {
         const from = path[i];
         const to = path[i + 1];
 
-        ctx.moveTo(
+        pathCtx.moveTo(
           from.x * cellSize + cellSize / 2,
           from.y * cellSize + cellSize / 2
         );
-        ctx.lineTo(
+        pathCtx.lineTo(
           to.x * cellSize + cellSize / 2,
           to.y * cellSize + cellSize / 2
         );
       }
-      ctx.stroke();
+      pathCtx.stroke();
 
       return path;
     },
