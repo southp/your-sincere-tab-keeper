@@ -78,15 +78,15 @@ async function build() {
 function runCommand(command) {
   return new Promise((resolve, reject) => {
     const process = exec(command, { cwd: rootDir });
-    
+
     process.stdout.on('data', (data) => {
       console.log(data.toString());
     });
-    
+
     process.stderr.on('data', (data) => {
       console.error(data.toString());
     });
-    
+
     process.on('close', (code) => {
       if (code === 0) {
         resolve();
@@ -103,7 +103,7 @@ function runCommand(command) {
 async function copyManifest() {
   const sourceManifest = join(rootDir, 'manifest.json');
   const destManifest = join(rootDir, 'dist', 'manifest.json');
-  
+
   try {
     const manifestContent = await fs.readFile(sourceManifest, 'utf8');
     await fs.writeFile(destManifest, manifestContent);
@@ -118,11 +118,11 @@ async function copyManifest() {
  */
 async function optimizeManifest() {
   const manifestPath = join(rootDir, 'dist', 'manifest.json');
-  
+
   try {
     const manifestContent = await fs.readFile(manifestPath, 'utf8');
     const manifest = JSON.parse(manifestContent);
-    
+
     // Update paths for production build (HTML files will be moved to root)
     if (manifest.action && manifest.action.default_popup) {
       manifest.action.default_popup = manifest.action.default_popup.replace('src/', '');
@@ -133,18 +133,18 @@ async function optimizeManifest() {
     if (manifest.background && manifest.background.service_worker) {
       manifest.background.service_worker = manifest.background.service_worker.replace('src/', '');
     }
-    
+
     // Remove development-specific fields if any
     // Add production optimizations
     manifest.content_security_policy = {
       extension_pages: "script-src 'self'; object-src 'self'"
     };
-    
+
     // Ensure all required fields are present
     if (!manifest.version) {
       manifest.version = '1.0.0';
     }
-    
+
     await fs.writeFile(manifestPath, JSON.stringify(manifest, null, 2));
     console.log('   ✓ Manifest optimized for production');
   } catch (error) {
@@ -158,14 +158,14 @@ async function optimizeManifest() {
 async function copyAssets() {
   const assetsPath = join(rootDir, 'assets');
   const distPath = join(rootDir, 'dist');
-  
+
   try {
     // Check if assets directory exists
     await fs.access(assetsPath);
-    
+
     // Copy entire assets directory to dist
     await fs.cp(assetsPath, join(distPath, 'assets'), { recursive: true });
-    
+
     console.log('   ✓ Assets copied to dist/assets/');
   } catch (error) {
     if (error.code === 'ENOENT') {
@@ -182,15 +182,15 @@ async function copyAssets() {
 async function flattenHtmlFiles() {
   const distPath = join(rootDir, 'dist');
   const srcPath = join(distPath, 'src');
-  
+
   try {
     // Check if src directory exists in dist
     await fs.access(srcPath);
-    
+
     // Get all HTML files in dist/src/
     const files = await fs.readdir(srcPath);
     const htmlFiles = files.filter(file => file.endsWith('.html'));
-    
+
     // Move each HTML file to dist root
     for (const file of htmlFiles) {
       const srcFile = join(srcPath, file);
@@ -198,7 +198,7 @@ async function flattenHtmlFiles() {
       await fs.rename(srcFile, destFile);
       console.log(`   ✓ Moved ${file} to root`);
     }
-    
+
     // Remove empty src directory if it's empty
     try {
       const remainingFiles = await fs.readdir(srcPath);
@@ -209,7 +209,7 @@ async function flattenHtmlFiles() {
     } catch (error) {
       // Ignore if directory not empty or doesn't exist
     }
-    
+
   } catch (error) {
     if (error.code === 'ENOENT') {
       console.log('   ⚠ No src directory found in dist, skipping...');
@@ -224,26 +224,26 @@ async function flattenHtmlFiles() {
  */
 async function updateFilePaths() {
   const distPath = join(rootDir, 'dist');
-  
+
   try {
     // Get all JavaScript files in dist
     const files = await fs.readdir(distPath);
     const jsFiles = files.filter(file => file.endsWith('.js'));
-    
+
     for (const file of jsFiles) {
       const filePath = join(distPath, file);
       let content = await fs.readFile(filePath, 'utf8');
-      
+
       // Update chrome.runtime.getURL paths to remove 'src/'
       const originalContent = content;
       content = content.replace(/chrome\.runtime\.getURL\(['"`]src\//g, "chrome.runtime.getURL('");
-      
+
       if (content !== originalContent) {
         await fs.writeFile(filePath, content);
         console.log(`   ✓ Updated paths in ${file}`);
       }
     }
-    
+
   } catch (error) {
     throw new Error(`Failed to update file paths: ${error.message}`);
   }
@@ -254,7 +254,7 @@ async function updateFilePaths() {
  */
 async function cleanupDevFiles() {
   const distPath = join(rootDir, 'dist');
-  
+
   // Files and patterns to remove from production build
   const devFiles = [
     'README.md',
@@ -265,7 +265,7 @@ async function cleanupDevFiles() {
     'scripts',
     'node_modules'
   ];
-  
+
   for (const file of devFiles) {
     try {
       await fs.rm(join(distPath, file), { recursive: true, force: true });
@@ -273,7 +273,7 @@ async function cleanupDevFiles() {
       // Ignore if file doesn't exist
     }
   }
-  
+
   console.log('   ✓ Development files cleaned');
 }
 
@@ -282,7 +282,7 @@ async function cleanupDevFiles() {
  */
 async function validateBuild() {
   const distPath = join(rootDir, 'dist');
-  
+
   // Check required files
   const requiredFiles = [
     'manifest.json',
@@ -299,7 +299,7 @@ async function validateBuild() {
     'blob.html',
     'blob.js'
   ];
-  
+
   for (const file of requiredFiles) {
     try {
       await fs.access(join(distPath, file));
@@ -308,21 +308,21 @@ async function validateBuild() {
       throw new Error(`Required file missing: ${file}`);
     }
   }
-  
+
   // Validate manifest
   try {
     const manifestContent = await fs.readFile(join(distPath, 'manifest.json'), 'utf8');
     const manifest = JSON.parse(manifestContent);
-    
+
     if (!manifest.name || !manifest.version || !manifest.manifest_version) {
       throw new Error('Manifest missing required fields');
     }
-    
+
     console.log(`   ✓ Manifest valid (v${manifest.version})`);
   } catch (error) {
     throw new Error(`Invalid manifest: ${error.message}`);
   }
-  
+
   console.log('   ✓ Build validation passed');
 }
 

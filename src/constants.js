@@ -19,7 +19,7 @@ export const TAB_LIMITS = {
 export function getTabLimitDescription(limit) {
   const descriptions = {
     2: getI18nMessage('tabLimitDesc2'),
-    3: getI18nMessage('tabLimitDesc3'), 
+    3: getI18nMessage('tabLimitDesc3'),
     4: getI18nMessage('tabLimitDesc4'),
     5: getI18nMessage('tabLimitDesc5'),
     6: getI18nMessage('tabLimitDesc6'),

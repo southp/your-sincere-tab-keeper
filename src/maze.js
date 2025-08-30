@@ -102,7 +102,7 @@ async function isCompletedMazeSession() {
 function showCompletedMazeMessage() {
   // Hide the normal maze interface
   document.querySelector('.maze-container').style.display = 'none';
-  
+
   // Show the completed maze message
   document.getElementById('completedMazeMessage').style.display = 'flex';
 }
@@ -112,23 +112,23 @@ function showCompletedMazeMessage() {
 document.addEventListener('DOMContentLoaded', async () => {
   // Initialize internationalization
   initializeI18n();
-  
+
   // Check if this is a completed maze that user navigated back to
   if (await isCompletedMazeSession()) {
     showCompletedMazeMessage();
     return; // Don't initialize the game
   }
-  
+
   // Load maze session data from storage first
   await loadMazeSessionData();
-  
+
   await initializeGame();
   setupEventListeners();
   await loadStats();
-  
+
   // Setup development debugging utilities
   setupMazeDebugUtilities();
-  
+
   // Handle different actions
   if (action === 'updateLimit') {
     challengeMessageEl.textContent = 'Solve this maze to update your tab limit!';
@@ -140,35 +140,35 @@ document.addEventListener('DOMContentLoaded', async () => {
  */
 function updateCanvasSize() {
   if (!canvas) return;
-  
+
   const wrapper = document.querySelector('.maze-wrapper');
   if (!wrapper) return;
-  
+
   // Get the container dimensions minus padding
   const wrapperStyle = getComputedStyle(wrapper);
   const wrapperPadding = parseInt(wrapperStyle.paddingLeft) + parseInt(wrapperStyle.paddingRight);
   const maxWidth = wrapper.clientWidth - wrapperPadding;
   const maxHeight = window.innerHeight * 0.6; // Max 60% of viewport height
-  
+
   // Calculate the optimal canvas size (square)
   const maxCanvasSize = Math.min(maxWidth, maxHeight, 800); // Cap at 800px for very large screens
   const minCanvasSize = 200; // Minimum size for usability
   const canvasSize = Math.max(minCanvasSize, Math.min(maxCanvasSize, maxWidth));
-  
+
   // Calculate cell size based on canvas size and maze size
   cellSize = Math.max(4, Math.floor(canvasSize / mazeModel.size));
-  
+
   // Adjust canvas size to be exact multiple of cell size for crisp rendering
   const actualCanvasSize = mazeModel.size * cellSize;
-  
+
   // Set canvas size (this automatically clears the canvas)
   canvas.width = actualCanvasSize;
   canvas.height = actualCanvasSize;
-  
+
   // Set CSS size for proper scaling on high-DPI displays
   canvas.style.width = actualCanvasSize + 'px';
   canvas.style.height = actualCanvasSize + 'px';
-  
+
   // Handle high-DPI displays for crisp rendering
   const dpr = window.devicePixelRatio || 1;
   if (dpr > 1) {
@@ -178,7 +178,7 @@ function updateCanvasSize() {
     canvas.style.height = actualCanvasSize + 'px';
     ctx.scale(dpr, dpr);
   }
-  
+
   // Re-render if maze exists
   if (mazeModel.grid.length > 0) {
     renderMaze(mazeModel);
@@ -192,19 +192,19 @@ async function loadMazeSessionData() {
   try {
     // Generate a unique session key based on current tab
     const sessionKey = `mazeSession_${Date.now()}`;
-    
+
     // Try to get existing session data
     const store = usageDataStore();
     const sessionData = await store.getMazeSession();
-    
+
     if (sessionData) {
       tabId = sessionData.tabId;
       action = sessionData.action;
       difficulty = sessionData.difficulty || 0;
-      
+
       mazeLogger.log('Loaded maze session data:', { tabId, action, difficulty });
       mazeLogger.log('Action loaded from storage:', action);
-      
+
       // Clear the session data to prevent reuse
       await store.clearMazeSession();
     } else {
@@ -230,7 +230,7 @@ async function loadMazeSessionData() {
 async function initializeGame() {
   canvas = document.getElementById('mazeCanvas');
   ctx = canvas.getContext('2d');
-  
+
   // Get current daily stats to determine difficulty
   let dailyMazesCompleted = 0;
   try {
@@ -241,57 +241,57 @@ async function initializeGame() {
   } catch (error) {
     mazeLogger.error('Error getting daily stats for difficulty:', error);
   }
-  
+
   // Set difficulty based on daily completed mazes and action type
   let calculatedDifficulty = dailyMazesCompleted;
-  
+
   // For updateLimit actions, ensure minimum Hard difficulty (index 3)
   if (action === 'updateLimit') {
     const minHardDifficulty = 3; // Hard level index
     calculatedDifficulty = Math.max(dailyMazesCompleted, minHardDifficulty);
   }
-  
+
   // Use stored difficulty as fallback, but prioritize calculated difficulty
   calculatedDifficulty = Math.max(difficulty, calculatedDifficulty);
   const difficultySettings = getDifficultySettings();
   currentDifficulty = Math.min(calculatedDifficulty, difficultySettings.length - 1);
   const currentDifficultySettings = difficultySettings[currentDifficulty];
-  
-  mazeLogger.log('Difficulty calculation:', { 
+
+  mazeLogger.log('Difficulty calculation:', {
     action,
-    storedDifficulty: difficulty, 
-    dailyMazesCompleted, 
+    storedDifficulty: difficulty,
+    dailyMazesCompleted,
     calculatedDifficulty,
-    finalDifficulty: currentDifficulty 
+    finalDifficulty: currentDifficulty
   });
-  
+
   // Initialize maze model with difficulty settings
   mazeModel.initialize(currentDifficultySettings);
   isHandlingCompletion = false; // Reset completion handler flag
-  
+
   // Calculate responsive canvas size after model is initialized
   updateCanvasSize();
-  
+
   // Add debounced resize listener for responsive updates
   let resizeTimeout;
   window.addEventListener('resize', () => {
     clearTimeout(resizeTimeout);
     resizeTimeout = setTimeout(updateCanvasSize, 100);
   });
-  
+
   // Update UI
   difficultyLevelEl.textContent = currentDifficultySettings.name;
   mazeSizeEl.textContent = `${mazeModel.size}x${mazeModel.size}`;
-  
+
   // Start timer
   gameStartTime = Date.now();
   startTimer();
-  
+
   // Set random motivation message
   const motivationMessages = getMotivationMessages();
   const randomMessage = motivationMessages[Math.floor(Math.random() * motivationMessages.length)];
   motivationMessageEl.textContent = randomMessage;
-  
+
   // Initial render
   renderMaze(mazeModel);
 }
@@ -305,9 +305,9 @@ function renderMaze(model) {
   // Clear canvas
   ctx.fillStyle = COLORS.background;
   ctx.fillRect(0, 0, canvas.width, canvas.height);
-  
+
   // Batch drawing operations for better performance
-  
+
   // Draw walls in one pass
   ctx.fillStyle = COLORS.wall;
   for (let y = 0; y < model.size; y++) {
@@ -317,7 +317,7 @@ function renderMaze(model) {
       }
     }
   }
-  
+
   // Draw paths in one pass
   ctx.fillStyle = COLORS.path;
   for (let y = 0; y < model.size; y++) {
@@ -327,7 +327,7 @@ function renderMaze(model) {
       }
     }
   }
-  
+
   // Draw goal
   ctx.fillStyle = COLORS.goal;
   ctx.fillRect(
@@ -336,41 +336,41 @@ function renderMaze(model) {
     cellSize - 4,
     cellSize - 4
   );
-  
+
   // Only draw borders for smaller mazes to avoid performance issues
   if (model.size <= 25) {
     ctx.strokeStyle = COLORS.border;
     ctx.lineWidth = 1;
     ctx.beginPath();
-    
+
     // Draw grid lines efficiently
     for (let i = 0; i <= model.size; i++) {
       // Vertical lines
       ctx.moveTo(i * cellSize, 0);
       ctx.lineTo(i * cellSize, model.size * cellSize);
-      
+
       // Horizontal lines
       ctx.moveTo(0, i * cellSize);
       ctx.lineTo(model.size * cellSize, i * cellSize);
     }
-    
+
     ctx.stroke();
   }
-  
+
   // Draw player
   ctx.fillStyle = COLORS.player;
   const playerX = model.playerPos.x * cellSize + 3;
   const playerY = model.playerPos.y * cellSize + 3;
   const playerSize = Math.max(4, cellSize - 6);
-  
+
   ctx.fillRect(playerX, playerY, playerSize, playerSize);
-  
+
   // Add player eyes (Chrome Dino style) - only if cell is big enough
   if (cellSize >= 8) {
     ctx.fillStyle = '#fff';
     const eyeSize = Math.max(1, Math.floor(cellSize / 10));
     const eyeOffset = Math.floor(cellSize * 0.3);
-    
+
     ctx.fillRect(
       model.playerPos.x * cellSize + eyeOffset,
       model.playerPos.y * cellSize + eyeOffset,
@@ -391,9 +391,9 @@ function renderMaze(model) {
  */
 function movePlayer(dx, dy) {
   const goalReached = mazeModel.movePlayer(dx, dy);
-  
+
   renderMaze(mazeModel);
-  
+
   // Check if goal reached
   if (goalReached) {
     handleMazeComplete();
@@ -405,7 +405,7 @@ function movePlayer(dx, dy) {
  */
 function showCompletionMessage() {
   const tip = getRandomTip();
-  
+
   // Update the overlay content with the productivity tip
   const overlayContent = document.querySelector('#mazeOverlay .overlay-content');
   overlayContent.innerHTML = `
@@ -418,7 +418,7 @@ function showCompletionMessage() {
     </div>
     <div class="loading-spinner"></div>
   `;
-  
+
   mazeOverlay.style.display = 'flex';
 }
 
@@ -427,10 +427,10 @@ function showCompletionMessage() {
  */
 async function handleMazeComplete() {
   if (isHandlingCompletion) return; // Prevent multiple completion handlers
-  
+
   isHandlingCompletion = true;
   stopTimer();
-  
+
   // Show completion overlay with productivity tip and send completion message
   // Note: TabManager will mark the maze as completed when it receives the MAZE_COMPLETED message
   showCompletionMessage();
@@ -443,7 +443,7 @@ async function handleMazeComplete() {
 async function sendMazeCompletionMessage() {
   try {
     mazeLogger.log('Sending maze completion message...');
-    
+
     await chrome.runtime.sendMessage({
       type: 'MAZE_COMPLETED',
       data: {
@@ -454,9 +454,9 @@ async function sendMazeCompletionMessage() {
         action: action
       }
     });
-    
+
     mazeLogger.log('Maze completion message sent successfully');
-    
+
     // Handle different completion types
     if (action === 'updateLimit') {
       // Extended delay to show productivity tip, then show limit update modal
@@ -469,7 +469,7 @@ async function sendMazeCompletionMessage() {
       mazeLogger.log('Normal maze completion - showing productivity tip for 5 seconds');
       // Note: Background script will wait for this delay before redirecting
     }
-    
+
   } catch (error) {
     mazeLogger.error('Error sending maze completion message:', error);
   }
@@ -485,7 +485,7 @@ async function showUpdateLimitModal() {
     mazeLogger.error('Update limit modal not found');
     return;
   }
-  
+
   // Set up the limit selector BEFORE showing the modal to prevent flash
   await setupLimitSelector();
   modal.style.display = 'flex';
@@ -505,54 +505,54 @@ async function setupLimitSelector() {
   } catch (error) {
     mazeLogger.error('Failed to get current tab limit:', error);
   }
-  
+
   let selectedLimit = currentLimit;
-  
+
   // Generate buttons dynamically with current limit selected and highlighted
   renderLimitButtons('limitOptions', currentLimit, currentLimit);
-  
+
   // Query elements fresh from the modal
   const modalLimitDesc = document.getElementById('modalLimitDescription');
   const confirmBtn = document.getElementById('confirmLimitBtn');
   const cancelBtn = document.getElementById('cancelLimitBtn');
-  
+
   if (!modalLimitDesc || !confirmBtn || !cancelBtn) {
     mazeLogger.error('Modal elements not found');
     return;
   }
-  
+
   // Function to update confirm button state
   const updateConfirmButton = (newSelectedLimit) => {
     const isUnchanged = newSelectedLimit === currentLimit;
     confirmBtn.disabled = isUnchanged;
-    confirmBtn.textContent = isUnchanged ? 
-      getI18nMessage('currentLimitSelected') : 
+    confirmBtn.textContent = isUnchanged ?
+      getI18nMessage('currentLimitSelected') :
       getI18nMessage('setLimitTo', [newSelectedLimit.toString()]);
   };
-  
+
   // Set up button event listeners using shared utility
   setupLimitButtonListeners('#limitOptions', (limit) => {
     selectedLimit = limit;
     updateLimitDescription('modalLimitDescription', limit);
     updateConfirmButton(limit);
   });
-  
+
   // Set initial description and confirm button state
   updateLimitDescription('modalLimitDescription', selectedLimit);
   updateConfirmButton(selectedLimit);
-  
+
   // Confirm button handler
   confirmBtn.addEventListener('click', async () => {
     try {
       confirmBtn.classList.add('loading');
       confirmBtn.disabled = true;
-      
+
       // Send new limit to background
       await chrome.runtime.sendMessage({
         type: 'UPDATE_TAB_LIMIT',
         limit: selectedLimit
       });
-      
+
       // Show success message
       const modal = document.getElementById('updateLimitModal');
       modal.innerHTML = `
@@ -569,14 +569,14 @@ async function setupLimitSelector() {
           </div>
         </div>
       `;
-      
+
       // Add event listener to the OK button
       const okBtn = document.getElementById('okBtn');
       okBtn.addEventListener('click', () => {
         // Navigate current tab to options page instead of opening new tab
         window.location.href = chrome.runtime.getURL('src/options.html');
       });
-      
+
     } catch (error) {
       mazeLogger.error('Error updating tab limit:', error);
       alert(getI18nMessage('failedToUpdateTabLimit'));
@@ -585,7 +585,7 @@ async function setupLimitSelector() {
       confirmBtn.disabled = false;
     }
   });
-  
+
   // Cancel button handler
   cancelBtn.addEventListener('click', () => {
     window.close();
@@ -620,7 +620,7 @@ function stopTimer() {
 async function loadStats() {
   try {
     const response = await chrome.runtime.sendMessage({ type: 'GET_STATS' });
-    
+
     if (response && !response.error) {
       dailyMazesEl.textContent = response.dailyMazesCompleted || 0;
       totalMazesEl.textContent = response.mazesCompleted || 0;
@@ -663,7 +663,7 @@ function setupEventListeners() {
         break;
     }
   });
-  
+
 }
 
 // Prevent context menu on canvas
@@ -684,9 +684,9 @@ async function setupMazeDebugUtilities() {
   if (!(await isDevelopment())) {
     return; // Only enable in development mode
   }
-  
+
   mazeLogger.log('🔧 Maze debug utilities enabled for development');
-  
+
   // Expose maze debugging utilities
   globalThis.debugMaze = {
     // Core maze inspection
@@ -700,7 +700,7 @@ async function setupMazeDebugUtilities() {
       tabId,
       difficulty
     }),
-    
+
     // Difficulty manipulation
     setDifficulty: async (newDifficulty) => {
       const allDifficultySettings = getDifficultySettings();
@@ -708,73 +708,73 @@ async function setupMazeDebugUtilities() {
         console.error(`❌ Invalid difficulty. Must be 0-${allDifficultySettings.length - 1}`);
         return;
       }
-      
+
       currentDifficulty = newDifficulty;
       const difficultySettings = allDifficultySettings[currentDifficulty];
-      
+
       // Regenerate maze with new difficulty
       mazeModel.initialize(difficultySettings);
       updateCanvasSize();
       renderMaze(mazeModel);
-      
+
       // Update UI
       difficultyLevelEl.textContent = difficultySettings.name;
       mazeSizeEl.textContent = `${mazeModel.size}x${mazeModel.size}`;
-      
+
       mazeLogger.log(`🎯 Set difficulty to ${currentDifficulty} (${difficultySettings.name})`);
     },
-    
+
     // Maze completion helpers
     finishMaze: () => {
       mazeLogger.log('🏁 Force finishing maze...');
       handleMazeComplete();
     },
-    
+
     solveInstantly: () => {
       // Move player to goal position
       mazeModel.playerPos.x = mazeModel.goalPos.x;
       mazeModel.playerPos.y = mazeModel.goalPos.y;
       renderMaze(mazeModel);
-      
+
       mazeLogger.log('✨ Teleported player to goal');
-      
+
       // Trigger completion
       setTimeout(() => {
         handleMazeComplete();
       }, 500);
     },
-    
+
     // Maze inspection utilities
     getMazeGrid: () => mazeModel.grid,
     getPlayerPos: () => ({ ...mazeModel.playerPos }),
     getGoalPos: () => ({ ...mazeModel.goalPos }),
     getMazeSize: () => mazeModel.size,
-    
+
     // Path finding helpers
     findPath: () => {
       // Simple pathfinding to show solution
       const path = [];
       const visited = new Set();
       const queue = [{ ...mazeModel.playerPos, path: [{ ...mazeModel.playerPos }] }];
-      
+
       while (queue.length > 0) {
         const { x, y, path: currentPath } = queue.shift();
         const key = `${x},${y}`;
-        
+
         if (visited.has(key)) continue;
         visited.add(key);
-        
+
         if (x === mazeModel.goalPos.x && y === mazeModel.goalPos.y) {
           return currentPath;
         }
-        
+
         // Check all 4 directions
         const directions = [[0, 1], [1, 0], [0, -1], [-1, 0]];
         for (const [dx, dy] of directions) {
           const newX = x + dx;
           const newY = y + dy;
-          
-          if (newX >= 0 && newX < mazeModel.size && 
+
+          if (newX >= 0 && newX < mazeModel.size &&
               newY >= 0 && newY < mazeModel.size &&
               mazeModel.grid[newY][newX] !== WALL) {
             queue.push({
@@ -787,7 +787,7 @@ async function setupMazeDebugUtilities() {
       }
       return null; // No path found
     },
-    
+
     // Visual helpers
     highlightPath: () => {
       const path = debugMaze.findPath();
@@ -795,19 +795,19 @@ async function setupMazeDebugUtilities() {
         console.log('❌ No path found to goal');
         return;
       }
-      
+
       console.log(`🗺️ Path to goal (${path.length} steps):`, path);
-      
+
       // Visual highlight on canvas
       const ctx = canvas.getContext('2d');
       ctx.strokeStyle = '#ffff00';
       ctx.lineWidth = 3;
       ctx.beginPath();
-      
+
       for (let i = 0; i < path.length - 1; i++) {
         const from = path[i];
         const to = path[i + 1];
-        
+
         ctx.moveTo(
           from.x * cellSize + cellSize / 2,
           from.y * cellSize + cellSize / 2
@@ -818,22 +818,22 @@ async function setupMazeDebugUtilities() {
         );
       }
       ctx.stroke();
-      
+
       return path;
     },
-    
+
     // Timer manipulation
     resetTimer: () => {
       gameStartTime = Date.now();
       mazeLogger.log('⏱️ Reset timer');
     },
-    
+
     // Render helpers
     rerender: () => {
       renderMaze(mazeModel);
       mazeLogger.log('🎨 Re-rendered maze');
     },
-    
+
     regenerate: () => {
       const difficultySettings = getDifficultySettings()[currentDifficulty];
       mazeModel.initialize(difficultySettings);
@@ -841,7 +841,7 @@ async function setupMazeDebugUtilities() {
       renderMaze(mazeModel);
       mazeLogger.log('🔄 Regenerated maze');
     },
-    
+
     // Help function
     help: () => {
       console.log(`
@@ -882,7 +882,7 @@ Example Usage:
       `);
     }
   };
-  
+
   // Show initial help message
   setTimeout(() => {
     console.log('🧩 Maze debugging utilities loaded! Type debugMaze.help() for usage.');

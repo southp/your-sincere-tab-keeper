@@ -5,6 +5,9 @@
 
 import { describe, test, expect, beforeEach, jest } from '@jest/globals';
 
+// Import after mocking
+import { isSpecialTab, isMazeTab, isPopupWindow } from './utils.js';
+
 // Mock Chrome APIs
 const mockChrome = {
   windows: {
@@ -17,9 +20,6 @@ const mockChrome = {
 
 // Set up global chrome mock
 global.chrome = mockChrome;
-
-// Import after mocking
-import { isSpecialTab, isMazeTab, isPopupWindow } from './utils.js';
 
 describe('Utils', () => {
   beforeEach(() => {
@@ -83,30 +83,30 @@ describe('Utils', () => {
 
     test('returns true for popup window type', async () => {
       mockChrome.windows.get.mockResolvedValue({ type: 'popup' });
-      
+
       const tab = { id: 1, url: 'https://accounts.google.com/oauth', windowId: 123 };
       const result = await isPopupWindow(tab);
-      
+
       expect(result).toBe(true);
       expect(mockChrome.windows.get).toHaveBeenCalledWith(123);
     });
 
     test('returns false for normal window type', async () => {
       mockChrome.windows.get.mockResolvedValue({ type: 'normal' });
-      
+
       const tab = { id: 1, url: 'https://example.com', windowId: 123 };
       const result = await isPopupWindow(tab);
-      
+
       expect(result).toBe(false);
       expect(mockChrome.windows.get).toHaveBeenCalledWith(123);
     });
 
     test('returns false when window info cannot be retrieved', async () => {
       mockChrome.windows.get.mockRejectedValue(new Error('Window not found'));
-      
+
       const tab = { id: 1, url: 'https://example.com', windowId: 123 };
       const result = await isPopupWindow(tab);
-      
+
       expect(result).toBe(false);
     });
   });

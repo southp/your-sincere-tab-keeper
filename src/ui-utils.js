@@ -22,11 +22,11 @@ export async function setLocaleOverride(locale) {
     console.warn('Locale override is only available in development mode');
     return false;
   }
-  
+
   if (locale === null || locale === undefined || locale === 'default') {
     localeOverride = null;
     alternateMessages = {};
-    
+
     // Use Chrome storage API instead of localStorage for service worker compatibility
     try {
       await chrome.storage.local.remove('debugLocaleOverride');
@@ -36,28 +36,28 @@ export async function setLocaleOverride(locale) {
         localStorage.removeItem('debugLocaleOverride');
       }
     }
-    
+
     console.log('🌍 Locale override disabled - using browser default');
-    
+
     // Refresh i18n on current page if DOM is available
     if (typeof document !== 'undefined') {
       initializeI18n();
     }
     return true;
   }
-  
+
   try {
     // Validate locale and load messages
     const messagesUrl = chrome.runtime.getURL(`_locales/${locale}/messages.json`);
     const response = await fetch(messagesUrl);
-    
+
     if (!response.ok) {
       throw new Error(`Locale '${locale}' not found`);
     }
-    
+
     alternateMessages = await response.json();
     localeOverride = locale;
-    
+
     // Use Chrome storage API instead of localStorage for service worker compatibility
     try {
       await chrome.storage.local.set({ debugLocaleOverride: locale });
@@ -67,16 +67,16 @@ export async function setLocaleOverride(locale) {
         localStorage.setItem('debugLocaleOverride', locale);
       }
     }
-    
+
     console.log(`🌍 Locale override set to: ${locale}`);
     console.log(`📝 Loaded ${Object.keys(alternateMessages).length} message keys`);
-    
+
     // Refresh i18n on current page if DOM is available
     if (typeof document !== 'undefined') {
       initializeI18n();
     }
     return true;
-    
+
   } catch (error) {
     console.error(`Failed to set locale override to '${locale}':`, error);
     return false;
@@ -94,7 +94,7 @@ export function getI18nMessage(messageName, substitutions) {
   if (localeOverride && alternateMessages[messageName]) {
     const messageData = alternateMessages[messageName];
     let message = messageData.message || messageData;
-    
+
     // Handle substitutions
     if (substitutions) {
       const subs = Array.isArray(substitutions) ? substitutions : [substitutions];
@@ -103,10 +103,10 @@ export function getI18nMessage(messageName, substitutions) {
         message = message.replace(new RegExp(`\\$\\{${index}\\}`, 'g'), sub);
       });
     }
-    
+
     return message;
   }
-  
+
   // Fallback to standard Chrome i18n
   return chrome.i18n.getMessage(messageName, substitutions);
 }
@@ -116,9 +116,9 @@ export function getI18nMessage(messageName, substitutions) {
  */
 async function initializeLocaleOverride() {
   if (!(await isDevelopment())) return;
-  
+
   let savedLocale = null;
-  
+
   // Try Chrome storage API first (for service worker compatibility)
   try {
     const result = await chrome.storage.local.get('debugLocaleOverride');
@@ -129,7 +129,7 @@ async function initializeLocaleOverride() {
       savedLocale = localStorage.getItem('debugLocaleOverride');
     }
   }
-  
+
   if (savedLocale) {
     await setLocaleOverride(savedLocale);
   }
@@ -188,7 +188,7 @@ export function renderLimitButtons(containerId, selectedLimit = TAB_LIMITS.DEFAU
     uiLogger.error(`Container with ID "${containerId}" not found`);
     return;
   }
-  
+
   container.innerHTML = generateLimitButtonsHTML(selectedLimit, currentLimit);
 }
 
@@ -199,15 +199,15 @@ export function renderLimitButtons(containerId, selectedLimit = TAB_LIMITS.DEFAU
  */
 export function setupLimitButtonListeners(containerSelector, onLimitChange) {
   const buttons = document.querySelectorAll(`${containerSelector} .limit-btn`);
-  
+
   buttons.forEach(button => {
     button.addEventListener('click', () => {
       // Remove previous selection
       buttons.forEach(btn => btn.classList.remove('selected'));
-      
+
       // Add selection to clicked button
       button.classList.add('selected');
-      
+
       // Get selected limit and call callback
       const limit = parseInt(button.dataset.limit);
       if (onLimitChange) {
@@ -237,13 +237,13 @@ export function updateLimitDescription(elementId, limit) {
 export function formatHourRange(hour) {
   const startHour = hour;
   const endHour = (hour + 1) % 24;
-  
+
   const formatHour = (h) => {
     if (h === 0) return '12 AM';
     if (h < 12) return `${h} AM`;
     if (h === 12) return '12 PM';
     return `${h - 12} PM`;
   };
-  
+
   return `${formatHour(startHour)}-${formatHour(endHour)}`;
 }

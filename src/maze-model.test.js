@@ -44,9 +44,9 @@ describe('MazeModel', () => {
   describe('initialize', () => {
     test('sets up maze correctly', () => {
       const difficulty = { size: 7, name: 'Test' };
-      
+
       maze.initialize(difficulty);
-      
+
       expect(maze.size).toBe(7);
       expect(maze.difficulty).toBe(difficulty);
       expect(maze.isComplete).toBe(false);
@@ -56,9 +56,9 @@ describe('MazeModel', () => {
 
     test('ensures odd size', () => {
       const difficulty = { size: 8, name: 'Test' };
-      
+
       maze.initialize(difficulty);
-      
+
       expect(maze.size).toBe(9); // 8 -> 9 (odd)
     });
   });
@@ -70,32 +70,32 @@ describe('MazeModel', () => {
 
     test('creates grid with correct dimensions', () => {
       maze.generate();
-      
+
       expect(maze.grid).toHaveLength(5);
       expect(maze.grid[0]).toHaveLength(5);
     });
 
     test('sets start position as PATH', () => {
       maze.generate();
-      
+
       expect(maze.grid[1][1]).toBe(PATH);
     });
 
     test('sets player position correctly', () => {
       maze.generate();
-      
+
       expect(maze.playerPos).toEqual({ x: 1, y: 1 });
     });
 
     test('places goal at different position from start', () => {
       maze.generate();
-      
+
       expect(maze.goalPos.x !== 1 || maze.goalPos.y !== 1).toBe(true);
     });
 
     test('marks goal position correctly in grid', () => {
       maze.generate();
-      
+
       expect(maze.grid[maze.goalPos.y][maze.goalPos.x]).toBe(GOAL);
     });
   });
@@ -108,9 +108,9 @@ describe('MazeModel', () => {
 
     test('returns valid neighbors', () => {
       const neighbors = maze.getUnvisitedNeighbors(3, 3);
-      
+
       expect(neighbors.length).toBeLessThanOrEqual(4);
-      
+
       neighbors.forEach(neighbor => {
         expect(neighbor.x).toBeGreaterThan(0);
         expect(neighbor.x).toBeLessThan(6);
@@ -122,9 +122,9 @@ describe('MazeModel', () => {
 
     test('returns empty array when all neighbors visited', () => {
       maze.grid = Array(7).fill().map(() => Array(7).fill(PATH));
-      
+
       const neighbors = maze.getUnvisitedNeighbors(3, 3);
-      
+
       expect(neighbors).toEqual([]);
     });
   });
@@ -139,9 +139,9 @@ describe('MazeModel', () => {
       maze.grid = Array(5).fill().map(() => Array(5).fill(PATH));
       maze.playerPos = { x: 2, y: 2 };
       maze.goalPos = { x: 4, y: 4 }; // Different from move target
-      
+
       const result = maze.movePlayer(1, 0); // Move right
-      
+
       expect(maze.playerPos).toEqual({ x: 3, y: 2 });
       expect(result).toBe(false);
     });
@@ -150,9 +150,9 @@ describe('MazeModel', () => {
       maze.grid = Array(5).fill().map(() => Array(5).fill(WALL));
       maze.grid[2][2] = PATH; // Only current position is path
       maze.playerPos = { x: 2, y: 2 };
-      
+
       const result = maze.movePlayer(1, 0); // Try to move right into wall
-      
+
       expect(maze.playerPos).toEqual({ x: 2, y: 2 });
       expect(result).toBe(false);
     });
@@ -160,9 +160,9 @@ describe('MazeModel', () => {
     test('is blocked by boundaries', () => {
       maze.grid = Array(5).fill().map(() => Array(5).fill(PATH));
       maze.playerPos = { x: 4, y: 2 }; // At right edge
-      
+
       const result = maze.movePlayer(1, 0); // Try to move beyond boundary
-      
+
       expect(maze.playerPos).toEqual({ x: 4, y: 2 });
       expect(result).toBe(false);
     });
@@ -171,9 +171,9 @@ describe('MazeModel', () => {
       maze.grid = Array(5).fill().map(() => Array(5).fill(PATH));
       maze.playerPos = { x: 2, y: 2 };
       maze.goalPos = { x: 3, y: 2 };
-      
+
       const result = maze.movePlayer(1, 0); // Move to goal
-      
+
       expect(maze.playerPos).toEqual({ x: 3, y: 2 });
       expect(maze.isComplete).toBe(true);
       expect(result).toBe(true);
@@ -183,9 +183,9 @@ describe('MazeModel', () => {
       maze.grid = Array(5).fill().map(() => Array(5).fill(PATH));
       maze.playerPos = { x: 2, y: 2 };
       maze.isComplete = true;
-      
+
       const result = maze.movePlayer(1, 0);
-      
+
       expect(maze.playerPos).toEqual({ x: 2, y: 2 });
       expect(result).toBe(false);
     });
@@ -194,14 +194,14 @@ describe('MazeModel', () => {
   describe('getElapsedTime', () => {
     test('returns 0 when no start time', () => {
       maze.startTime = null;
-      
+
       expect(maze.getElapsedTime()).toBe(0);
     });
 
     test('calculates time correctly', () => {
       maze.startTime = 1000;
       jest.spyOn(Date, 'now').mockReturnValue(1500);
-      
+
       expect(maze.getElapsedTime()).toBe(500);
     });
   });
@@ -213,19 +213,19 @@ describe('MazeModel', () => {
 
     test('returns true for valid path position', () => {
       maze.grid = Array(5).fill().map(() => Array(5).fill(PATH));
-      
+
       expect(maze.isValidPosition(2, 2)).toBe(true);
     });
 
     test('returns false for wall position', () => {
       maze.grid = Array(5).fill().map(() => Array(5).fill(WALL));
-      
+
       expect(maze.isValidPosition(2, 2)).toBe(false);
     });
 
     test('returns false for out-of-bounds positions', () => {
       maze.grid = Array(5).fill().map(() => Array(5).fill(PATH));
-      
+
       expect(maze.isValidPosition(-1, 2)).toBe(false);
       expect(maze.isValidPosition(5, 2)).toBe(false);
       expect(maze.isValidPosition(2, -1)).toBe(false);
@@ -236,7 +236,7 @@ describe('MazeModel', () => {
   describe('isValidMaze', () => {
     test('returns false for empty grid', () => {
       maze.grid = [];
-      
+
       expect(maze.isValidMaze()).toBe(false);
     });
 
@@ -250,7 +250,7 @@ describe('MazeModel', () => {
         [WALL, WALL, WALL, WALL, WALL]
       ];
       maze.goalPos = { x: 3, y: 3 };
-      
+
       expect(maze.isValidMaze()).toBe(true);
     });
 
@@ -264,7 +264,7 @@ describe('MazeModel', () => {
         [WALL, WALL, WALL, WALL, WALL]
       ];
       maze.goalPos = { x: 3, y: 1 };
-      
+
       expect(maze.isValidMaze()).toBe(false);
     });
   });
@@ -272,22 +272,22 @@ describe('MazeModel', () => {
   describe('Integration Tests', () => {
     test('full maze generation creates valid solvable maze', () => {
       const difficulty = { size: 9, name: 'Test' };
-      
+
       maze.initialize(difficulty);
-      
+
       // Basic structure tests
       expect(maze.size).toBe(9);
       expect(maze.grid).toHaveLength(9);
       expect(maze.grid[0]).toHaveLength(9);
-      
+
       // Start position should be correct
       expect(maze.playerPos).toEqual({ x: 1, y: 1 });
       expect(maze.grid[1][1]).toBe(PATH);
-      
+
       // Goal should be placed and different from start
       expect(maze.goalPos.x !== 1 || maze.goalPos.y !== 1).toBe(true);
       expect(maze.grid[maze.goalPos.y][maze.goalPos.x]).toBe(GOAL);
-      
+
       // Maze should be solvable
       expect(maze.isValidMaze()).toBe(true);
     });
@@ -304,18 +304,18 @@ describe('MazeModel', () => {
       maze.playerPos = { x: 1, y: 1 };
       maze.goalPos = { x: 3, y: 3 };
       maze.isComplete = false;
-      
+
       // Move right twice
       expect(maze.movePlayer(1, 0)).toBe(false);
       expect(maze.playerPos).toEqual({ x: 2, y: 1 });
-      
+
       expect(maze.movePlayer(1, 0)).toBe(false);
       expect(maze.playerPos).toEqual({ x: 3, y: 1 });
-      
+
       // Move down twice
       expect(maze.movePlayer(0, 1)).toBe(false);
       expect(maze.playerPos).toEqual({ x: 3, y: 2 });
-      
+
       expect(maze.movePlayer(0, 1)).toBe(true); // Reach goal
       expect(maze.playerPos).toEqual({ x: 3, y: 3 });
       expect(maze.isComplete).toBe(true);

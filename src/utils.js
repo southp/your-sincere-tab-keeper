@@ -24,7 +24,7 @@ export function isSpecialTab(tab) {
  */
 export function isMazeTab(tab) {
   if (!tab.url) return false;
-  
+
   // Check if the URL is from our extension and points to maze.html
   const extensionBaseUrl = chrome.runtime.getURL('');
   return tab.url.startsWith(extensionBaseUrl) && tab.url.includes('maze.html');
@@ -37,11 +37,11 @@ export function isMazeTab(tab) {
  */
 export async function isPopupWindow(tab) {
   if (!tab.windowId) return false;
-  
+
   try {
     // Get the window information to check its type
     const window = await chrome.windows.get(tab.windowId);
-    
+
     // Return true if this is a popup window
     return window.type === 'popup';
   } catch (error) {

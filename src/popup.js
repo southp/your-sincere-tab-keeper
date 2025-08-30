@@ -51,7 +51,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 async function loadStats() {
   try {
     const response = await chrome.runtime.sendMessage({ type: 'GET_STATS' });
-    
+
     if (response && !response.error) {
       currentLimitEl.textContent = response.tabLimit;
       mazesCompletedEl.textContent = response.mazesCompleted;
@@ -72,12 +72,12 @@ async function loadStats() {
 async function checkCurrentTabs() {
   try {
     const tabs = await chrome.tabs.query({});
-    
+
     // Filter out special tabs and maze tabs
     const regularTabs = tabs.filter(tab => !isSpecialTab(tab) && !isMazeTab(tab));
-    
+
     tabCountEl.textContent = regularTabs.length;
-    
+
     // Highlight if over limit
     const currentLimit = parseInt(currentLimitEl.textContent);
     if (regularTabs.length > currentLimit) {
@@ -85,7 +85,7 @@ async function checkCurrentTabs() {
     } else {
       tabCountEl.classList.remove('over-limit');
     }
-    
+
   } catch (error) {
     popupLogger.error('Error checking tabs:', error);
     tabCountEl.textContent = '?';
@@ -99,10 +99,10 @@ async function checkForActiveMaze() {
   try {
     const tabs = await chrome.tabs.query({});
     const mazeTabs = tabs.filter(tab => tab.url && tab.url.includes('maze.html'));
-    
+
     if (mazeTabs.length > 0) {
       mazeStatusEl.style.display = 'block';
-      
+
       // Add click handler to focus maze tab
       mazeStatusEl.addEventListener('click', async () => {
         try {
@@ -112,7 +112,7 @@ async function checkForActiveMaze() {
           popupLogger.error('Failed to focus maze tab:', error);
         }
       });
-      
+
       mazeStatusEl.style.cursor = 'pointer';
     } else {
       mazeStatusEl.style.display = 'none';
@@ -145,13 +145,13 @@ async function handleUpdateLimit() {
   try {
     updateLimitBtn.classList.add('loading');
     updateLimitBtn.disabled = true;
-    
+
     // Get current session difficulty and ensure minimum Hard level for limit updates
     const response = await chrome.runtime.sendMessage({ type: 'GET_STATS' });
     const currentDifficulty = response?.dailyMazesCompleted || 0;
     const minHardDifficulty = 3; // Hard level index
     const updateLimitDifficulty = Math.max(currentDifficulty, minHardDifficulty);
-    
+
     // Store maze session data using data store
     const store = usageDataStore();
     await store.setMazeSession({
@@ -159,14 +159,14 @@ async function handleUpdateLimit() {
       difficulty: updateLimitDifficulty,
       timestamp: Date.now()
     });
-    
+
     // Create a new tab with maze for limit update
     const mazeUrl = chrome.runtime.getURL('src/maze.html');
     await chrome.tabs.create({ url: mazeUrl });
-    
+
     // Close popup
     window.close();
-    
+
   } catch (error) {
     popupLogger.error('Error creating maze tab for limit update:', error);
     showError(getI18nMessage('failedToStartUpdate'));
@@ -183,13 +183,13 @@ async function handleViewStats() {
   try {
     viewStatsBtn.classList.add('loading');
     viewStatsBtn.disabled = true;
-    
+
     // Open options page with stats focus
     await chrome.runtime.openOptionsPage();
-    
+
     // Close popup
     window.close();
-    
+
   } catch (error) {
     popupLogger.error('Error opening options page:', error);
     showError(getI18nMessage('failedToOpenStats'));
@@ -219,9 +219,9 @@ function showError(message) {
     z-index: 1000;
   `;
   errorDiv.textContent = message;
-  
+
   document.body.appendChild(errorDiv);
-  
+
   // Remove after 3 seconds
   setTimeout(() => {
     if (errorDiv.parentNode) {
@@ -237,7 +237,7 @@ async function checkForExistingMaze() {
   try {
     const store = usageDataStore();
     const session = await store.getMazeSession();
-    
+
     if (session && session.tabId) {
       showSpeechBubble(getI18nMessage('alreadyHaveAMaze'), getI18nMessage('focusOnCurrentMaze'));
     }
@@ -260,7 +260,7 @@ function showSpeechBubble(title, message) {
     </div>
     <div class="speech-bubble-arrow"></div>
   `;
-  
+
   // Add CSS for speech bubble
   const style = document.createElement('style');
   style.textContent = `
@@ -316,10 +316,10 @@ function showSpeechBubble(title, message) {
       }
     }
   `;
-  
+
   document.head.appendChild(style);
   document.body.appendChild(speechBubble);
-  
+
   // Auto-remove after 3 seconds
   setTimeout(() => {
     speechBubble.style.animation = 'speechBubbleSlide 0.3s ease-in reverse';

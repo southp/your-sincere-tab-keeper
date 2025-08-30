@@ -39,10 +39,10 @@ describe('UI Utils', () => {
     it('should format all 24 hours with valid patterns', () => {
       for (let hour = 0; hour < 24; hour++) {
         const formatted = formatHourRange(hour);
-        
+
         // Verify format pattern: should match "XX AM-XX AM" or "XX PM-XX PM" or mixed
         expect(formatted).toMatch(/^\d{1,2} (AM|PM)-\d{1,2} (AM|PM)$/);
-        
+
         // Should contain exactly one dash
         expect(formatted.split('-')).toHaveLength(2);
       }

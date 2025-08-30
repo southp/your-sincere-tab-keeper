@@ -1,6 +1,6 @@
 /**
  * Usage Data Store - Centralized storage operations with semantic API
- * 
+ *
  * This module provides a clean, testable interface for all Chrome storage operations,
  * eliminating direct chrome.storage.local usage throughout the codebase.
  * All methods are unit-testable and provide clear semantic naming for tab keeper usage data.
@@ -14,7 +14,7 @@ class UsageDataStore {
     // Allow injection of storage provider for testing
     this.storage = storageProvider || chrome?.storage?.local;
     this.logger = new Logger('USAGE-DATA-STORE');
-    
+
     if (!this.storage) {
       throw new Error('Storage provider is required');
     }
@@ -25,8 +25,8 @@ class UsageDataStore {
    */
   getTodayKey() {
     const today = new Date();
-    return today.getFullYear() + '-' + 
-           String(today.getMonth() + 1).padStart(2, '0') + '-' + 
+    return today.getFullYear() + '-' +
+           String(today.getMonth() + 1).padStart(2, '0') + '-' +
            String(today.getDate()).padStart(2, '0');
   }
 
@@ -106,7 +106,7 @@ class UsageDataStore {
   }
 
   // =============================================================================
-  // STATISTICS OPERATIONS  
+  // STATISTICS OPERATIONS
   // =============================================================================
 
   /**
@@ -117,7 +117,7 @@ class UsageDataStore {
       const result = await this.storage.get([
         'mazesCompleted', 'blockedAttempts', 'tabLimit', 'installDate'
       ]);
-      
+
       return {
         mazesCompleted: result.mazesCompleted || 0,
         blockedAttempts: result.blockedAttempts || 0,
@@ -201,10 +201,10 @@ class UsageDataStore {
       const todayKey = this.getTodayKey();
       const result = await this.storage.get(['dailyMazes']);
       const dailyMazes = result.dailyMazes || {};
-      
+
       dailyMazes[todayKey] = (dailyMazes[todayKey] || 0) + 1;
       await this.storage.set({ dailyMazes });
-      
+
       const newCount = dailyMazes[todayKey];
       this.logger.log(`Incremented today's maze count to ${newCount}`);
       return newCount;
@@ -222,10 +222,10 @@ class UsageDataStore {
       const todayKey = this.getTodayKey();
       const result = await this.storage.get(['dailyTabLimits']);
       const dailyTabLimits = result.dailyTabLimits || {};
-      
+
       dailyTabLimits[todayKey] = tabLimit;
       await this.storage.set({ dailyTabLimits });
-      
+
       this.logger.log(`Recorded today's tab limit: ${tabLimit}`);
     } catch (error) {
       this.logger.error('Failed to record today\'s tab limit:', error);
@@ -241,10 +241,10 @@ class UsageDataStore {
       const todayKey = this.getTodayKey();
       const result = await this.storage.get(['dailyBlockedAttempts']);
       const dailyBlockedAttempts = result.dailyBlockedAttempts || {};
-      
+
       dailyBlockedAttempts[todayKey] = (dailyBlockedAttempts[todayKey] || 0) + 1;
       await this.storage.set({ dailyBlockedAttempts });
-      
+
       const newCount = dailyBlockedAttempts[todayKey];
       this.logger.log(`Incremented today's blocked count to ${newCount}`);
       return newCount;
@@ -262,7 +262,7 @@ class UsageDataStore {
       const result = await this.storage.get([
         'dailyMazes', 'dailyTabLimits', 'dailyBlockedAttempts'
       ]);
-      
+
       return {
         dailyMazes: result.dailyMazes || {},
         dailyTabLimits: result.dailyTabLimits || {},
@@ -357,15 +357,15 @@ class UsageDataStore {
       const now = Date.now();
       const result = await this.storage.get(['limitHitTimestamps']);
       const timestamps = result.limitHitTimestamps || [];
-      
+
       // Add current timestamp
       timestamps.push(now);
-      
+
       // Keep only last 100 timestamps to prevent storage bloat
       const recentTimestamps = timestamps.slice(-100);
-      
+
       await this.storage.set({ limitHitTimestamps: recentTimestamps });
-      
+
       this.logger.log('Logged limit hit timestamp:', new Date(now).toLocaleString());
       return now;
     } catch (error) {
@@ -407,7 +407,7 @@ class UsageDataStore {
   async calculatePeakActivityHour() {
     try {
       const timestamps = await this.getLimitHitTimestamps();
-      
+
       // Need at least 10 data points for meaningful analysis
       if (timestamps.length < 10) {
         return null;
@@ -415,7 +415,7 @@ class UsageDataStore {
 
       // Count hits by hour (0-23)
       const hourCounts = new Array(24).fill(0);
-      
+
       timestamps.forEach(timestamp => {
         const date = new Date(timestamp);
         const hour = date.getHours();
@@ -425,7 +425,7 @@ class UsageDataStore {
       // Find hour with most hits
       let maxCount = 0;
       let peakHour = 0;
-      
+
       hourCounts.forEach((count, hour) => {
         if (count > maxCount) {
           maxCount = count;
@@ -457,7 +457,7 @@ class UsageDataStore {
     try {
       // Initialize install date if not set
       await this.initializeInstallDate();
-      
+
       // Ensure tab limit is set
       const tabLimit = await this.getTabLimit();
       if (tabLimit === TAB_LIMITS.DEFAULT) {

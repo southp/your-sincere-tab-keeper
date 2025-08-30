@@ -13,7 +13,7 @@ class TrendGraph extends HTMLElement {
   constructor() {
     super();
     this.attachShadow({ mode: 'open' });
-    
+
     // Component state
     this.period = 'current-month';
     this.granularity = 'daily';
@@ -22,23 +22,23 @@ class TrendGraph extends HTMLElement {
       dailyTabLimits: {},
       dailyBlockedAttempts: {}
     };
-    
+
     // Chart dimensions and styling
     this.dimensions = {
       width: 800,
       height: 300,
       margin: { top: 20, right: 80, bottom: 60, left: 60 }
     };
-    
+
     this.colors = {
       mazes: '#4ecdc4',      // Teal - matches maze goal color
-      tabLimit: '#ff6b6b',   // Red - matches maze player color  
+      tabLimit: '#ff6b6b',   // Red - matches maze player color
       blocked: '#ffd93d',    // Yellow - warning/blocked color
       grid: '#e5e5e5',
       text: '#666666',
       background: '#ffffff'
     };
-    
+
     this.render();
     this.setupEventListeners();
   }
@@ -300,7 +300,7 @@ class TrendGraph extends HTMLElement {
       });
     });
 
-    // Granularity controls  
+    // Granularity controls
     this.shadowRoot.querySelectorAll('.granularity-btn').forEach(btn => {
       btn.addEventListener('click', (e) => {
         this.shadowRoot.querySelectorAll('.granularity-btn').forEach(b => b.classList.remove('active'));
@@ -314,11 +314,11 @@ class TrendGraph extends HTMLElement {
 
   updateChart() {
     const chartContainer = this.shadowRoot.querySelector('.chart-container');
-    
+
     // Generate date range for current period
     const dateRange = this.getDateRange();
     const aggregatedData = this.aggregateData(dateRange);
-    
+
     if (aggregatedData.length === 0) {
       this.showNoData();
       return;
@@ -326,7 +326,7 @@ class TrendGraph extends HTMLElement {
 
     // Create SVG chart
     const svg = this.createSVGChart(aggregatedData);
-    
+
     // Preserve tooltip and only clear other content
     const tooltip = chartContainer.querySelector('.tooltip');
     chartContainer.innerHTML = '';
@@ -343,7 +343,7 @@ class TrendGraph extends HTMLElement {
     if (this.period === 'current-month') {
       const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
       const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
-      
+
       for (let d = new Date(startOfMonth); d <= endOfMonth; d.setDate(d.getDate() + 1)) {
         dates.push(new Date(d));
       }
@@ -390,7 +390,7 @@ class TrendGraph extends HTMLElement {
           blocked: 0,
           count: 0
         };
-        
+
         week.dates.forEach(date => {
           const dateKey = this.formatDateKey(date);
           weekData.mazes += this.data.dailyMazes[dateKey] || 0;
@@ -400,7 +400,7 @@ class TrendGraph extends HTMLElement {
             weekData.count++;
           }
         });
-        
+
         // Average tab limit for the week
         weekData.tabLimit = weekData.count > 0 ? Math.round(weekData.tabLimit / weekData.count) : 0;
         data.push(weekData);
@@ -417,7 +417,7 @@ class TrendGraph extends HTMLElement {
           blocked: 0,
           count: 0
         };
-        
+
         month.dates.forEach(date => {
           const dateKey = this.formatDateKey(date);
           monthData.mazes += this.data.dailyMazes[dateKey] || 0;
@@ -427,7 +427,7 @@ class TrendGraph extends HTMLElement {
             monthData.count++;
           }
         });
-        
+
         // Average tab limit for the month
         monthData.tabLimit = monthData.count > 0 ? Math.round(monthData.tabLimit / monthData.count) : 0;
         data.push(monthData);
@@ -438,23 +438,23 @@ class TrendGraph extends HTMLElement {
   }
 
   formatDateKey(date) {
-    return date.getFullYear() + '-' + 
-           String(date.getMonth() + 1).padStart(2, '0') + '-' + 
+    return date.getFullYear() + '-' +
+           String(date.getMonth() + 1).padStart(2, '0') + '-' +
            String(date.getDate()).padStart(2, '0');
   }
 
   groupByWeek(dates) {
     const weeks = new Map();
-    
+
     dates.forEach(date => {
       const year = date.getFullYear();
       const week = this.getWeekNumber(date);
       const key = `${year}-${week}`;
-      
+
       if (!weeks.has(key)) {
         const startOfWeek = new Date(date);
         startOfWeek.setDate(date.getDate() - date.getDay());
-        
+
         weeks.set(key, {
           year,
           week,
@@ -462,21 +462,21 @@ class TrendGraph extends HTMLElement {
           dates: []
         });
       }
-      
+
       weeks.get(key).dates.push(date);
     });
-    
+
     return Array.from(weeks.values()).sort((a, b) => a.startDate - b.startDate);
   }
 
   groupByMonth(dates) {
     const months = new Map();
-    
+
     dates.forEach(date => {
       const year = date.getFullYear();
       const month = date.getMonth() + 1;
       const key = `${year}-${month}`;
-      
+
       if (!months.has(key)) {
         months.set(key, {
           year,
@@ -485,10 +485,10 @@ class TrendGraph extends HTMLElement {
           dates: []
         });
       }
-      
+
       months.get(key).dates.push(date);
     });
-    
+
     return Array.from(months.values()).sort((a, b) => a.startDate - b.startDate);
   }
 
@@ -549,7 +549,7 @@ class TrendGraph extends HTMLElement {
 
   addGridLines(svg, chartWidth, chartHeight, margin, maxValue) {
     const gridGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g');
-    
+
     // Horizontal grid lines
     for (let i = 0; i <= 5; i++) {
       const y = margin.top + (i / 5) * chartHeight;
@@ -562,33 +562,33 @@ class TrendGraph extends HTMLElement {
       line.setAttribute('stroke-width', '1');
       gridGroup.appendChild(line);
     }
-    
+
     svg.appendChild(gridGroup);
   }
 
   drawLine(svg, data, xScale, yScale, property, color) {
     if (data.length < 2) return;
-    
+
     const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
     let pathData = `M ${xScale(0)} ${yScale(data[0][property])}`;
-    
+
     for (let i = 1; i < data.length; i++) {
       pathData += ` L ${xScale(i)} ${yScale(data[i][property])}`;
     }
-    
+
     path.setAttribute('d', pathData);
     path.setAttribute('stroke', color);
     path.setAttribute('stroke-width', '2');
     path.setAttribute('fill', 'none');
     path.setAttribute('stroke-linecap', 'round');
     path.setAttribute('stroke-linejoin', 'round');
-    
+
     svg.appendChild(path);
   }
 
   drawPoints(svg, data, xScale, yScale, property, color) {
     const tooltip = this.shadowRoot.querySelector('.tooltip');
-    
+
     data.forEach((point, i) => {
       const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
       circle.setAttribute('cx', xScale(i));
@@ -597,33 +597,33 @@ class TrendGraph extends HTMLElement {
       circle.setAttribute('fill', color);
       circle.setAttribute('stroke', 'white');
       circle.setAttribute('stroke-width', '1');
-      
+
       // Make points interactive with HTML tooltip
       circle.addEventListener('mouseenter', (e) => {
         circle.setAttribute('r', '5');
         circle.setAttribute('stroke-width', '2');
-        
+
         // Show tooltip
         const propertyLabels = {
           'mazes': 'Mazes Solved',
-          'tabLimit': 'Tab Limit', 
+          'tabLimit': 'Tab Limit',
           'blocked': 'Tabs Blocked'
         };
         const currentLabel = propertyLabels[property];
         tooltip.innerHTML = `${this.formatDate(point.date)}<br/>${currentLabel}: ${point[property]}<br/>Mazes: ${point.mazes} | Tab Limit: ${point.tabLimit} | Blocked: ${point.blocked}`;
         tooltip.classList.add('visible');
-        
+
         // Smart tooltip positioning to avoid boundary clipping
         const cx = parseFloat(circle.getAttribute('cx'));
         const cy = parseFloat(circle.getAttribute('cy'));
         const containerRect = this.shadowRoot.querySelector('.chart-container');
         const containerWidth = containerRect.offsetWidth;
         const containerHeight = containerRect.offsetHeight;
-        
+
         // Calculate tooltip dimensions (approximate)
         const tooltipWidth = 200; // estimated width
         const tooltipHeight = 60; // estimated height
-        
+
         // Smart horizontal positioning with safety margins
         let left = cx + 10;
         if (left + tooltipWidth > containerWidth - 20) { // Add 20px safety margin
@@ -637,17 +637,17 @@ class TrendGraph extends HTMLElement {
         if (left + tooltipWidth > containerWidth - 10) {
           left = containerWidth - tooltipWidth - 10;
         }
-        
-        // Smart vertical positioning  
+
+        // Smart vertical positioning
         let top = cy - tooltipHeight - 10;
         if (top < 0) {
           top = cy + 15; // Place below point if not enough space above
         }
-        
+
         tooltip.style.left = `${left}px`;
         tooltip.style.top = `${top}px`;
       });
-      
+
       circle.addEventListener('mousemove', (e) => {
         if (tooltip.classList.contains('visible')) {
           // Update positioning on mouse move using same smart logic
@@ -655,10 +655,10 @@ class TrendGraph extends HTMLElement {
           const cy = parseFloat(circle.getAttribute('cy'));
           const containerRect = this.shadowRoot.querySelector('.chart-container');
           const containerWidth = containerRect.offsetWidth;
-          
+
           const tooltipWidth = 200;
           const tooltipHeight = 60;
-          
+
           let left = cx + 10;
           if (left + tooltipWidth > containerWidth - 20) { // Add 20px safety margin
             left = cx - tooltipWidth - 10;
@@ -671,23 +671,23 @@ class TrendGraph extends HTMLElement {
           if (left + tooltipWidth > containerWidth - 10) {
             left = containerWidth - tooltipWidth - 10;
           }
-          
+
           let top = cy - tooltipHeight - 10;
           if (top < 0) {
             top = cy + 15;
           }
-          
+
           tooltip.style.left = `${left}px`;
           tooltip.style.top = `${top}px`;
         }
       });
-      
+
       circle.addEventListener('mouseleave', () => {
         circle.setAttribute('r', '3');
         circle.setAttribute('stroke-width', '1');
         tooltip.classList.remove('visible');
       });
-      
+
       svg.appendChild(circle);
     });
   }
@@ -717,7 +717,7 @@ class TrendGraph extends HTMLElement {
     for (let i = 0; i <= 5; i++) {
       const value = Math.round((maxValue * (5 - i)) / 5);
       const y = margin.top + (i / 5) * chartHeight;
-      
+
       const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
       text.setAttribute('x', margin.left - 10);
       text.setAttribute('y', y + 4);

@@ -6,7 +6,7 @@ import { isDevelopment, isTest } from './env.js';
 
 const LogLevel = {
   LOG: 'log',
-  WARN: 'warn', 
+  WARN: 'warn',
   ERROR: 'error'
 };
 
@@ -36,7 +36,7 @@ class Logger {
     this._ensureEnvironment().then(() => {
       // Don't log anything in test environment unless explicitly enabled
       if (this.isTestEnv) return;
-      
+
       if (this.isDev) {
         console.log(...this._formatMessage(...args));
       }
@@ -71,7 +71,7 @@ class Logger {
     this._ensureEnvironment().then(() => {
       // Don't log info in test environment
       if (this.isTestEnv) return;
-      
+
       if (this.isDev) {
         console.info(...this._formatMessage(...args));
       }
@@ -84,7 +84,7 @@ class Logger {
     this._ensureEnvironment().then(() => {
       // Don't log debug in test environment
       if (this.isTestEnv) return;
-      
+
       if (this.isDev) {
         console.debug(...this._formatMessage(...args));
       }

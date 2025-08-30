@@ -22,21 +22,21 @@ async function detectEnvironment() {
   if (typeof global !== 'undefined' && global.chrome && global.chrome.__testMode) {
     return Environment.TEST;
   }
-  
+
   // Check for Jest test environment
   if (typeof process !== 'undefined' && process.env && process.env.NODE_ENV === 'test') {
     return Environment.TEST;
   }
-  
+
   // Check for common test globals
   if (typeof jest !== 'undefined' || typeof describe !== 'undefined' || typeof it !== 'undefined') {
     return Environment.TEST;
   }
-  
+
   try {
     // Use chrome.management.getSelf() for more robust detection
     const extensionInfo = await chrome.management.getSelf();
-    
+
     // installType directly tells us if it's development or production
     if (extensionInfo.installType === 'development') {
       return Environment.DEVELOPMENT;
@@ -47,7 +47,7 @@ async function detectEnvironment() {
     // Fallback to manifest-based detection if management API fails
     try {
       const manifest = chrome.runtime.getManifest();
-      
+
       // In production (web store), extensions have an update_url
       // In development (unpacked), this property is not present
       if (manifest.update_url) {

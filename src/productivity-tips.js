@@ -25,7 +25,7 @@ const PRODUCTIVITY_TIP_KEYS = [
 export function getRandomTip() {
   const randomIndex = Math.floor(Math.random() * PRODUCTIVITY_TIP_KEYS.length);
   const tipKeys = PRODUCTIVITY_TIP_KEYS[randomIndex];
-  
+
   return {
     title: getI18nMessage(tipKeys.titleKey),
     message: getI18nMessage(tipKeys.messageKey)
@@ -39,15 +39,15 @@ export function getRandomTip() {
  */
 export function getUniqueTip(recentTipTitles = []) {
   // Filter out recently shown tips
-  const availableTips = PRODUCTIVITY_TIPS.filter(tip => 
+  const availableTips = PRODUCTIVITY_TIPS.filter(tip =>
     !recentTipTitles.includes(tip.title)
   );
-  
+
   // If all tips have been shown recently, reset and use any tip
   if (availableTips.length === 0) {
     return getRandomTip();
   }
-  
+
   // Return a random tip from available ones
   const randomIndex = Math.floor(Math.random() * availableTips.length);
   return availableTips[randomIndex];

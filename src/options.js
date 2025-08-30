@@ -83,7 +83,7 @@ function updateRangeText() {
 async function checkOnboardingStatus() {
   const urlParams = new URLSearchParams(window.location.search);
   const isOnboarding = urlParams.get('onboarding') === 'true';
-  
+
   if (isOnboarding) {
     // Show only onboarding section, hide everything else
     onboardingSection.style.display = 'block';
@@ -91,7 +91,7 @@ async function checkOnboardingStatus() {
     statsSection.style.display = 'none';
     aboutSection.style.display = 'none';
     footer.style.display = 'none';
-    
+
     // Set up limit selector
     setupLimitSelector();
   } else {
@@ -110,13 +110,13 @@ async function checkOnboardingStatus() {
 function setupLimitSelector() {
   // Generate buttons dynamically
   renderLimitButtons('onboardingLimitOptions', TAB_LIMITS.DEFAULT);
-  
+
   // Set up button event listeners using shared utility
   setupLimitButtonListeners('#onboardingLimitOptions', (limit) => {
     selectedLimit = limit;
     updateLimitDescription('limitDescription', limit);
   });
-  
+
   // Set initial description
   updateLimitDescription('limitDescription', selectedLimit);
 }
@@ -127,7 +127,7 @@ function setupLimitSelector() {
 async function loadCurrentSettings() {
   try {
     const response = await chrome.runtime.sendMessage({ type: 'GET_STATS' });
-    
+
     if (response && !response.error) {
       currentTabLimitEl.textContent = response.tabLimit;
     } else {
@@ -144,24 +144,24 @@ async function loadCurrentSettings() {
 async function loadStatistics() {
   try {
     const response = await chrome.runtime.sendMessage({ type: 'GET_STATS' });
-    
+
     if (response && !response.error) {
       totalMazesCompletedEl.textContent = response.mazesCompleted || 0;
       totalBlockedAttemptsEl.textContent = response.blockedAttempts || 0;
       currentStreakEl.textContent = response.dailyMazesCompleted || 0;
-      
+
       // Calculate days active
       const installDate = response.installDate || Date.now();
       const daysActive = Math.floor((Date.now() - installDate) / (1000 * 60 * 60 * 24));
       daysActiveEl.textContent = Math.max(1, daysActive);
-      
+
       // Handle peak activity time
       if (response.peakActivityHour) {
         peakActivityTimeEl.textContent = formatHourRange(response.peakActivityHour.hour);
       } else {
         peakActivityTimeEl.textContent = getI18nMessage('peakActivityInsufficientData');
       }
-      
+
     } else {
       optionsLogger.error('Failed to load statistics:', response?.error);
     }
@@ -193,16 +193,16 @@ async function loadTrendData() {
 async function generateInsights() {
   try {
     const response = await chrome.runtime.sendMessage({ type: 'GET_STATS' });
-    
+
     if (!response || response.error) {
       return;
     }
-    
+
     const insights = [];
     const mazesCompleted = response.mazesCompleted || 0;
     const blockedAttempts = response.blockedAttempts || 0;
     const tabLimit = response.tabLimit || 5;
-    
+
     // Generate insights based on statistics
     if (mazesCompleted === 0 && blockedAttempts === 0) {
       insights.push({
@@ -227,14 +227,14 @@ async function generateInsights() {
         });
       }
     }
-    
+
     if (blockedAttempts > mazesCompleted * 2) {
       insights.push({
         icon: '🤔',
         text: 'You have more blocked attempts than completed mazes. Consider if you really need all those tabs.'
       });
     }
-    
+
     if (tabLimit <= 3) {
       insights.push({
         icon: '🔥',
@@ -246,7 +246,7 @@ async function generateInsights() {
         text: 'You prefer flexibility in your browsing. The extension is here as a gentle reminder.'
       });
     }
-    
+
     // Success rate insight
     if (blockedAttempts > 0) {
       const successRate = Math.round((mazesCompleted / blockedAttempts) * 100);
@@ -262,7 +262,7 @@ async function generateInsights() {
         });
       }
     }
-    
+
     // Default insight if no specific ones apply
     if (insights.length === 0) {
       insights.push({
@@ -270,7 +270,7 @@ async function generateInsights() {
         text: getI18nMessage('defaultInsight')
       });
     }
-    
+
     // Display insights
     insightsListEl.innerHTML = '';
     insights.forEach(insight => {
@@ -282,7 +282,7 @@ async function generateInsights() {
       `;
       insightsListEl.appendChild(insightEl);
     });
-    
+
   } catch (error) {
     optionsLogger.error('Error generating insights:', error);
   }
@@ -305,51 +305,51 @@ async function handleCompleteOnboarding() {
   try {
     completeOnboardingBtn.classList.add('loading');
     completeOnboardingBtn.disabled = true;
-    
+
     // First, check how many tabs are currently open
     const tabs = await chrome.tabs.query({});
     const currentTabCount = tabs.length;
-    
+
     if (currentTabCount > selectedLimit) {
       const tabsToClose = currentTabCount - selectedLimit;
-      
+
       // Show confirmation dialog about tab closure
       const confirmed = await showTabClosureConfirmation(currentTabCount, selectedLimit, tabsToClose);
-      
+
       if (!confirmed) {
         completeOnboardingBtn.classList.remove('loading');
         completeOnboardingBtn.disabled = false;
         return; // User cancelled
       }
     }
-    
+
     // Save selected limit using data store
     const store = usageDataStore();
     await store.setTabLimit(selectedLimit);
     await store.setInstallDate();
-    
+
     // Send message to background script for smart tab management
     await chrome.runtime.sendMessage({
       type: 'COMPLETE_ONBOARDING',
       limit: selectedLimit
     });
-    
+
     // Hide onboarding and show all main sections
     onboardingSection.style.display = 'none';
     settingsSection.style.display = 'block';
     statsSection.style.display = 'block';
     aboutSection.style.display = 'block';
     footer.style.display = 'block';
-    
+
     // Refresh the page to show updated settings
     await loadCurrentSettings();
     await loadStatistics();
     await loadTrendData();
     generateInsights();
-    
+
     // Show success message
     showNotification('Tab limit set successfully! Your journey begins now.', 'success');
-    
+
   } catch (error) {
     optionsLogger.error('Error completing onboarding:', error);
     showNotification('Failed to save settings. Please try again.', 'error');
@@ -366,13 +366,13 @@ async function handleChangeLimit() {
   try {
     changeLimitBtn.classList.add('loading');
     changeLimitBtn.disabled = true;
-    
+
     // Get current session difficulty and ensure minimum Hard level for limit updates
     const response = await chrome.runtime.sendMessage({ type: 'GET_STATS' });
     const currentDifficulty = response?.dailyMazesCompleted || 0;
     const minHardDifficulty = 3; // Hard level index
     const updateLimitDifficulty = Math.max(currentDifficulty, minHardDifficulty);
-    
+
     // Store maze session data using data store
     const store = usageDataStore();
     await store.setMazeSession({
@@ -380,13 +380,13 @@ async function handleChangeLimit() {
       difficulty: updateLimitDifficulty,
       timestamp: Date.now()
     });
-    
+
     // Create maze tab for limit update
     const mazeUrl = chrome.runtime.getURL('src/maze.html');
     await chrome.tabs.create({ url: mazeUrl });
-    
+
     showNotification('Solve the maze to update your tab limit!', 'info');
-    
+
   } catch (error) {
     optionsLogger.error('Error starting limit change:', error);
     showNotification('Failed to start limit update process.', 'error');
@@ -403,21 +403,21 @@ async function handleResetStats() {
   if (!confirm(getI18nMessage('confirmResetStats'))) {
     return;
   }
-  
+
   try {
     resetStatsBtn.classList.add('loading');
-    
+
     // Reset statistics using data store
     const store = usageDataStore();
     await store.resetStatistics();
-    
+
     // Reload statistics display
     await loadStatistics();
     await loadTrendData();
     generateInsights();
-    
+
     showNotification('Statistics reset successfully!', 'success');
-    
+
   } catch (error) {
     optionsLogger.error('Error resetting statistics:', error);
     showNotification('Failed to reset statistics.', 'error');
@@ -432,24 +432,24 @@ async function handleResetStats() {
 async function handleExportStats() {
   try {
     exportStatsBtn.classList.add('loading');
-    
+
     const store = usageDataStore();
     const exportData = await store.exportAllData();
-    
+
     // Create and download JSON file
     const dataStr = JSON.stringify(exportData, null, 2);
     const dataBlob = new Blob([dataStr], { type: 'application/json' });
     const url = URL.createObjectURL(dataBlob);
-    
+
     const a = document.createElement('a');
     a.href = url;
     a.download = `tab-keeper-stats-${new Date().toISOString().split('T')[0]}.json`;
     a.click();
-    
+
     URL.revokeObjectURL(url);
-    
+
     showNotification('Statistics exported successfully!', 'success');
-    
+
   } catch (error) {
     optionsLogger.error('Error exporting statistics:', error);
     showNotification('Failed to export statistics.', 'error');
@@ -478,7 +478,7 @@ async function showTabClosureConfirmation(currentCount, newLimit, tabsToClose) {
       z-index: 10000;
       backdrop-filter: blur(5px);
     `;
-    
+
     // Create modal content
     const modal = document.createElement('div');
     modal.style.cssText = `
@@ -491,7 +491,7 @@ async function showTabClosureConfirmation(currentCount, newLimit, tabsToClose) {
       text-align: center;
       animation: modalSlideIn 0.3s ease-out;
     `;
-    
+
     modal.innerHTML = `
       <div style="font-size: 3em; margin-bottom: 16px;">⚠️</div>
       <h2 style="color: #333; margin-bottom: 16px; font-size: 1.5em;">Too Many Tabs Open</h2>
@@ -530,7 +530,7 @@ async function showTabClosureConfirmation(currentCount, newLimit, tabsToClose) {
         ">Cancel</button>
       </div>
     `;
-    
+
     // Add animation CSS
     const style = document.createElement('style');
     style.textContent = `
@@ -554,23 +554,23 @@ async function showTabClosureConfirmation(currentCount, newLimit, tabsToClose) {
       }
     `;
     document.head.appendChild(style);
-    
+
     overlay.appendChild(modal);
     document.body.appendChild(overlay);
-    
+
     // Handle button clicks
     modal.querySelector('#confirmClose').addEventListener('click', () => {
       document.body.removeChild(overlay);
       document.head.removeChild(style);
       resolve(true);
     });
-    
+
     modal.querySelector('#cancelClose').addEventListener('click', () => {
       document.body.removeChild(overlay);
       document.head.removeChild(style);
       resolve(false);
     });
-    
+
     // Close on overlay click
     overlay.addEventListener('click', (e) => {
       if (e.target === overlay) {
@@ -601,7 +601,7 @@ function showNotification(message, type = 'info') {
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
     animation: slideIn 0.3s ease;
   `;
-  
+
   // Set colors based on type
   switch (type) {
     case 'success':
@@ -619,10 +619,10 @@ function showNotification(message, type = 'info') {
       notification.style.color = '#0c5460';
       notification.style.border = '1px solid #bee5eb';
   }
-  
+
   notification.textContent = message;
   document.body.appendChild(notification);
-  
+
   // Remove after 4 seconds
   setTimeout(() => {
     notification.style.animation = 'slideOut 0.3s ease';

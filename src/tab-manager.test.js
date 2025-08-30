@@ -7,6 +7,9 @@ import { describe, test, expect, beforeEach, jest, afterEach } from '@jest/globa
 import { TabManager } from './tab-manager.js';
 import { TAB_LIMITS } from './constants.js';
 
+// Import mocked functions and TabManager after mocking
+import { isSpecialTab, isMazeTab, isPopupWindow } from './utils.js';
+
 // Mock Chrome APIs
 const mockChrome = {
   storage: {
@@ -40,9 +43,6 @@ jest.mock('./utils.js', () => ({
 // Set up global chrome mock
 global.chrome = mockChrome;
 
-// Import mocked functions and TabManager after mocking
-import { isSpecialTab, isMazeTab, isPopupWindow } from './utils.js';
-
 // Get references to the mocked functions
 const mockUtils = {
   isSpecialTab,
@@ -67,10 +67,10 @@ describe('TabManager', () => {
         EMPTY_TAB_CLEANUP_DELAY: 50      // Fast cleanup delay for tests
       }
     });
-    
+
     // Reset all mocks
     jest.clearAllMocks();
-    
+
     // Default mock implementations
     mockChrome.storage.local.get.mockResolvedValue({});
     mockChrome.storage.local.set.mockResolvedValue();
@@ -80,7 +80,7 @@ describe('TabManager', () => {
     mockChrome.tabs.remove.mockResolvedValue();
     mockChrome.windows.update.mockResolvedValue();
     mockChrome.runtime.getURL.mockImplementation(path => `chrome-extension://test/${path}`);
-    
+
     // Set up standard mocks for regular tabs
     setupStandardMocks();
   });
@@ -238,7 +238,7 @@ describe('TabManager', () => {
       mockUtils.isMazeTab.mockReturnValue(false);
       mockUtils.isPopupWindow.mockResolvedValue(false);
       jest.spyOn(tabManager, 'getCurrentTabCount').mockResolvedValue(3); // Over limit
-      
+
       // Mark tab as unblocked
       const tab = { id: 4, url: 'http://example.com' };
       tabManager.unblockedTabs.add(4);
@@ -257,7 +257,7 @@ describe('TabManager', () => {
       mockUtils.isMazeTab.mockReturnValue(false);
       mockUtils.isPopupWindow.mockResolvedValue(true); // This is a popup window
       jest.spyOn(tabManager, 'getCurrentTabCount').mockResolvedValue(3); // Over limit
-      
+
       const tab = { id: 5, url: 'https://accounts.google.com/oauth/authorize', windowId: 123 };
 
       const result = await tabManager.shouldAllowNewTab(tab);
@@ -280,7 +280,7 @@ describe('TabManager', () => {
       mockUtils.isSpecialTab.mockReturnValue(false);
       mockUtils.isMazeTab.mockReturnValue(false);
       mockUtils.isPopupWindow.mockResolvedValue(false);
-      
+
       // Mock getCurrentTabCount to return 3 (including the new tab being evaluated)
       jest.spyOn(tabManager, 'getCurrentTabCount').mockResolvedValue(3);
 
@@ -295,7 +295,7 @@ describe('TabManager', () => {
       mockUtils.isSpecialTab.mockReturnValue(false);
       mockUtils.isMazeTab.mockReturnValue(false);
       mockUtils.isPopupWindow.mockResolvedValue(false);
-      
+
       // Mock getCurrentTabCount to return 3 (within limit of 5)
       jest.spyOn(tabManager, 'getCurrentTabCount').mockResolvedValue(3);
 
@@ -311,11 +311,11 @@ describe('TabManager', () => {
       tabManager.tabLimit = 3;
       tabManager.isInitialized = true;
       tabManager.unblockedTabs.add(1); // Pre-existing unblocked tab
-      
+
       mockUtils.isSpecialTab.mockReturnValue(false);
       mockUtils.isMazeTab.mockReturnValue(false);
       mockUtils.isPopupWindow.mockResolvedValue(false);
-      
+
       // New tab would bring count to 2 (within limit of 3)
       jest.spyOn(tabManager, 'getCurrentTabCount').mockResolvedValue(2);
 
@@ -333,16 +333,16 @@ describe('TabManager', () => {
       tabManager.isInitialized = true;
       tabManager.restoringTabs.clear(); // Ensure clean state
       tabManager.mazeTabId = null; // Ensure no maze exists
-      
+
       // Mock utility functions for this specific test
       mockUtils.isSpecialTab.mockReturnValue(false);
       mockUtils.isMazeTab.mockReturnValue(false);
       mockUtils.isPopupWindow.mockResolvedValue(false);
-      
+
       jest.spyOn(tabManager, 'getCurrentTabCount').mockResolvedValue(3);
 
       const tab = { id: 4, url: 'http://example.com' };
-      
+
       // Debug: verify initial state
       expect(tabManager.isInitialized).toBe(true);
       expect(tabManager.tabLimit).toBe(2);
@@ -359,12 +359,12 @@ describe('TabManager', () => {
       tabManager.tabLimit = 2;
       tabManager.isInitialized = true;
       tabManager.restoringTabs.clear(); // Ensure clean state
-      
+
       // Mock utility functions for this specific test
       mockUtils.isSpecialTab.mockReturnValue(false);
       mockUtils.isMazeTab.mockReturnValue(false);
       mockUtils.isPopupWindow.mockResolvedValue(false);
-      
+
       jest.spyOn(tabManager, 'getCurrentTabCount').mockResolvedValue(3);
       tabManager.mazeTabId = 2; // Maze exists
 
@@ -449,12 +449,12 @@ describe('TabManager', () => {
     test('marks tab as permanently unblocked after completion', async () => {
       const tab = { id: 1 };
       mockChrome.tabs.get.mockResolvedValue(tab);
-      
+
       // Ensure tab is not initially unblocked
       expect(tabManager.unblockedTabs.has(1)).toBe(false);
-      
+
       await tabManager.handleMazeCompleted(1, {});
-      
+
       // Verify tab is now marked as unblocked
       expect(tabManager.unblockedTabs.has(1)).toBe(true);
     });
@@ -499,7 +499,7 @@ describe('TabManager', () => {
       const tab = { id: 1 };
       mockChrome.tabs.get.mockResolvedValue(tab);
       tabManager.blockedUrls.set(1, 'http://example.com');
-      
+
       jest.useFakeTimers();
       const handleUrlRedirectSpy = jest.spyOn(tabManager, 'handleUrlRedirect').mockResolvedValue();
 
@@ -514,7 +514,7 @@ describe('TabManager', () => {
 
       // Now redirect should be called
       expect(handleUrlRedirectSpy).toHaveBeenCalledWith(1, 'http://example.com');
-      
+
       jest.useRealTimers();
     });
   });
@@ -567,12 +567,12 @@ describe('TabManager', () => {
         { id: 2, url: 'chrome-extension://abc123/src/maze.html' },
         { id: 3, url: 'https://google.com' }
       ];
-      
+
       mockChrome.tabs.query.mockResolvedValue(tabs);
       mockUtils.isMazeTab.mockImplementation(tab => tab.url.includes('maze.html'));
-      
+
       await tabManager.initializeTabState();
-      
+
       expect(tabManager.mazeTabId).toBe(2);
     });
 
@@ -582,17 +582,17 @@ describe('TabManager', () => {
         { id: 1, url: 'https://example.com' },
         { id: 2, url: 'https://google.com' }
       ];
-      
+
       mockChrome.tabs.query.mockResolvedValue(tabs);
-      
+
       await tabManager.initializeTabState();
-      
+
       expect(tabManager.mazeTabId).toBeNull();
     });
 
     test('handles errors gracefully', async () => {
       mockChrome.tabs.query.mockRejectedValue(new Error('Query failed'));
-      
+
       await expect(tabManager.initializeTabState()).resolves.not.toThrow();
     });
 
@@ -600,9 +600,9 @@ describe('TabManager', () => {
       // Mock tabs
       const tabs = [{ id: 1, url: 'https://example.com' }];
       mockChrome.tabs.query.mockResolvedValue(tabs);
-      
+
       await tabManager.initializeTabState();
-      
+
       // Should not populate transient state (these start empty and get built naturally)
       expect(tabManager.unblockedTabs.size).toBe(0);
       expect(tabManager.restoringTabs.size).toBe(0);
@@ -620,7 +620,7 @@ describe('TabManager', () => {
 
     test('marks existing tabs as unblocked up to limit', async () => {
       tabManager.tabLimit = 3;
-      
+
       // Mock 5 regular tabs
       const tabs = [
         { id: 1, url: 'https://example.com' },
@@ -629,11 +629,11 @@ describe('TabManager', () => {
         { id: 4, url: 'https://stackoverflow.com' },
         { id: 5, url: 'https://mdn.dev' }
       ];
-      
+
       mockChrome.tabs.query.mockResolvedValue(tabs);
-      
+
       await tabManager.markExistingTabsAsUnblocked();
-      
+
       // Should mark first 3 tabs (up to limit) as unblocked
       expect(tabManager.unblockedTabs.has(1)).toBe(true);
       expect(tabManager.unblockedTabs.has(2)).toBe(true);
@@ -644,7 +644,7 @@ describe('TabManager', () => {
 
     test('excludes special tabs, maze tabs, and popups', async () => {
       tabManager.tabLimit = 3;
-      
+
       const tabs = [
         { id: 1, url: 'chrome://settings' }, // Special tab
         { id: 2, url: 'chrome-extension://abc/maze.html' }, // Maze tab
@@ -652,16 +652,16 @@ describe('TabManager', () => {
         { id: 4, url: 'https://example.com' }, // Regular tab
         { id: 5, url: 'https://google.com' } // Regular tab
       ];
-      
+
       mockChrome.tabs.query.mockResolvedValue(tabs);
-      
+
       // Configure mocks to identify special tabs
       mockUtils.isSpecialTab.mockImplementation(tab => tab.url.startsWith('chrome'));
       mockUtils.isMazeTab.mockImplementation(tab => tab.url.includes('maze.html'));
       mockUtils.isPopupWindow.mockImplementation(tab => tab.id === 3);
-      
+
       await tabManager.markExistingTabsAsUnblocked();
-      
+
       // Should only mark regular tabs as unblocked
       expect(tabManager.unblockedTabs.has(1)).toBe(false);
       expect(tabManager.unblockedTabs.has(2)).toBe(false);
@@ -673,16 +673,16 @@ describe('TabManager', () => {
     test('does not override already unblocked tabs', async () => {
       tabManager.tabLimit = 2;
       tabManager.unblockedTabs.add(1); // Already unblocked
-      
+
       const tabs = [
         { id: 1, url: 'https://example.com' },
         { id: 2, url: 'https://google.com' }
       ];
-      
+
       mockChrome.tabs.query.mockResolvedValue(tabs);
-      
+
       await tabManager.markExistingTabsAsUnblocked();
-      
+
       // Should still be unblocked
       expect(tabManager.unblockedTabs.has(1)).toBe(true);
       expect(tabManager.unblockedTabs.has(2)).toBe(true);
@@ -690,7 +690,7 @@ describe('TabManager', () => {
 
     test('handles errors gracefully', async () => {
       mockChrome.tabs.query.mockRejectedValue(new Error('Query failed'));
-      
+
       await expect(tabManager.markExistingTabsAsUnblocked()).resolves.not.toThrow();
     });
   });
@@ -777,13 +777,13 @@ describe('TabManager', () => {
         { id: 3, lastAccessed: 1500 },
         { id: 4, lastAccessed: 3000 }
       ];
-      
+
       mockChrome.tabs.query.mockResolvedValue(tabs);
       mockChrome.tabs.remove.mockResolvedValue();
 
       // Test that the method executes without throwing errors
       await expect(tabManager.smartTabClosure(2)).resolves.not.toThrow();
-      
+
       // Verify that tabs.query was called (method at least attempted to get tabs)
       expect(mockChrome.tabs.query).toHaveBeenCalledWith({});
     });
@@ -806,7 +806,7 @@ describe('TabManager', () => {
   });
 
   describe('getStats', () => {
-    test('returns complete statistics', async () => {      
+    test('returns complete statistics', async () => {
       // Mock the current date to match our test data
       const originalDate = global.Date;
       const mockDate = new originalDate('2025-08-25T10:30:00.000Z');
@@ -855,7 +855,7 @@ describe('TabManager', () => {
 
     test('handles missing stats with defaults', async () => {
       mockChrome.storage.local.get.mockResolvedValue({});
-      
+
       const stats = await tabManager.getStats();
 
       expect(stats.mazesCompleted).toBe(0);
@@ -880,7 +880,7 @@ describe('TabManager', () => {
 
       // Test that the method executes without throwing and calls the Chrome APIs
       await expect(tabManager.focusMazeTab()).resolves.not.toThrow();
-      
+
       // Verify that the Chrome APIs were called (the core functionality)
       expect(mockChrome.tabs.get).toHaveBeenCalledWith(1);
     });
@@ -984,7 +984,7 @@ describe('TabManager', () => {
       // Set up a tab with multiple types of state
       const oldTabId = 150;
       const newTabId = 250;
-      
+
       tabManager.unblockedTabs.add(oldTabId);
       tabManager.restoringTabs.add(oldTabId);
       tabManager.blockedUrls.set(oldTabId, 'http://multi-state.com');
@@ -1004,10 +1004,10 @@ describe('TabManager', () => {
     test('transfers maze completion tracking state', () => {
       const oldTabId = 400;
       const newTabId = 500;
-      
+
       // Set up completion tracking for old tab
       tabManager.completedMazeSessions.add(`maze_completed_tab_${oldTabId}`);
-      
+
 
       tabManager.onTabReplaced(newTabId, oldTabId);
 
@@ -1015,15 +1015,15 @@ describe('TabManager', () => {
       expect(tabManager.completedMazeSessions.has(`maze_completed_tab_${oldTabId}`)).toBe(false);
       // New completion tracking should be added
       expect(tabManager.completedMazeSessions.has(`maze_completed_tab_${newTabId}`)).toBe(true);
-      
+
     });
 
     test('handles sessionStorage error during completion tracking transfer', () => {
       const oldTabId = 600;
       const newTabId = 700;
-      
+
       tabManager.completedMazeSessions.add(`maze_completed_tab_${oldTabId}`);
-      
+
       // Mock sessionStorage that throws errors
       const mockSessionStorage = {
         removeItem: jest.fn(() => { throw new Error('sessionStorage error'); }),
@@ -1033,11 +1033,11 @@ describe('TabManager', () => {
 
       // Should not throw
       expect(() => tabManager.onTabReplaced(newTabId, oldTabId)).not.toThrow();
-      
+
       // In-memory state should still transfer correctly
       expect(tabManager.completedMazeSessions.has(`maze_completed_tab_${oldTabId}`)).toBe(false);
       expect(tabManager.completedMazeSessions.has(`maze_completed_tab_${newTabId}`)).toBe(true);
-      
+
       delete global.sessionStorage;
     });
   });
@@ -1049,7 +1049,7 @@ describe('TabManager', () => {
       await tabManager.initialize();
       tabManager.tabLimit = 2;
       tabManager.isInitialized = true;
-      
+
       // Clear restoring tabs to ensure clean test state
       tabManager.restoringTabs.clear();
 
@@ -1061,17 +1061,17 @@ describe('TabManager', () => {
 
       // Complete the maze
       mockChrome.tabs.get.mockResolvedValue({ id: 4 });
-      
+
       jest.useFakeTimers();
       await tabManager.handleMazeCompleted(4, {});
-      
+
       // Advance timers to handle the productivity tip delay
       jest.advanceTimersByTime(tabManager.timing.MAZE_COMPLETION_DISPLAY);
       await jest.runAllTimersAsync();
-      
+
       expect(tabManager.mazeTabId).toBeNull();
       expect(tabManager.dailyMazesCompleted).toBe(1);
-      
+
       jest.useRealTimers();
     });
   });
@@ -1084,11 +1084,11 @@ describe('TabManager', () => {
       // Mock Date before creating TabManager instance
       originalDate = global.Date;
       mockDate = new originalDate('2024-03-15T10:30:00.000Z');
-      
+
       global.Date = jest.fn(() => mockDate);
       global.Date.now = jest.fn(() => mockDate.getTime());
       global.Date.prototype = originalDate.prototype;
-      
+
       // Create a fresh TabManager instance with mocked date
       tabManager = new TabManager();
     });
@@ -1135,9 +1135,9 @@ describe('TabManager', () => {
               '2024-03-15': 8
             }
           });
-        
+
         await tabManager.initialize();
-        
+
         expect(tabManager.dailyMazesCompleted).toBe(8);
       });
 
@@ -1150,9 +1150,9 @@ describe('TabManager', () => {
               '2024-03-14': 5  // Yesterday's data only
             }
           });
-        
+
         await tabManager.initialize();
-        
+
         expect(tabManager.dailyMazesCompleted).toBe(0);
       });
     });
@@ -1162,7 +1162,7 @@ describe('TabManager', () => {
       test('handleMazeCompleted increments daily count', async () => {
         await tabManager.initialize();
         tabManager.mazeTabId = 1;
-        
+
         const tab = { id: 1 };
         mockChrome.tabs.get.mockResolvedValue(tab);
         mockChrome.storage.local.get.mockResolvedValue({
@@ -1170,9 +1170,9 @@ describe('TabManager', () => {
             '2024-03-15': 2
           }
         });
-        
+
         await tabManager.handleMazeCompleted(1, {});
-        
+
         expect(tabManager.dailyMazesCompleted).toBe(3);
         expect(mockChrome.storage.local.set).toHaveBeenCalledWith({
           dailyMazes: {
@@ -1184,9 +1184,9 @@ describe('TabManager', () => {
       test('difficulty calculation uses daily count', async () => {
         // Set up initial daily count
         tabManager.dailyMazesCompleted = 4;
-        
+
         await tabManager.handleTabLimitExceeded({ id: 1, url: 'http://example.com' });
-        
+
         expect(mockChrome.storage.local.set).toHaveBeenCalledWith({
           currentMazeSession: {
             tabId: 1,
@@ -1260,7 +1260,7 @@ describe('TabManager', () => {
         await tabManager.initialize();
         const tab = { id: 555 };
         mockChrome.tabs.get.mockResolvedValue(tab);
-        
+
         jest.useFakeTimers();
         await tabManager.handleMazeCompleted(555, {});
         jest.useRealTimers();
@@ -1308,7 +1308,7 @@ describe('TabManager', () => {
       test('completion key format is consistent', () => {
         const tabId = 999;
         tabManager.markMazeAsCompleted(tabId);
-        
+
         const expectedKey = `maze_completed_tab_${tabId}`;
         expect(tabManager.completedMazeSessions.has(expectedKey)).toBe(true);
       });

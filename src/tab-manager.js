@@ -1,6 +1,6 @@
 /**
  * TabManager - Core application logic for tab management
- * 
+ *
  * This class encapsulates all the business logic for tab limiting, maze handling,
  * and state management, separate from Chrome service worker event handling.
  */
@@ -20,13 +20,13 @@ export class TabManager {
   constructor(options = {}) {
     // Allow timing override for testing
     this.timing = { ...TabManager.TIMING, ...options.timing };
-    
+
     // Initialize loggers
     this.tabLogger = new Logger('TAB-MANAGER');
     this.mazeLogger = new Logger('MAZE-MANAGER');
     this.storageLogger = new Logger('STORAGE-MANAGER');
     this.generalLogger = new Logger('TAB-MANAGER-GENERAL');
-    
+
     // In-memory state
     this.tabLimit = TAB_LIMITS.DEFAULT;
     this.blockedUrls = new Map(); // tabId -> original URL mapping
@@ -43,8 +43,8 @@ export class TabManager {
    */
   getTodayKey() {
     const today = new Date();
-    return today.getFullYear() + '-' + 
-           String(today.getMonth() + 1).padStart(2, '0') + '-' + 
+    return today.getFullYear() + '-' +
+           String(today.getMonth() + 1).padStart(2, '0') + '-' +
            String(today.getDate()).padStart(2, '0');
   }
 
@@ -110,24 +110,24 @@ export class TabManager {
    */
   async shouldAllowNewTab(tab) {
     if (!this.isInitialized) return { action: 'allow' };
-    
+
     // Allow special tabs and maze tabs
     if (isSpecialTab(tab) || isMazeTab(tab)) return { action: 'allow' };
-    
+
     // Allow popup windows (SSO authentication, payment flows, etc.)
     if (await isPopupWindow(tab)) {
       this.tabLogger.log('Allowing popup window for tab:', tab.id);
       return { action: 'allow' };
     }
-    
+
     // Allow tabs being restored from maze completion
     if (this.restoringTabs.has(tab.id)) return { action: 'allow' };
-    
+
     // Allow tabs that have been permanently unblocked by solving a maze
     if (this.unblockedTabs.has(tab.id)) return { action: 'allow' };
-    
+
     const currentCount = await this.getCurrentTabCount();
-    
+
     // If within limit (including the new tab), allow and mark as unblocked
     // Note: currentCount includes the tab being evaluated since onCreated fires after tab creation
     if (currentCount <= this.tabLimit) {
@@ -136,7 +136,7 @@ export class TabManager {
       this.tabLogger.log('Marked new tab as unblocked (within limit):', tab.id);
       return { action: 'allow' };
     }
-    
+
     // Over limit - check if maze already exists
     if (this.mazeTabId) {
       // Maze already exists, show notification instead of creating another maze
@@ -153,7 +153,7 @@ export class TabManager {
   async handleTabLimitExceeded(tab) {
     try {
       this.tabLogger.log('Tab limit exceeded. Redirecting tab', tab.id, 'to maze');
-      
+
       // Store original URL for later restoration
       if (tab.url && tab.url !== 'chrome://newtab/' && tab.url !== 'about:blank' && tab.url.trim() !== '') {
         this.blockedUrls.set(tab.id, tab.url);
@@ -161,7 +161,7 @@ export class TabManager {
       } else {
         this.tabLogger.log('No URL to store for tab', tab.id, '- will default to new tab page');
       }
-      
+
       // Store maze session data using data store
       const store = usageDataStore();
       await store.setMazeSession({
@@ -169,15 +169,15 @@ export class TabManager {
         difficulty: this.dailyMazesCompleted,
         timestamp: Date.now()
       });
-      
+
       // Redirect to maze
       const mazeUrl = chrome.runtime.getURL('src/maze.html');
-      
+
       try {
         await chrome.tabs.update(tab.id, { url: mazeUrl });
         this.mazeTabId = tab.id;
         this.tabLogger.log('Successfully redirected tab to maze');
-        
+
         // Log limit hit for analytics
         const store = usageDataStore();
         await store.incrementStatistic('blockedAttempts');
@@ -188,7 +188,7 @@ export class TabManager {
         // Clean up stored URL on failure
         this.blockedUrls.delete(tab.id);
       }
-      
+
     } catch (error) {
       this.tabLogger.error('Error in handleTabLimitExceeded:', error);
     }
@@ -199,7 +199,7 @@ export class TabManager {
    */
   async handleMazeCompleted(tabId, data) {
     this.mazeLogger.log('Maze completed for tab:', tabId, 'data:', data);
-    
+
     try {
       // Verify the tab still exists before processing
       let tab;
@@ -214,10 +214,10 @@ export class TabManager {
         this.cleanupTabReferences(tabId);
         return;
       }
-      
+
       // Check if this is an updateLimit maze by looking at message data or checking storage
       let isUpdateLimitMaze = false;
-      
+
       if (data && data.action === 'updateLimit') {
         isUpdateLimitMaze = true;
       } else {
@@ -230,48 +230,48 @@ export class TabManager {
           this.mazeLogger.error('Failed to check maze session for updateLimit action:', error);
         }
       }
-      
+
       // Mark tab as being restored
       this.restoringTabs.add(tabId);
       this.tabLogger.log('Marked tab as restoring:', tabId);
-      
+
       // Reset maze tab tracking
       if (this.mazeTabId === tabId) {
         this.mazeTabId = null;
         this.mazeLogger.log('Reset maze tab tracking for tab:', tabId);
       }
-      
+
       // Increment completion counters
       const store = usageDataStore();
       this.dailyMazesCompleted = await store.incrementTodayMazeCount();
       await store.incrementStatistic('mazesCompleted');
-      
+
       // Mark this tab as permanently unblocked for its lifetime
       this.unblockedTabs.add(tabId);
       this.tabLogger.log('Marked tab as permanently unblocked:', tabId);
-      
+
       // Mark maze as completed to prevent re-entry on navigation
       this.markMazeAsCompleted(tabId);
-      
+
       // Handle URL restoration
       const originalUrl = this.blockedUrls.get(tabId);
       this.tabLogger.log('Retrieved original URL for tab', tabId, ':', originalUrl || 'none (will use new tab page)');
-      
+
       // Clean up stored URL
       if (this.blockedUrls.has(tabId)) {
         this.blockedUrls.delete(tabId);
       }
-      
+
       // Determine target URL
       let targetUrl = originalUrl;
-      
+
       if (!originalUrl || originalUrl.trim() === '' || originalUrl === 'about:blank') {
         if (isUpdateLimitMaze) {
           // Update limit mazes handle their own completion flow via modal
           this.restoringTabs.delete(tabId);
           return;
         }
-        
+
         this.tabLogger.log('No valid stored URL for tab', tabId, '- closing maze tab to allow fresh new tab');
         // For empty tabs, close the maze and let user start fresh
         setTimeout(async () => {
@@ -289,13 +289,13 @@ export class TabManager {
       } else {
         this.tabLogger.log('Using stored URL for tab', tabId, ':', originalUrl);
       }
-      
+
       // Wait to allow productivity tip to be displayed
       setTimeout(async () => {
         await this.handleUrlRedirect(tabId, targetUrl);
         this.mazeLogger.log('Maze completion handling finished for tab:', tabId);
       }, this.timing.MAZE_COMPLETION_DISPLAY);
-      
+
     } catch (error) {
       this.mazeLogger.error('Error in handleMazeCompleted:', error);
       this.cleanupTabReferences(tabId);
@@ -318,9 +318,9 @@ export class TabManager {
    */
   isMazeCompleted(tabId) {
     if (!tabId) return false;
-    
+
     const completionKey = `maze_completed_tab_${tabId}`;
-    
+
     // Check in-memory state - service worker is authoritative source
     return this.completedMazeSessions.has(completionKey);
   }
@@ -342,13 +342,13 @@ export class TabManager {
   async handleUrlRedirect(tabId, originalUrl) {
     try {
       this.tabLogger.log('Redirecting tab', tabId, 'to:', originalUrl);
-      
+
       await chrome.tabs.update(tabId, { url: originalUrl });
       this.tabLogger.log('Successfully redirected tab:', tabId);
-      
+
       // Don't delete restoringTabs flag immediately - let the tab loading event handle it
       // This prevents the tab from getting another maze during the redirect process
-      
+
     } catch (error) {
       this.tabLogger.error('Failed to redirect tab', tabId, 'to:', originalUrl, error);
       this.restoringTabs.delete(tabId);
@@ -379,22 +379,22 @@ export class TabManager {
     try {
       // Get all currently existing tabs
       const existingTabs = await chrome.tabs.query({});
-      
+
       // Check if any tab looks like a maze tab from this extension
       const mazeTab = existingTabs.find(tab => isMazeTab(tab));
       if (mazeTab) {
         this.mazeTabId = mazeTab.id;
         this.tabLogger.log('Found existing maze tab on initialization:', mazeTab.id);
       }
-      
+
       // Note: We intentionally don't try to restore other state like unblockedTabs,
       // restoringTabs, or blockedUrls because:
       // 1. Service workers lose all memory on restart/termination
       // 2. These states are transient and will be rebuilt naturally as users interact
       // 3. markExistingTabsAsUnblocked() will handle the unblocked tabs properly
-      
+
       this.generalLogger.log('Initialized tab state from current browser state');
-      
+
     } catch (error) {
       this.generalLogger.error('Error initializing tab state:', error);
     }
@@ -409,7 +409,7 @@ export class TabManager {
     try {
       // Get all currently existing tabs
       const existingTabs = await chrome.tabs.query({});
-      
+
       // Filter to regular tabs (exclude special tabs, maze tabs, popups)
       const regularTabs = [];
       for (const tab of existingTabs) {
@@ -417,24 +417,24 @@ export class TabManager {
           regularTabs.push(tab);
         }
       }
-      
+
       // Sort tabs by ID (older tabs typically have lower IDs)
       regularTabs.sort((a, b) => a.id - b.id);
-      
+
       // Mark up to the tab limit as unblocked
       const tabsToUnblock = regularTabs.slice(0, this.tabLimit);
-      
+
       tabsToUnblock.forEach(tab => {
         if (!this.unblockedTabs.has(tab.id)) {
           this.unblockedTabs.add(tab.id);
           this.tabLogger.log('Marked existing tab as unblocked:', tab.id, tab.url);
         }
       });
-      
+
       if (tabsToUnblock.length > 0) {
         this.generalLogger.log(`Marked ${tabsToUnblock.length} existing tabs as unblocked`);
       }
-      
+
     } catch (error) {
       this.generalLogger.error('Error marking existing tabs as unblocked:', error);
     }
@@ -451,7 +451,7 @@ export class TabManager {
       await store.setTabLimit(newLimit);
       await store.recordTodayTabLimit(this.tabLimit);
       this.generalLogger.log('Tab limit updated from', oldLimit, 'to:', newLimit);
-      
+
       if (newLimit < oldLimit) {
         // If the new limit is lower, close excess tabs intelligently
         await this.smartTabClosure(newLimit);
@@ -488,24 +488,24 @@ export class TabManager {
     try {
       const tabs = await chrome.tabs.query({});
       const regularTabs = tabs.filter(tab => !isSpecialTab(tab) && !isMazeTab(tab));
-      
+
       if (regularTabs.length <= limit) {
         this.tabLogger.log('No excess tabs to close');
         return;
       }
-      
+
       const excessCount = regularTabs.length - limit;
       this.tabLogger.log(`Need to close ${excessCount} excess tabs`);
-      
+
       // Sort by last accessed time, close oldest tabs first
       const sortedTabs = regularTabs.sort((a, b) => {
         const aTime = a.lastAccessed || 0;
         const bTime = b.lastAccessed || 0;
         return aTime - bTime;
       });
-      
+
       const tabsToClose = sortedTabs.slice(0, excessCount);
-      
+
       for (const tab of tabsToClose) {
         try {
           await chrome.tabs.remove(tab.id);
@@ -514,7 +514,7 @@ export class TabManager {
           this.tabLogger.error('Failed to close tab:', tab.id, error);
         }
       }
-      
+
     } catch (error) {
       this.tabLogger.error('Error in smart tab closure:', error);
     }
@@ -527,7 +527,7 @@ export class TabManager {
     try {
       const store = usageDataStore();
       const extendedStats = await store.getExtendedStatistics();
-      
+
       return {
         ...extendedStats,
         tabLimit: this.tabLimit
@@ -543,7 +543,7 @@ export class TabManager {
    */
   async focusMazeTab() {
     if (!this.mazeTabId) return false;
-    
+
     try {
       const tab = await chrome.tabs.get(this.mazeTabId);
       if (tab && isMazeTab(tab)) {
@@ -556,7 +556,7 @@ export class TabManager {
       this.tabLogger.error('Error focusing maze tab:', error);
       this.mazeTabId = null; // Clear invalid reference
     }
-    
+
     return false;
   }
 
@@ -574,21 +574,21 @@ export class TabManager {
    */
   onTabReplaced(addedTabId, removedTabId) {
     this.generalLogger.log('Tab replaced due to prerendering:', removedTabId, '→', addedTabId);
-    
+
     // Transfer unblocked status
     if (this.unblockedTabs.has(removedTabId)) {
       this.unblockedTabs.delete(removedTabId);
       this.unblockedTabs.add(addedTabId);
       this.tabLogger.log('Transferred unblocked status:', removedTabId, '→', addedTabId);
     }
-    
+
     // Transfer restoring status
     if (this.restoringTabs.has(removedTabId)) {
       this.restoringTabs.delete(removedTabId);
       this.restoringTabs.add(addedTabId);
       this.tabLogger.log('Transferred restoring status:', removedTabId, '→', addedTabId);
     }
-    
+
     // Transfer blocked URL mapping
     if (this.blockedUrls.has(removedTabId)) {
       const blockedUrl = this.blockedUrls.get(removedTabId);
@@ -596,13 +596,13 @@ export class TabManager {
       this.blockedUrls.set(addedTabId, blockedUrl);
       this.tabLogger.log('Transferred blocked URL mapping:', removedTabId, '→', addedTabId);
     }
-    
+
     // Update maze tab reference
     if (this.mazeTabId === removedTabId) {
       this.mazeTabId = addedTabId;
       this.tabLogger.log('Updated maze tab reference:', removedTabId, '→', addedTabId);
     }
-    
+
     // Transfer maze completion tracking
     const removedCompletionKey = `maze_completed_tab_${removedTabId}`;
     const addedCompletionKey = `maze_completed_tab_${addedTabId}`;
