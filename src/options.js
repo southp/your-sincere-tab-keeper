@@ -15,7 +15,6 @@ const optionsLogger = new Logger('OPTIONS');
 const onboardingSection = document.getElementById('onboardingSection');
 const settingsSection = document.getElementById('settingsSection');
 const statsSection = document.getElementById('statsSection');
-const aboutSection = document.getElementById('aboutSection');
 const footer = document.querySelector('.footer');
 const currentTabLimitEl = document.getElementById('currentTabLimit');
 const completeOnboardingBtn = document.getElementById('completeOnboardingBtn');
@@ -27,7 +26,6 @@ const totalBlockedAttemptsEl = document.getElementById('totalBlockedAttempts');
 const daysActiveEl = document.getElementById('daysActive');
 const currentStreakEl = document.getElementById('currentStreak');
 const peakActivityTimeEl = document.getElementById('peakActivityTime');
-const insightsListEl = document.getElementById('insightsList');
 
 // Footer elements
 const resetStatsBtn = document.getElementById('resetStatsBtn');
@@ -46,7 +44,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   await loadStatistics();
   await loadTrendData();
   setupEventListeners();
-  generateInsights();
 });
 
 /**
@@ -87,7 +84,6 @@ function checkOnboardingStatus() {
     onboardingSection.style.display = 'block';
     settingsSection.style.display = 'none';
     statsSection.style.display = 'none';
-    aboutSection.style.display = 'none';
     footer.style.display = 'none';
 
     // Set up limit selector
@@ -97,7 +93,6 @@ function checkOnboardingStatus() {
     onboardingSection.style.display = 'none';
     settingsSection.style.display = 'block';
     statsSection.style.display = 'block';
-    aboutSection.style.display = 'block';
     footer.style.display = 'block';
   }
 }
@@ -185,106 +180,6 @@ async function loadTrendData() {
   }
 }
 
-/**
- * Generate personalized insights based on user statistics
- */
-async function generateInsights() {
-  try {
-    const response = await chrome.runtime.sendMessage({ type: 'GET_STATS' });
-
-    if (!response || response.error) {
-      return;
-    }
-
-    const insights = [];
-    const mazesCompleted = response.mazesCompleted || 0;
-    const blockedAttempts = response.blockedAttempts || 0;
-    const tabLimit = response.tabLimit || 5;
-
-    // Generate insights based on statistics
-    if (mazesCompleted === 0 && blockedAttempts === 0) {
-      insights.push({
-        icon: '🌟',
-        text: 'Welcome! Your journey to mindful browsing starts now.'
-      });
-    } else if (mazesCompleted > 0) {
-      if (mazesCompleted === 1) {
-        insights.push({
-          icon: '🎯',
-          text: 'Great job solving your first maze! Every journey begins with a single step.'
-        });
-      } else if (mazesCompleted < 10) {
-        insights.push({
-          icon: '💪',
-          text: `You've solved ${mazesCompleted} mazes! You're building great habits.`
-        });
-      } else {
-        insights.push({
-          icon: '🏆',
-          text: `Impressive! ${mazesCompleted} mazes solved. You're a mindful browsing champion!`
-        });
-      }
-    }
-
-    if (blockedAttempts > mazesCompleted * 2) {
-      insights.push({
-        icon: '🤔',
-        text: 'You have more blocked attempts than completed mazes. Consider if you really need all those tabs.'
-      });
-    }
-
-    if (tabLimit <= 3) {
-      insights.push({
-        icon: '🔥',
-        text: 'You chose a strict limit! This level of focus will supercharge your productivity.'
-      });
-    } else if (tabLimit >= 8) {
-      insights.push({
-        icon: '🌈',
-        text: 'You prefer flexibility in your browsing. The extension is here as a gentle reminder.'
-      });
-    }
-
-    // Success rate insight
-    if (blockedAttempts > 0) {
-      const successRate = Math.round((mazesCompleted / blockedAttempts) * 100);
-      if (successRate >= 80) {
-        insights.push({
-          icon: '✨',
-          text: getI18nMessage('insightHighCompletionRate', [successRate.toString()])
-        });
-      } else if (successRate < 50) {
-        insights.push({
-          icon: '💭',
-          text: getI18nMessage('insightLowCompletionRate')
-        });
-      }
-    }
-
-    // Default insight if no specific ones apply
-    if (insights.length === 0) {
-      insights.push({
-        icon: '🎯',
-        text: getI18nMessage('defaultInsight')
-      });
-    }
-
-    // Display insights
-    insightsListEl.innerHTML = '';
-    insights.forEach(insight => {
-      const insightEl = document.createElement('div');
-      insightEl.className = 'insight-item';
-      insightEl.innerHTML = `
-        <span class="insight-icon">${insight.icon}</span>
-        <span class="insight-text">${insight.text}</span>
-      `;
-      insightsListEl.appendChild(insightEl);
-    });
-
-  } catch (error) {
-    optionsLogger.error('Error generating insights:', error);
-  }
-}
 
 /**
  * Setup event listeners
@@ -336,14 +231,12 @@ async function handleCompleteOnboarding() {
     onboardingSection.style.display = 'none';
     settingsSection.style.display = 'block';
     statsSection.style.display = 'block';
-    aboutSection.style.display = 'block';
     footer.style.display = 'block';
 
     // Refresh the page to show updated settings
     await loadCurrentSettings();
     await loadStatistics();
     await loadTrendData();
-    generateInsights();
 
     // Show success message
     showNotification('Tab limit set successfully! Your journey begins now.', 'success');
@@ -413,7 +306,6 @@ async function handleResetStats() {
     // Reload statistics display
     await loadStatistics();
     await loadTrendData();
-    generateInsights();
 
     showNotification('Statistics reset successfully!', 'success');
 

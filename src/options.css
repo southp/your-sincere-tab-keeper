@@ -274,79 +274,6 @@ body {
   text-align: center;
 }
 
-/* Insights */
-.insights {
-  border-top: 1px solid #eee;
-  padding-top: 20px;
-}
-
-.insights h3 {
-  margin-bottom: 16px;
-  color: #2c3e50;
-}
-
-.insights-list {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.insight-item {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 12px 16px;
-  background: #f8f9fa;
-  border-radius: 6px;
-  border-left: 4px solid #667eea;
-}
-
-.insight-icon {
-  font-size: 20px;
-}
-
-.insight-text {
-  font-size: 14px;
-  color: #2c3e50;
-}
-
-/* About Section */
-.about-content {
-  font-size: 15px;
-  line-height: 1.7;
-}
-
-.about-content p {
-  margin-bottom: 20px;
-}
-
-.philosophy,
-.features {
-  margin: 24px 0;
-}
-
-.philosophy h3,
-.features h3 {
-  margin-bottom: 12px;
-  color: #667eea;
-}
-
-.features ul {
-  list-style: none;
-  padding-left: 0;
-}
-
-.features li {
-  padding: 6px 0;
-}
-
-.version-info {
-  margin-top: 24px;
-  padding-top: 20px;
-  border-top: 1px solid #eee;
-  font-size: 14px;
-  color: #666;
-}
 
 /* Buttons */
 .primary-btn,
@@ -416,6 +343,12 @@ body {
 
 .footer-links a:hover {
   text-decoration: underline;
+}
+
+.footer-info {
+  margin-top: 8px;
+  font-size: 12px;
+  color: #999;
 }
 
 .separator {
