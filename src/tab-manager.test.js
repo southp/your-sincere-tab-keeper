@@ -22,7 +22,8 @@ const mockChrome = {
     query: jest.fn(),
     get: jest.fn(),
     update: jest.fn(),
-    remove: jest.fn()
+    remove: jest.fn(),
+    create: jest.fn()
   },
   windows: {
     get: jest.fn(),
@@ -39,6 +40,7 @@ jest.mock('./utils.js', () => ({
   isMazeTab: jest.fn().mockReturnValue(false),
   isPopupWindow: jest.fn().mockResolvedValue(false)
 }));
+
 
 // Set up global chrome mock
 global.chrome = mockChrome;
@@ -902,6 +904,7 @@ describe('TabManager', () => {
       expect(tabManager.mazeTabId).toBeNull();
     });
   });
+
 
   describe('onTabRemoved', () => {
     test('cleans up tab references', () => {

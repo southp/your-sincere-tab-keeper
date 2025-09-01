@@ -556,6 +556,51 @@ export class TabManager {
   }
 
   /**
+   * Create a maze tab or show blob page if maze already exists
+   * Consolidates maze creation logic for both limit exceeded and limit updates
+   */
+  async createMazeTabOrBlob(options = {}) {
+    try {
+      const { action = 'limitExceeded', difficulty } = options;
+
+      // Check if maze already exists
+      if (this.mazeTabId) {
+        this.mazeLogger.log('Maze already exists, creating blob page instead');
+        const blobUrl = chrome.runtime.getURL('src/blob.html');
+        await chrome.tabs.create({ url: blobUrl });
+        return { created: 'blob' };
+      }
+
+      // For limit update actions, store maze session data and determine difficulty
+      if (action === 'updateLimit') {
+        const currentDifficulty = this.dailyMazesCompleted || 0;
+        const minHardDifficulty = 3; // Hard level index
+        const updateLimitDifficulty = Math.max(currentDifficulty, minHardDifficulty, difficulty || 0);
+
+        const store = usageDataStore();
+        await store.setMazeSession({
+          action: 'updateLimit',
+          difficulty: updateLimitDifficulty,
+          timestamp: Date.now()
+        });
+        this.mazeLogger.log('Stored maze session for limit update with difficulty:', updateLimitDifficulty);
+      }
+
+      // Create new maze tab
+      const mazeUrl = chrome.runtime.getURL('src/maze.html');
+      const newTab = await chrome.tabs.create({ url: mazeUrl });
+      this.mazeTabId = newTab.id;
+      this.mazeLogger.log('Created new maze tab:', newTab.id, 'for action:', action);
+
+      return { created: 'maze', tabId: newTab.id };
+
+    } catch (error) {
+      this.mazeLogger.error('Error creating maze tab or blob:', error);
+      throw error;
+    }
+  }
+
+  /**
    * Handle tab removed event
    */
   onTabRemoved(tabId) {

@@ -187,6 +187,11 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     case 'CLOSE_BLOB_TAB':
       handleCloseBlobTab(sender.tab.id);
       break;
+    case 'CREATE_MAZE_TAB':
+      handleCreateMazeTab(message.data)
+        .then(() => sendResponse({ success: true }))
+        .catch(error => sendResponse({ error: error.message }));
+      return true; // Keep message channel open for async response
     default:
       generalLogger.warn('Unknown message type:', message.type);
   }
@@ -202,6 +207,20 @@ async function handleGetStats(sendResponse) {
   } catch (error) {
     generalLogger.error('Failed to get stats:', error);
     sendResponse({ error: 'Failed to load statistics' });
+  }
+}
+
+/**
+ * Handle maze tab creation using TabManager
+ */
+async function handleCreateMazeTab(data) {
+  try {
+    const result = await tabManager.createMazeTabOrBlob(data);
+    generalLogger.log('Maze creation result:', result);
+    return result;
+  } catch (error) {
+    generalLogger.error('Error creating maze tab:', error);
+    throw error;
   }
 }
 
