@@ -99,6 +99,8 @@ export default [
       'no-trailing-spaces': 'error',
       'comma-dangle': ['error', 'never'],
       'indent': ['error', 2, { SwitchCase: 1 }],
+      'no-multiple-empty-lines': ['error', { max: 2, maxEOF: 1, maxBOF: 0 }],
+      'eol-last': ['error', 'always'],
 
       // === Import Plugin Rules ===
       'import/no-unresolved': 'off', // Too strict for our setup
@@ -191,6 +193,7 @@ export default [
       'node_modules/**',
       'dist/**',
       'coverage/**',
+      'packages/**', // Bundled/minified files
       '*.min.js',
       'build/**',
       '.git/**'

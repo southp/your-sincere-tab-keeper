@@ -38,8 +38,6 @@ const dailyMazesEl = document.getElementById('dailyMazes');
 const totalMazesEl = document.getElementById('totalMazes');
 const mazeOverlay = document.getElementById('mazeOverlay');
 
-
-
 // Colors (Chrome Dino inspired)
 const COLORS = {
   wall: '#535353',

@@ -8,10 +8,10 @@ export default defineConfig({
       compress: {
         drop_console: false, // Keep console for debug utilities
         drop_debugger: true,
-        pure_funcs: ['console.debug'], // Remove debug calls in production
+        pure_funcs: ['console.debug'] // Remove debug calls in production
       },
       format: {
-        comments: false, // Remove comments
+        comments: false // Remove comments
       }
     },
     rollupOptions: {

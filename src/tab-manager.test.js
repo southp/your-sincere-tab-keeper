@@ -1043,7 +1043,6 @@ describe('TabManager', () => {
   });
 
 
-
   describe('Integration Tests', () => {
     test('complete tab limiting workflow', async () => {
       await tabManager.initialize();
@@ -1122,7 +1121,6 @@ describe('TabManager', () => {
         expect(key).toBe('2025-01-01');
       });
     });
-
 
 
     describe('initialization with daily data', () => {

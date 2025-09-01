@@ -48,10 +48,6 @@ export class TabManager {
            String(today.getDate()).padStart(2, '0');
   }
 
-
-
-
-
   /**
    * Initialize the tab manager with settings from storage
    */
