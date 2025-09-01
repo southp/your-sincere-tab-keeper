@@ -24,7 +24,6 @@ let currentDifficulty = 0;
 let isHandlingCompletion = false; // Prevent multiple completion handlers
 
 // Maze session data (will be loaded from storage)
-let tabId = null;
 let action = null;
 let difficulty = 0;
 
@@ -187,11 +186,10 @@ async function loadMazeSessionData() {
     const sessionData = await store.getMazeSession();
 
     if (sessionData) {
-      tabId = sessionData.tabId;
       action = sessionData.action;
       difficulty = sessionData.difficulty || 0;
 
-      mazeLogger.log('Loaded maze session data:', { tabId, action, difficulty });
+      mazeLogger.log('Loaded maze session data:', { action, difficulty });
       mazeLogger.log('Action loaded from storage:', action);
 
       // Clear the session data to prevent reuse
@@ -200,14 +198,12 @@ async function loadMazeSessionData() {
       mazeLogger.warn('No maze session data found, using defaults');
       mazeLogger.log('Setting action to null (default)');
       // Set defaults
-      tabId = null;
       action = null;
       difficulty = 0;
     }
   } catch (error) {
     mazeLogger.error('Error loading maze session data:', error);
     // Use safe defaults
-    tabId = null;
     action = null;
     difficulty = 0;
   }
@@ -439,7 +435,6 @@ async function sendMazeCompletionMessage() {
         difficulty: currentDifficulty,
         time: mazeModel.getElapsedTime(),
         size: mazeModel.size,
-        tabId: parseInt(tabId) || null,
         action: action
       }
     });
@@ -688,7 +683,6 @@ async function setupMazeDebugUtilities() {
       cellSize,
       isHandlingCompletion,
       action,
-      tabId,
       difficulty
     }),
 

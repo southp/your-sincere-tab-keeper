@@ -390,7 +390,6 @@ describe('TabManager', () => {
       expect(tabManager.blockedUrls.get(1)).toBe('http://example.com');
       expect(mockChrome.storage.local.set).toHaveBeenCalledWith({
         currentMazeSession: {
-          tabId: 1,
           difficulty: 0,
           timestamp: expect.any(Number)
         }
@@ -1187,7 +1186,6 @@ describe('TabManager', () => {
 
         expect(mockChrome.storage.local.set).toHaveBeenCalledWith({
           currentMazeSession: {
-            tabId: 1,
             difficulty: 4,
             timestamp: expect.any(Number)
           }

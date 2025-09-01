@@ -238,7 +238,7 @@ async function checkForExistingMaze() {
     const store = usageDataStore();
     const session = await store.getMazeSession();
 
-    if (session && session.tabId) {
+    if (session) {
       showSpeechBubble(getI18nMessage('alreadyHaveAMaze'), getI18nMessage('focusOnCurrentMaze'));
     }
   } catch (error) {

@@ -161,7 +161,6 @@ export class TabManager {
       // Store maze session data using data store
       const store = usageDataStore();
       await store.setMazeSession({
-        tabId: tab.id,
         difficulty: this.dailyMazesCompleted,
         timestamp: Date.now()
       });
