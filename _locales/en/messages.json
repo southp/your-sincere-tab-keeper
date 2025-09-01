@@ -206,6 +206,9 @@
   "reportIssues": {
     "message": "Report Issues"
   },
+  "solveMazeToUpdateLimit": {
+    "message": "Solve this maze to update your tab limit!"
+  },
   "mazeTitle": {
     "message": "Your Sincere Tab Keeper - Maze Challenge"
   },

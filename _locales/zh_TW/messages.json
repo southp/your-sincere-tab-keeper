@@ -206,6 +206,9 @@
   "reportIssues": {
     "message": "回報問題"
   },
+  "solveMazeToUpdateLimit": {
+    "message": "解決這個迷宮以更新你的分頁限制！"
+  },
   "mazeTitle": {
     "message": "你的誠摯分頁管理員 - 迷宮挑戰"
   },

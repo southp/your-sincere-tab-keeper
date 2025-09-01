@@ -276,7 +276,7 @@ async function handleChangeLimit() {
     const mazeUrl = chrome.runtime.getURL('src/maze.html');
     await chrome.tabs.create({ url: mazeUrl });
 
-    showNotification('Solve the maze to update your tab limit!', 'info');
+    showNotification(getI18nMessage('solveMazeToUpdateLimit'), 'info');
 
   } catch (error) {
     optionsLogger.error('Error starting limit change:', error);

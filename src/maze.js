@@ -122,7 +122,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // Handle different actions
   if (action === 'updateLimit') {
-    challengeMessageEl.textContent = 'Solve this maze to update your tab limit!';
+    challengeMessageEl.textContent = getI18nMessage('solveMazeToUpdateLimit');
   }
 });
 
