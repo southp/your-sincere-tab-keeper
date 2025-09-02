@@ -36,6 +36,14 @@ let currentVelocity = { x: 0, y: 0 };
 let isMoving = false;
 let lastFrameTime = 0;
 
+// Goal celebration animation system
+let celebrationState = {
+  active: false,
+  startTime: 0,
+  duration: 2000, // 2 seconds of celebration
+  sparkles: []
+};
+
 // Movement configuration
 const MOVEMENT_CONFIG = {
   baseSpeed: 4.0,          // Base movement speed (cells per second)
@@ -375,10 +383,11 @@ function renderMaze(model) {
     ctx.stroke();
   }
 
-  // Draw player using smooth visual position
+  // Draw player using smooth visual position with celebration hopping
   ctx.fillStyle = COLORS.player;
+  const hopOffset = getPlayerHopOffset();
   const playerX = playerVisualPos.x * cellSize + 3;
-  const playerY = playerVisualPos.y * cellSize + 3;
+  const playerY = playerVisualPos.y * cellSize + 3 + (hopOffset * cellSize);
   const playerSize = Math.max(4, cellSize - 6);
 
   ctx.fillRect(playerX, playerY, playerSize, playerSize);
@@ -391,16 +400,37 @@ function renderMaze(model) {
 
     ctx.fillRect(
       playerVisualPos.x * cellSize + eyeOffset,
-      playerVisualPos.y * cellSize + eyeOffset,
+      playerVisualPos.y * cellSize + eyeOffset + (hopOffset * cellSize),
       eyeSize,
       eyeSize
     );
     ctx.fillRect(
       playerVisualPos.x * cellSize + Math.floor(cellSize * 0.6),
-      playerVisualPos.y * cellSize + eyeOffset,
+      playerVisualPos.y * cellSize + eyeOffset + (hopOffset * cellSize),
       eyeSize,
       eyeSize
     );
+  }
+
+  // Draw celebration sparkles
+  if (celebrationState.active) {
+    celebrationState.sparkles.forEach(sparkle => {
+      ctx.fillStyle = sparkle.color;
+      ctx.globalAlpha = sparkle.life;
+      
+      const sparkleX = sparkle.x * cellSize;
+      const sparkleY = sparkle.y * cellSize;
+      
+      ctx.fillRect(
+        sparkleX - sparkle.size / 2,
+        sparkleY - sparkle.size / 2,
+        sparkle.size,
+        sparkle.size
+      );
+    });
+    
+    // Reset alpha
+    ctx.globalAlpha = 1.0;
   }
 }
 
@@ -416,13 +446,16 @@ function animate(currentTime) {
   // Update movement physics
   const previousPos = { x: playerVisualPos.x, y: playerVisualPos.y };
   updateMovement(deltaTime);
+  
+  // Update celebration animation
+  updateCelebration(deltaTime);
 
-  // Only render if player position has changed or if we're still moving
+  // Only render if player position has changed, we're moving, or celebration is active
   const positionChanged =
     Math.abs(playerVisualPos.x - previousPos.x) > 0.001 ||
     Math.abs(playerVisualPos.y - previousPos.y) > 0.001;
 
-  if (positionChanged || isMoving) {
+  if (positionChanged || isMoving || celebrationState.active) {
     renderMaze(mazeModel);
   }
 
@@ -530,20 +563,38 @@ function updateMovement(deltaTime) {
       }
     }
 
-    // Update logical position if we've moved to a new cell
-    const currentLogicalX = Math.round(playerVisualPos.x);
-    const currentLogicalY = Math.round(playerVisualPos.y);
+    // Check for goal completion - trigger when avatar center is close to goal center
+    const distanceToGoal = Math.sqrt(
+      Math.pow(playerVisualPos.x - mazeModel.goalPos.x, 2) +
+      Math.pow(playerVisualPos.y - mazeModel.goalPos.y, 2)
+    );
     
-    if (currentLogicalX !== mazeModel.playerPos.x || currentLogicalY !== mazeModel.playerPos.y) {
-      // Double-check that the logical position is valid
-      if (canMoveTo(currentLogicalX, currentLogicalY)) {
-        const goalReached = mazeModel.movePlayer(
-          currentLogicalX - mazeModel.playerPos.x,
-          currentLogicalY - mazeModel.playerPos.y
-        );
-
-        if (goalReached) {
-          handleMazeComplete();
+    if (distanceToGoal < 0.3 && !celebrationState.active && !isHandlingCompletion) {
+      // Goal reached! Trigger celebration immediately
+      startCelebration();
+      
+      // Update logical position to goal for consistency
+      mazeModel.playerPos.x = mazeModel.goalPos.x;
+      mazeModel.playerPos.y = mazeModel.goalPos.y;
+      playerVisualPos.x = mazeModel.goalPos.x;
+      playerVisualPos.y = mazeModel.goalPos.y;
+      
+      // Delay completion to show celebration animation
+      setTimeout(() => {
+        handleMazeComplete();
+      }, celebrationState.duration);
+    } else {
+      // Update logical position if we've moved to a new cell (for normal movement)
+      const currentLogicalX = Math.round(playerVisualPos.x);
+      const currentLogicalY = Math.round(playerVisualPos.y);
+      
+      if (currentLogicalX !== mazeModel.playerPos.x || currentLogicalY !== mazeModel.playerPos.y) {
+        // Double-check that the logical position is valid
+        if (canMoveTo(currentLogicalX, currentLogicalY)) {
+          mazeModel.movePlayer(
+            currentLogicalX - mazeModel.playerPos.x,
+            currentLogicalY - mazeModel.playerPos.y
+          );
         }
       }
     }
@@ -560,6 +611,90 @@ function canMoveTo(x, y) {
 }
 
 /**
+ * Start celebration animation when goal is reached
+ */
+function startCelebration() {
+  celebrationState.active = true;
+  celebrationState.startTime = performance.now();
+  celebrationState.sparkles = [];
+  
+  // Create initial sparkles around the goal
+  for (let i = 0; i < 20; i++) {
+    celebrationState.sparkles.push(createSparkle());
+  }
+}
+
+/**
+ * Create a sparkle particle for celebration
+ */
+function createSparkle() {
+  const goalX = mazeModel.goalPos.x;
+  const goalY = mazeModel.goalPos.y;
+  
+  return {
+    x: goalX + (Math.random() - 0.5) * 2,
+    y: goalY + (Math.random() - 0.5) * 2,
+    vx: (Math.random() - 0.5) * 4,
+    vy: (Math.random() - 0.5) * 4 - 2, // Bias upward
+    life: 1.0,
+    decay: 0.015 + Math.random() * 0.01,
+    size: 2 + Math.random() * 3,
+    color: `hsl(${Math.random() * 60 + 40}, 70%, ${50 + Math.random() * 30}%)`
+  };
+}
+
+/**
+ * Update celebration animation
+ */
+function updateCelebration(deltaTime) {
+  if (!celebrationState.active) return;
+  
+  const elapsed = performance.now() - celebrationState.startTime;
+  const dt = deltaTime / 1000;
+  
+  // Update sparkles
+  celebrationState.sparkles = celebrationState.sparkles.filter(sparkle => {
+    // Update position
+    sparkle.x += sparkle.vx * dt;
+    sparkle.y += sparkle.vy * dt;
+    sparkle.vy += 3 * dt; // Gravity
+    
+    // Update life
+    sparkle.life -= sparkle.decay;
+    
+    return sparkle.life > 0;
+  });
+  
+  // Add more sparkles periodically
+  if (elapsed < celebrationState.duration * 0.7 && Math.random() < 0.1) {
+    celebrationState.sparkles.push(createSparkle());
+  }
+  
+  // End celebration
+  if (elapsed >= celebrationState.duration) {
+    celebrationState.active = false;
+    celebrationState.sparkles = [];
+  }
+}
+
+/**
+ * Get player hop offset for celebration animation
+ */
+function getPlayerHopOffset() {
+  if (!celebrationState.active) return 0;
+  
+  const elapsed = performance.now() - celebrationState.startTime;
+  const hopFreq = 1; // hops per second - much slower for better visibility
+  const hopHeight = 0.15; // maximum hop height in cells
+  
+  // Create a bouncing animation
+  const phase = (elapsed / 1000) * hopFreq * Math.PI * 2;
+  const bounce = Math.abs(Math.sin(phase));
+  
+  return -bounce * hopHeight; // Negative Y means upward
+}
+
+/**
  * Handle player movement (legacy function - now just triggers movement state)
  */
 function movePlayer(dx, dy) {
@@ -572,7 +707,11 @@ function movePlayer(dx, dy) {
   playerVisualPos.y = mazeModel.playerPos.y;
 
   if (goalReached) {
-    handleMazeComplete();
+    startCelebration();
+    // Delay completion to show celebration animation
+    setTimeout(() => {
+      handleMazeComplete();
+    }, celebrationState.duration);
   }
 }
 
