@@ -1,18 +1,18 @@
 {
   "extensionName": {
-    "message": "你的誠摯分頁管理員"
+    "message": "你誠摯的分頁管理員"
   },
   "extensionDescription": {
-    "message": "一個透過有趣的迷宮遊戲來限制開啟分頁數量的 Chrome 擴充功能 - 幫助你過上最好的分頁生活，一次一個迷宮。"
+    "message": "一個透過迷宮遊戲限制開啟分頁數量來提醒您專注當下的 Chrome 擴充功能 - 一次一頁，專注美滿。"
   },
   "actionDefaultTitle": {
-    "message": "你的誠摯分頁管理員"
+    "message": "你誠摯的分頁管理員"
   },
   "popupTitle": {
-    "message": "你的誠摯分頁管理員"
+    "message": "你誠摯的分頁管理員"
   },
   "popupTagline": {
-    "message": "過上你最好的分頁生活，一次一個迷宮"
+    "message": "一次一頁，專注美滿"
   },
   "currentTabLimit": {
     "message": "目前分頁限制："
@@ -33,13 +33,13 @@
     "message": "查看完整統計"
   },
   "youHaveAMazeToSolve": {
-    "message": "你有一個迷宮要解！"
+    "message": "你有一個迷宮要解喔！"
   },
   "alreadyHaveAMaze": {
-    "message": "你已經有一個迷宮要解決了！🧩"
+    "message": "你已經有一個迷宮囉！🧩"
   },
   "focusOnCurrentMaze": {
-    "message": "專心完成目前的迷宮。"
+    "message": "專心完成眼前的迷宮吧！"
   },
   "tip1": {
     "message": "💡 提示：關閉未使用的分頁以保持專注！"
@@ -78,13 +78,13 @@
     "message": "開啟統計頁面失敗"
   },
   "optionsTitle": {
-    "message": "你的誠摯分頁管理員 - 設定"
+    "message": "你誠摯的分頁管理員 - 設定"
   },
   "welcomeHeading": {
-    "message": "🎉 歡迎使用你的誠摯分頁管理員！"
+    "message": "🎉 歡迎使用你誠摯的分頁管理員！"
   },
   "welcomeIntro": {
-    "message": "感謝你安裝你的誠摯分頁管理員！這個擴充功能透過限制開啟的分頁數量來幫助你建立更好的瀏覽習慣。"
+    "message": "感謝你安裝你誠摯的分頁管理員！這個擴充功能透過限制開啟的分頁數量來幫助你建立更好的瀏覽習慣。"
   },
   "howItWorksHeading": {
     "message": "運作方式："
@@ -162,13 +162,13 @@
     "message": "ℹ️ 關於"
   },
   "aboutDescription": {
-    "message": "你的誠摯分頁管理員旨在幫助你反思瀏覽習慣，與科技建立更專心的關係。"
+    "message": "你誠摯的分頁管理員旨在幫助你反思瀏覽習慣，與科技建立更專心的關係。"
   },
   "philosophyHeading": {
     "message": "我們的理念"
   },
   "philosophyText": {
-    "message": "我們相信小小的阻力能帶來大大的改變。透過在你超過分頁限制時加入有趣的迷宮遊戲，我們幫助你暫停並考慮是否真的需要那個新分頁。"
+    "message": "我們相信小小的阻力能帶來大大的改變。透過在你超過分頁限制時加入的迷宮遊戲，我們幫助你暫停並考慮是否真的需要那個新分頁。"
   },
   "keyFeaturesHeading": {
     "message": "主要功能"
@@ -249,7 +249,7 @@
     "message": "🎯 更新你的分頁限制"
   },
   "updateLimitModalDescription": {
-    "message": "解決迷宮做得很好！現在選擇你的新分頁限制："
+    "message": "好喔，你贏了。現在選擇你的新分頁限制："
   },
   "setNewLimit": {
     "message": "設定新限制"
@@ -315,7 +315,7 @@
     "message": "寬鬆許可 - 溫和指導"
   },
   "blobPageTitle": {
-    "message": "你的誠摯分頁管理員"
+    "message": "你誠摯的分頁管理員"
   },
   "whoaThere": {
     "message": "等等！🧩"
@@ -339,7 +339,7 @@
     }
   },
   "notificationTitle": {
-    "message": "你的誠摯分頁管理員"
+    "message": "你誠摯的分頁管理員"
   },
   "notificationMessage": {
     "message": "你已經有一個迷宮要解決了！🧩"
@@ -438,7 +438,7 @@
     "message": "載入趨勢資料中..."
   },
   "mazeCompletionWithTip": {
-    "message": "您解開了迷宮！這裡是重定向時的生產力提示："
+    "message": "您解開了迷宮！以下是給您的生產力提示："
   },
   "motivation1": {
     "message": "每個解謎都是邁向更專注瀏覽的一步！🌟"
@@ -453,7 +453,7 @@
     "message": "耐心與堅持會引導您渡過難關！🧭"
   },
   "motivation5": {
-    "message": "您導航的每堵牆都讓目標更清晰！🔍"
+    "message": "每堵牆都讓目標更清晰！🔍"
   },
   "motivation6": {
     "message": "專注瀏覽始於專注解題！🧠"
