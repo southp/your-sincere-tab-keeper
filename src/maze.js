@@ -36,6 +36,10 @@ let currentVelocity = { x: 0, y: 0 };
 let isMoving = false;
 let lastFrameTime = 0;
 
+// Eye direction tracking
+let eyeDirection = { x: 0, y: 0 }; // Current eye look direction
+let lastMovementDirection = { x: 0, y: 0 }; // Last significant movement direction
+
 // Goal celebration animation system
 let celebrationState = {
   active: false,
@@ -392,21 +396,28 @@ function renderMaze(model) {
 
   ctx.fillRect(playerX, playerY, playerSize, playerSize);
 
-  // Add player eyes (Chrome Dino style) - only if cell is big enough
+  // Add player eyes with directional movement - only if cell is big enough
   if (cellSize >= 8) {
     ctx.fillStyle = '#fff';
     const eyeSize = Math.max(1, Math.floor(cellSize / 10));
-    const eyeOffset = Math.floor(cellSize * 0.3);
-
+    const baseEyeOffset = Math.floor(cellSize * 0.3);
+    
+    // Calculate eye positions with directional offset
+    const eyeShiftX = eyeDirection.x * (eyeSize * 2.0); // Much larger shift for obvious movement
+    const eyeShiftY = eyeDirection.y * (eyeSize * 2.0);
+    
+    // Left eye
     ctx.fillRect(
-      playerVisualPos.x * cellSize + eyeOffset,
-      playerVisualPos.y * cellSize + eyeOffset + (hopOffset * cellSize),
+      playerVisualPos.x * cellSize + baseEyeOffset + eyeShiftX,
+      playerVisualPos.y * cellSize + baseEyeOffset + (hopOffset * cellSize) + eyeShiftY,
       eyeSize,
       eyeSize
     );
+    
+    // Right eye
     ctx.fillRect(
-      playerVisualPos.x * cellSize + Math.floor(cellSize * 0.6),
-      playerVisualPos.y * cellSize + eyeOffset + (hopOffset * cellSize),
+      playerVisualPos.x * cellSize + Math.floor(cellSize * 0.6) + eyeShiftX,
+      playerVisualPos.y * cellSize + baseEyeOffset + (hopOffset * cellSize) + eyeShiftY,
       eyeSize,
       eyeSize
     );
@@ -518,10 +529,21 @@ function updateMovement(deltaTime) {
     currentVelocity.x = intendedVelocity.x;
     currentVelocity.y = intendedVelocity.y;
     isMoving = true;
+    
+    // Update eye direction based on movement
+    updateEyeDirection(intendedVelocity, dt);
   } else {
     currentVelocity.x = 0;
     currentVelocity.y = 0;
     isMoving = false;
+    
+    // Gradually return eyes to center when not moving
+    eyeDirection.x = eyeDirection.x * 0.95;
+    eyeDirection.y = eyeDirection.y * 0.95;
+    
+    // Snap to zero if very close
+    if (Math.abs(eyeDirection.x) < 0.01) eyeDirection.x = 0;
+    if (Math.abs(eyeDirection.y) < 0.01) eyeDirection.y = 0;
   }
 
   // Update visual position with precise collision detection
@@ -692,6 +714,30 @@ function getPlayerHopOffset() {
   const bounce = Math.abs(Math.sin(phase));
   
   return -bounce * hopHeight; // Negative Y means upward
+}
+
+/**
+ * Update eye direction based on movement
+ */
+function updateEyeDirection(velocity, deltaTime) {
+  // Normalize velocity for eye direction (max strength of 1.0)
+  const speed = Math.sqrt(velocity.x ** 2 + velocity.y ** 2);
+  if (speed < 0.5) return; // Don't update for very slow movement
+  
+  const normalizedX = velocity.x / speed;
+  const normalizedY = velocity.y / speed;
+  
+  // Smoothly interpolate eye direction toward movement direction
+  const lerpSpeed = 8.0; // How quickly eyes follow movement direction
+  const targetX = normalizedX * 1.0; // Max eye offset (100% for obvious movement)
+  const targetY = normalizedY * 1.0;
+  
+  eyeDirection.x += (targetX - eyeDirection.x) * lerpSpeed * deltaTime;
+  eyeDirection.y += (targetY - eyeDirection.y) * lerpSpeed * deltaTime;
+  
+  // Update last movement direction for reference
+  lastMovementDirection.x = normalizedX;
+  lastMovementDirection.y = normalizedY;
 }
 
 /**
