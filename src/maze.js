@@ -491,35 +491,61 @@ function updateMovement(deltaTime) {
     isMoving = false;
   }
 
-  // Update visual position
+  // Update visual position with precise collision detection
   if (isMoving) {
-    const newVisualX = playerVisualPos.x + (currentVelocity.x * dt);
-    const newVisualY = playerVisualPos.y + (currentVelocity.y * dt);
+    let newVisualX = playerVisualPos.x + (currentVelocity.x * dt);
+    let newVisualY = playerVisualPos.y + (currentVelocity.y * dt);
 
-    // Check collision and snap to grid for logical position updates
+    // Check X-axis movement separately to allow sliding along walls
     const targetLogicalX = Math.round(newVisualX);
+    if (canMoveTo(targetLogicalX, Math.round(playerVisualPos.y))) {
+      // Check if we're not going too far beyond the cell boundary
+      const cellCenterX = Math.round(playerVisualPos.x);
+      const maxDistance = 0.4; // Allow 40% deviation from cell center
+      
+      if (Math.abs(newVisualX - cellCenterX) <= maxDistance || 
+          canMoveTo(Math.floor(newVisualX), Math.round(playerVisualPos.y)) && 
+          canMoveTo(Math.ceil(newVisualX), Math.round(playerVisualPos.y))) {
+        playerVisualPos.x = newVisualX;
+      } else {
+        // Stop at the boundary
+        playerVisualPos.x = cellCenterX + Math.sign(newVisualX - cellCenterX) * maxDistance;
+      }
+    }
+
+    // Check Y-axis movement separately to allow sliding along walls  
     const targetLogicalY = Math.round(newVisualY);
+    if (canMoveTo(Math.round(playerVisualPos.x), targetLogicalY)) {
+      // Check if we're not going too far beyond the cell boundary
+      const cellCenterY = Math.round(playerVisualPos.y);
+      const maxDistance = 0.4; // Allow 40% deviation from cell center
+      
+      if (Math.abs(newVisualY - cellCenterY) <= maxDistance ||
+          canMoveTo(Math.round(playerVisualPos.x), Math.floor(newVisualY)) &&
+          canMoveTo(Math.round(playerVisualPos.x), Math.ceil(newVisualY))) {
+        playerVisualPos.y = newVisualY;
+      } else {
+        // Stop at the boundary
+        playerVisualPos.y = cellCenterY + Math.sign(newVisualY - cellCenterY) * maxDistance;
+      }
+    }
 
-    // Only update logical position if we can move there
-    if (canMoveTo(targetLogicalX, targetLogicalY)) {
-      playerVisualPos.x = newVisualX;
-      playerVisualPos.y = newVisualY;
-
-      // Update logical position if we've moved to a new cell
-      if (targetLogicalX !== mazeModel.playerPos.x || targetLogicalY !== mazeModel.playerPos.y) {
+    // Update logical position if we've moved to a new cell
+    const currentLogicalX = Math.round(playerVisualPos.x);
+    const currentLogicalY = Math.round(playerVisualPos.y);
+    
+    if (currentLogicalX !== mazeModel.playerPos.x || currentLogicalY !== mazeModel.playerPos.y) {
+      // Double-check that the logical position is valid
+      if (canMoveTo(currentLogicalX, currentLogicalY)) {
         const goalReached = mazeModel.movePlayer(
-          targetLogicalX - mazeModel.playerPos.x,
-          targetLogicalY - mazeModel.playerPos.y
+          currentLogicalX - mazeModel.playerPos.x,
+          currentLogicalY - mazeModel.playerPos.y
         );
 
         if (goalReached) {
           handleMazeComplete();
         }
       }
-    } else {
-      // Snap visual position to current logical position if movement is blocked
-      playerVisualPos.x = mazeModel.playerPos.x;
-      playerVisualPos.y = mazeModel.playerPos.y;
     }
   }
 }
