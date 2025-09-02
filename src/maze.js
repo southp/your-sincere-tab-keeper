@@ -48,6 +48,30 @@ let celebrationState = {
   sparkles: []
 };
 
+// Ambient animation system
+let ambientAnimationTime = 0; // Running time for ambient animations
+
+// Idle behavior system
+let idleState = {
+  lastMovementTime: 0,
+  currentState: 'awake', // 'awake', 'blinking', 'looking', 'napping', 'sleeping'
+  blinkTimer: 0,
+  lookDirection: { x: 0, y: 0 },
+  lookTimer: 0,
+  sleepParticles: []
+};
+
+// Idle timing configuration
+const IDLE_CONFIG = {
+  blinkStartDelay: 5000,    // 5 seconds before blinking starts
+  lookingStartDelay: 10000, // 10 seconds before looking around starts  
+  nappingStartDelay: 20000, // 20 seconds before napping starts
+  sleepingStartDelay: 25000, // 25 seconds before ZZZ appears
+  blinkInterval: 3000,      // Blink every 3 seconds when idle
+  lookInterval: 2000,       // Change look direction every 2 seconds
+  zzzInterval: 2000         // New ZZZ every 2 seconds
+};
+
 // Movement configuration
 const MOVEMENT_CONFIG = {
   baseSpeed: 4.0,          // Base movement speed (cells per second)
@@ -314,6 +338,11 @@ async function initializeGame() {
   // Initialize smooth movement system
   playerVisualPos.x = mazeModel.playerPos.x;
   playerVisualPos.y = mazeModel.playerPos.y;
+  
+  // Initialize idle behavior system
+  idleState.lastMovementTime = performance.now();
+  idleState.currentState = 'awake';
+  idleState.sleepParticles = [];
 
   // Initial render
   renderMaze(mazeModel);
@@ -358,14 +387,47 @@ function renderMaze(model) {
     }
   }
 
-  // Draw goal
-  ctx.fillStyle = COLORS.goal;
+  // Draw goal with waving flag
+  const goalCenterX = model.goalPos.x * cellSize + cellSize / 2;
+  const goalCenterY = model.goalPos.y * cellSize + cellSize / 2;
+  const flagWave = getFlagWaveOffset();
+  
+  // Draw goal base (flagpole)
+  ctx.fillStyle = '#8B4513'; // Brown flagpole
+  const poleWidth = Math.max(1, cellSize / 12);
+  const poleHeight = cellSize * 0.7;
   ctx.fillRect(
-    model.goalPos.x * cellSize + 2,
-    model.goalPos.y * cellSize + 2,
-    cellSize - 4,
-    cellSize - 4
+    goalCenterX - poleWidth / 2,
+    goalCenterY - poleHeight / 2,
+    poleWidth,
+    poleHeight
   );
+  
+  // Draw waving flag
+  ctx.fillStyle = COLORS.goal;
+  const flagWidth = cellSize * 0.4;
+  const flagHeight = cellSize * 0.25;
+  const flagX = goalCenterX;
+  const flagY = goalCenterY - poleHeight / 3;
+  
+  // Create simple waving flag effect using quadratic curves
+  ctx.beginPath();
+  ctx.moveTo(flagX, flagY);
+  ctx.quadraticCurveTo(
+    flagX + flagWidth / 2 + (flagWave * cellSize),
+    flagY - flagHeight / 4,
+    flagX + flagWidth,
+    flagY
+  );
+  ctx.lineTo(flagX + flagWidth, flagY + flagHeight);
+  ctx.quadraticCurveTo(
+    flagX + flagWidth / 2 + (flagWave * cellSize),
+    flagY + flagHeight + flagHeight / 4,
+    flagX,
+    flagY + flagHeight
+  );
+  ctx.closePath();
+  ctx.fill();
 
   // Only draw borders for smaller mazes to avoid performance issues
   if (model.size <= 25) {
@@ -396,31 +458,50 @@ function renderMaze(model) {
 
   ctx.fillRect(playerX, playerY, playerSize, playerSize);
 
-  // Add player eyes with directional movement - only if cell is big enough
+  // Add player eyes with different states - only if cell is big enough
   if (cellSize >= 8) {
-    ctx.fillStyle = '#fff';
     const eyeSize = Math.max(1, Math.floor(cellSize / 10));
     const baseEyeOffset = Math.floor(cellSize * 0.3);
     
     // Calculate eye positions with directional offset
-    const eyeShiftX = eyeDirection.x * (eyeSize * 2.0); // Much larger shift for obvious movement
+    const eyeShiftX = eyeDirection.x * (eyeSize * 2.0);
     const eyeShiftY = eyeDirection.y * (eyeSize * 2.0);
     
-    // Left eye
-    ctx.fillRect(
-      playerVisualPos.x * cellSize + baseEyeOffset + eyeShiftX,
-      playerVisualPos.y * cellSize + baseEyeOffset + (hopOffset * cellSize) + eyeShiftY,
-      eyeSize,
-      eyeSize
-    );
+    const leftEyeX = playerVisualPos.x * cellSize + baseEyeOffset + eyeShiftX;
+    const rightEyeX = playerVisualPos.x * cellSize + Math.floor(cellSize * 0.6) + eyeShiftX;
+    const eyeY = playerVisualPos.y * cellSize + baseEyeOffset + (hopOffset * cellSize) + eyeShiftY;
     
-    // Right eye
-    ctx.fillRect(
-      playerVisualPos.x * cellSize + Math.floor(cellSize * 0.6) + eyeShiftX,
-      playerVisualPos.y * cellSize + baseEyeOffset + (hopOffset * cellSize) + eyeShiftY,
-      eyeSize,
-      eyeSize
-    );
+    // Draw eyes based on current idle state
+    if (idleState.currentState === 'napping' || idleState.currentState === 'sleeping') {
+      // Draw sleepy hyphen-shaped eyes
+      ctx.fillStyle = '#000';
+      const hyphenWidth = eyeSize * 1.5;
+      const hyphenHeight = Math.max(1, eyeSize / 3);
+      
+      // Left sleepy eye
+      ctx.fillRect(leftEyeX - eyeSize/4, eyeY + eyeSize/3, hyphenWidth, hyphenHeight);
+      // Right sleepy eye  
+      ctx.fillRect(rightEyeX - eyeSize/4, eyeY + eyeSize/3, hyphenWidth, hyphenHeight);
+      
+    } else if (idleState.currentState === 'blinking' && isBlinking()) {
+      // Draw closed eyes (thin horizontal lines)
+      ctx.fillStyle = '#000';
+      const blinkHeight = Math.max(1, eyeSize / 4);
+      
+      // Left closed eye
+      ctx.fillRect(leftEyeX, eyeY + eyeSize/2, eyeSize, blinkHeight);
+      // Right closed eye
+      ctx.fillRect(rightEyeX, eyeY + eyeSize/2, eyeSize, blinkHeight);
+      
+    } else {
+      // Draw normal white eyes
+      ctx.fillStyle = '#fff';
+      
+      // Left eye
+      ctx.fillRect(leftEyeX, eyeY, eyeSize, eyeSize);
+      // Right eye
+      ctx.fillRect(rightEyeX, eyeY, eyeSize, eyeSize);
+    }
   }
 
   // Draw celebration sparkles
@@ -443,6 +524,28 @@ function renderMaze(model) {
     // Reset alpha
     ctx.globalAlpha = 1.0;
   }
+
+  // Draw ZZZ particles when sleeping
+  if (idleState.currentState === 'sleeping' && idleState.sleepParticles.length > 0) {
+    ctx.fillStyle = '#888';
+    ctx.font = `${Math.max(8, cellSize * 0.4)}px monospace`;
+    ctx.textAlign = 'center';
+    
+    idleState.sleepParticles.forEach(particle => {
+      const alpha = Math.max(0, 1 - (particle.age / 3)); // Fade out over 3 seconds
+      ctx.globalAlpha = alpha;
+      
+      ctx.fillText(
+        'z',
+        particle.x * cellSize,
+        particle.y * cellSize
+      );
+    });
+    
+    // Reset alpha and text properties
+    ctx.globalAlpha = 1.0;
+    ctx.textAlign = 'left';
+  }
 }
 
 /**
@@ -460,13 +563,18 @@ function animate(currentTime) {
   
   // Update celebration animation
   updateCelebration(deltaTime);
+  
+  // Update ambient animation time
+  ambientAnimationTime += deltaTime;
 
-  // Only render if player position has changed, we're moving, or celebration is active
+  // Render if position changed, moving, celebrating, or idle animations are active
   const positionChanged =
     Math.abs(playerVisualPos.x - previousPos.x) > 0.001 ||
     Math.abs(playerVisualPos.y - previousPos.y) > 0.001;
 
-  if (positionChanged || isMoving || celebrationState.active) {
+  const hasIdleAnimations = idleState.currentState !== 'awake' || idleState.sleepParticles.length > 0;
+
+  if (positionChanged || isMoving || celebrationState.active || hasIdleAnimations) {
     renderMaze(mazeModel);
   }
 
@@ -530,6 +638,11 @@ function updateMovement(deltaTime) {
     currentVelocity.y = intendedVelocity.y;
     isMoving = true;
     
+    // Reset idle state when moving
+    idleState.lastMovementTime = currentTime;
+    idleState.currentState = 'awake';
+    idleState.sleepParticles = [];
+    
     // Update eye direction based on movement
     updateEyeDirection(intendedVelocity, dt);
   } else {
@@ -537,13 +650,8 @@ function updateMovement(deltaTime) {
     currentVelocity.y = 0;
     isMoving = false;
     
-    // Gradually return eyes to center when not moving
-    eyeDirection.x = eyeDirection.x * 0.95;
-    eyeDirection.y = eyeDirection.y * 0.95;
-    
-    // Snap to zero if very close
-    if (Math.abs(eyeDirection.x) < 0.01) eyeDirection.x = 0;
-    if (Math.abs(eyeDirection.y) < 0.01) eyeDirection.y = 0;
+    // Update idle behavior
+    updateIdleBehavior(currentTime, dt);
   }
 
   // Update visual position with precise collision detection
@@ -738,6 +846,153 @@ function updateEyeDirection(velocity, deltaTime) {
   // Update last movement direction for reference
   lastMovementDirection.x = normalizedX;
   lastMovementDirection.y = normalizedY;
+}
+
+/**
+ * Update idle behavior system
+ */
+function updateIdleBehavior(currentTime, deltaTime) {
+  const idleTime = currentTime - idleState.lastMovementTime;
+  
+  // Update idle state based on time
+  if (idleTime > IDLE_CONFIG.sleepingStartDelay) {
+    if (idleState.currentState !== 'sleeping') {
+      idleState.currentState = 'sleeping';
+      idleState.sleepParticles = [];
+    }
+  } else if (idleTime > IDLE_CONFIG.nappingStartDelay) {
+    if (idleState.currentState !== 'napping') {
+      idleState.currentState = 'napping';
+    }
+  } else if (idleTime > IDLE_CONFIG.lookingStartDelay) {
+    if (idleState.currentState !== 'looking') {
+      idleState.currentState = 'looking';
+      idleState.lookTimer = 0;
+    }
+  } else if (idleTime > IDLE_CONFIG.blinkStartDelay) {
+    if (idleState.currentState !== 'blinking') {
+      idleState.currentState = 'blinking';
+      idleState.blinkTimer = 0;
+    }
+  }
+  
+  // Handle state-specific behavior
+  switch (idleState.currentState) {
+    case 'blinking':
+      updateBlinkingBehavior(currentTime);
+      break;
+    case 'looking':
+      updateLookingBehavior(currentTime);
+      break;
+    case 'napping':
+      // Eyes remain closed, no special updates needed
+      break;
+    case 'sleeping':
+      updateSleepingBehavior(currentTime, deltaTime);
+      break;
+  }
+}
+
+/**
+ * Update blinking behavior
+ */
+function updateBlinkingBehavior(currentTime) {
+  // Gradually return eyes to center and trigger periodic blinks
+  eyeDirection.x = eyeDirection.x * 0.95;
+  eyeDirection.y = eyeDirection.y * 0.95;
+  
+  // Snap to zero if very close
+  if (Math.abs(eyeDirection.x) < 0.01) eyeDirection.x = 0;
+  if (Math.abs(eyeDirection.y) < 0.01) eyeDirection.y = 0;
+  
+  // Update blink timer for periodic blinking (handled in rendering)
+  idleState.blinkTimer = currentTime;
+}
+
+/**
+ * Update looking around behavior
+ */
+function updateLookingBehavior(currentTime) {
+  // Change look direction periodically
+  if (currentTime - idleState.lookTimer > IDLE_CONFIG.lookInterval) {
+    // Pick a new random direction to look
+    const directions = [
+      { x: -0.8, y: 0 },    // Left
+      { x: 0.8, y: 0 },     // Right  
+      { x: 0, y: -0.8 },    // Up
+      { x: 0, y: 0.8 },     // Down
+      { x: -0.6, y: -0.6 }, // Up-left
+      { x: 0.6, y: -0.6 },  // Up-right
+      { x: 0, y: 0 }        // Center (rest)
+    ];
+    
+    idleState.lookDirection = directions[Math.floor(Math.random() * directions.length)];
+    idleState.lookTimer = currentTime;
+  }
+  
+  // Smoothly interpolate to look direction
+  const lerpSpeed = 3.0;
+  const dt = 1/60; // Approximate delta time
+  eyeDirection.x += (idleState.lookDirection.x - eyeDirection.x) * lerpSpeed * dt;
+  eyeDirection.y += (idleState.lookDirection.y - eyeDirection.y) * lerpSpeed * dt;
+}
+
+/**
+ * Update sleeping behavior with ZZZ particles
+ */
+function updateSleepingBehavior(currentTime, deltaTime) {
+  // Add new ZZZ particles periodically
+  if (idleState.sleepParticles.length === 0 || 
+      (idleState.sleepParticles.length > 0 && 
+       currentTime - idleState.sleepParticles[idleState.sleepParticles.length - 1].birthTime > IDLE_CONFIG.zzzInterval)) {
+    
+    idleState.sleepParticles.push({
+      x: playerVisualPos.x + 0.2 + (Math.random() - 0.5) * 0.3,
+      y: playerVisualPos.y - 0.3,
+      age: 0,
+      birthTime: currentTime,
+      drift: (Math.random() - 0.5) * 0.5,
+      size: 0.8 + Math.random() * 0.4
+    });
+  }
+  
+  // Update existing ZZZ particles
+  const dt = deltaTime / 1000;
+  idleState.sleepParticles = idleState.sleepParticles.filter(particle => {
+    particle.age += dt;
+    particle.y -= 0.5 * dt; // Float upward
+    particle.x += particle.drift * dt; // Gentle horizontal drift
+    
+    return particle.age < 3; // Remove after 3 seconds
+  });
+}
+
+/**
+ * Check if avatar is currently blinking
+ */
+function isBlinking() {
+  if (idleState.currentState !== 'blinking') return false;
+  
+  const timeSinceLastBlink = performance.now() - idleState.blinkTimer;
+  const blinkCycle = timeSinceLastBlink % IDLE_CONFIG.blinkInterval;
+  
+  // Blink for 200ms every blinkInterval
+  return blinkCycle < 200;
+}
+
+/**
+ * Get flag wave offset for goal animation
+ */
+function getFlagWaveOffset() {
+  const waveFreq = 2.0; // Faster wave cycles per second
+  const waveAmplitude = 0.25; // Much more dramatic waving (in cells)
+  
+  // Sine wave for flag waving motion with some variation
+  const phase = (ambientAnimationTime / 1000) * waveFreq * Math.PI * 2;
+  const secondaryPhase = (ambientAnimationTime / 1000) * waveFreq * 1.3 * Math.PI * 2;
+  
+  // Combine two sine waves for more natural flag motion
+  return (Math.sin(phase) * waveAmplitude) + (Math.sin(secondaryPhase) * waveAmplitude * 0.3);
 }
 
 /**
