@@ -22,6 +22,7 @@ class TrendGraph extends HTMLElement {
       dailyTabLimits: {},
       dailyBlockedAttempts: {}
     };
+    this.isInitialized = false;
 
     // Chart dimensions and styling
     this.dimensions = {
@@ -39,16 +40,24 @@ class TrendGraph extends HTMLElement {
       background: '#ffffff'
     };
 
-    this.render();
-    this.setupEventListeners();
+    this.initialize();
   }
 
-  connectedCallback() {
+  initialize() {
+    this.render();
+    this.setupEventListeners();
+    this.isInitialized = true;
+    // Initial chart render after everything is set up
     this.updateChart();
   }
 
+  connectedCallback() {
+    // Component is already initialized in constructor
+    // No additional action needed
+  }
+
   attributeChangedCallback(name, oldValue, newValue) {
-    if (oldValue !== newValue) {
+    if (oldValue !== newValue && this.isInitialized) {
       if (name === 'data-period') {
         this.period = newValue;
         this.updateChart();
@@ -67,7 +76,10 @@ class TrendGraph extends HTMLElement {
         dailyTabLimits: newData.dailyTabLimits || {},
         dailyBlockedAttempts: newData.dailyBlockedAttempts || {}
       };
-      this.updateChart();
+      // Only update chart if component is fully initialized
+      if (this.isInitialized) {
+        this.updateChart();
+      }
     }
   }
 
@@ -314,6 +326,12 @@ class TrendGraph extends HTMLElement {
 
   updateChart() {
     const chartContainer = this.shadowRoot.querySelector('.chart-container');
+    
+    // This should never happen with proper initialization, but add assertion for debugging
+    if (!chartContainer) {
+      console.error('TrendGraph: Chart container not found - this indicates a component lifecycle bug');
+      return;
+    }
 
     // Generate date range for current period
     const dateRange = this.getDateRange();
@@ -760,11 +778,19 @@ class TrendGraph extends HTMLElement {
 
   showNoData() {
     const chartContainer = this.shadowRoot.querySelector('.chart-container');
+    if (!chartContainer) {
+      console.warn('TrendGraph: Chart container not found for showNoData');
+      return;
+    }
     chartContainer.innerHTML = `<div class="no-data-message">${getI18nMessage('noDataAvailable')}</div>`;
   }
 
   showError(message) {
     const chartContainer = this.shadowRoot.querySelector('.chart-container');
+    if (!chartContainer) {
+      console.warn('TrendGraph: Chart container not found for showError');
+      return;
+    }
     chartContainer.innerHTML = `<div class="no-data-message">Error: ${message}</div>`;
   }
 }

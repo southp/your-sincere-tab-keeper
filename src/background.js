@@ -344,6 +344,19 @@ async function setupDebugUtilities() {
       return locales;
     },
 
+    // Component testing helpers
+    openTrendGraphTestPage: async () => {
+      try {
+        const testPageUrl = chrome.runtime.getURL('src/test-trend-graph.html');
+        await chrome.tabs.create({ url: testPageUrl });
+        generalLogger.log('🧪 Opened trend graph test page');
+        return true;
+      } catch (error) {
+        generalLogger.error('Failed to open trend graph test page:', error);
+        return false;
+      }
+    },
+
     // Help function
     help: () => {
       // eslint-disable-next-line no-console
@@ -365,6 +378,9 @@ State Management:
 Testing Helpers:
   debugTabKeeper.simulateTabLimit(n)   - Set tab limit for testing
   debugTabKeeper.forceBlock(url)       - Check if URL would be blocked
+
+Component Testing:
+  debugTabKeeper.openTrendGraphTestPage() - Open trend graph test page
 
 Localization Testing:
   debugTabKeeper.setLocale('zh_TW')    - Test Traditional Chinese

@@ -263,7 +263,9 @@ async function cleanupDevFiles() {
     'package-lock.json',
     'vite.config.js',
     'scripts',
-    'node_modules'
+    'node_modules',
+    'src/test-trend-graph.html',  // Test page for development only
+    'src/test-trend-graph.js'    // Test script for development only
   ];
 
   for (const file of devFiles) {
