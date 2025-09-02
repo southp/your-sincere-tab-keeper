@@ -23,6 +23,28 @@ let timerInterval;
 let currentDifficulty = 0;
 let isHandlingCompletion = false; // Prevent multiple completion handlers
 
+// Smooth movement system
+let animationFrameId = null;
+let playerVisualPos = { x: 1, y: 1 }; // Smooth interpolated position for rendering
+let movementState = {
+  up: { pressed: false, timePressed: 0 },
+  down: { pressed: false, timePressed: 0 },
+  left: { pressed: false, timePressed: 0 },
+  right: { pressed: false, timePressed: 0 }
+};
+let currentVelocity = { x: 0, y: 0 };
+let isMoving = false;
+let lastFrameTime = 0;
+
+// Movement configuration
+const MOVEMENT_CONFIG = {
+  baseSpeed: 4.0,          // Base movement speed (cells per second)
+  maxSpeed: 16.0,           // Maximum movement speed (cells per second)
+  acceleration: 6.0,       // Acceleration rate (cells/s² per second)
+  smoothingFactor: 0.85,   // Position interpolation smoothing (0-1)
+  keyRepeatDelay: 150      // ms before acceleration starts
+};
+
 // Maze session data (will be loaded from storage)
 let action = null;
 let difficulty = 0;
@@ -277,8 +299,19 @@ async function initializeGame() {
   const randomMessage = motivationMessages[Math.floor(Math.random() * motivationMessages.length)];
   motivationMessageEl.textContent = randomMessage;
 
+  // Initialize smooth movement system
+  playerVisualPos.x = mazeModel.playerPos.x;
+  playerVisualPos.y = mazeModel.playerPos.y;
+
   // Initial render
   renderMaze(mazeModel);
+
+  // Start animation loop for smooth movement
+  if (animationFrameId) {
+    cancelAnimationFrame(animationFrameId);
+  }
+  lastFrameTime = performance.now();
+  animationFrameId = requestAnimationFrame(animate);
 }
 
 
@@ -342,10 +375,10 @@ function renderMaze(model) {
     ctx.stroke();
   }
 
-  // Draw player
+  // Draw player using smooth visual position
   ctx.fillStyle = COLORS.player;
-  const playerX = model.playerPos.x * cellSize + 3;
-  const playerY = model.playerPos.y * cellSize + 3;
+  const playerX = playerVisualPos.x * cellSize + 3;
+  const playerY = playerVisualPos.y * cellSize + 3;
   const playerSize = Math.max(4, cellSize - 6);
 
   ctx.fillRect(playerX, playerY, playerSize, playerSize);
@@ -357,14 +390,14 @@ function renderMaze(model) {
     const eyeOffset = Math.floor(cellSize * 0.3);
 
     ctx.fillRect(
-      model.playerPos.x * cellSize + eyeOffset,
-      model.playerPos.y * cellSize + eyeOffset,
+      playerVisualPos.x * cellSize + eyeOffset,
+      playerVisualPos.y * cellSize + eyeOffset,
       eyeSize,
       eyeSize
     );
     ctx.fillRect(
-      model.playerPos.x * cellSize + Math.floor(cellSize * 0.6),
-      model.playerPos.y * cellSize + eyeOffset,
+      playerVisualPos.x * cellSize + Math.floor(cellSize * 0.6),
+      playerVisualPos.y * cellSize + eyeOffset,
       eyeSize,
       eyeSize
     );
@@ -372,14 +405,146 @@ function renderMaze(model) {
 }
 
 /**
- * Handle player movement
+ * Animation loop for smooth movement and rendering
+ */
+function animate(currentTime) {
+  if (!canvas) return;
+
+  const deltaTime = currentTime - lastFrameTime;
+  lastFrameTime = currentTime;
+
+  // Update movement physics
+  const previousPos = { x: playerVisualPos.x, y: playerVisualPos.y };
+  updateMovement(deltaTime);
+
+  // Only render if player position has changed or if we're still moving
+  const positionChanged =
+    Math.abs(playerVisualPos.x - previousPos.x) > 0.001 ||
+    Math.abs(playerVisualPos.y - previousPos.y) > 0.001;
+
+  if (positionChanged || isMoving) {
+    renderMaze(mazeModel);
+  }
+
+  // Continue animation loop
+  animationFrameId = requestAnimationFrame(animate);
+}
+
+/**
+ * Update player movement with smooth physics
+ */
+function updateMovement(deltaTime) {
+  if (!deltaTime || deltaTime > 100) return; // Skip large time jumps or pauses
+
+  const dt = deltaTime / 1000; // Convert to seconds
+  const currentTime = performance.now();
+
+  // Skip update if delta time is too small to prevent floating point precision issues
+  if (dt < 0.001) return;
+
+  // Calculate intended movement direction
+  let intendedVelocity = { x: 0, y: 0 };
+  let anyKeyPressed = false;
+
+  // Check each direction and calculate velocity with acceleration
+  Object.keys(movementState).forEach(direction => {
+    const state = movementState[direction];
+    if (!state.pressed) return;
+
+    anyKeyPressed = true;
+    const timeHeld = currentTime - state.timePressed;
+    let speed = MOVEMENT_CONFIG.baseSpeed;
+
+    // Apply smooth acceleration after initial delay
+    if (timeHeld > MOVEMENT_CONFIG.keyRepeatDelay) {
+      const accelerationTime = (timeHeld - MOVEMENT_CONFIG.keyRepeatDelay) / 1000;
+      speed = Math.min(
+        MOVEMENT_CONFIG.maxSpeed,
+        MOVEMENT_CONFIG.baseSpeed + (MOVEMENT_CONFIG.acceleration * accelerationTime)
+      );
+    }
+
+    // Apply direction
+    switch (direction) {
+      case 'up': intendedVelocity.y = -speed; break;
+      case 'down': intendedVelocity.y = speed; break;
+      case 'left': intendedVelocity.x = -speed; break;
+      case 'right': intendedVelocity.x = speed; break;
+    }
+  });
+
+  // Handle diagonal movement (normalize)
+  if (intendedVelocity.x !== 0 && intendedVelocity.y !== 0) {
+    const magnitude = Math.sqrt(intendedVelocity.x ** 2 + intendedVelocity.y ** 2);
+    intendedVelocity.x = (intendedVelocity.x / magnitude) * Math.abs(intendedVelocity.x);
+    intendedVelocity.y = (intendedVelocity.y / magnitude) * Math.abs(intendedVelocity.y);
+  }
+
+  // Smooth velocity changes
+  if (anyKeyPressed) {
+    currentVelocity.x = intendedVelocity.x;
+    currentVelocity.y = intendedVelocity.y;
+    isMoving = true;
+  } else {
+    currentVelocity.x = 0;
+    currentVelocity.y = 0;
+    isMoving = false;
+  }
+
+  // Update visual position
+  if (isMoving) {
+    const newVisualX = playerVisualPos.x + (currentVelocity.x * dt);
+    const newVisualY = playerVisualPos.y + (currentVelocity.y * dt);
+
+    // Check collision and snap to grid for logical position updates
+    const targetLogicalX = Math.round(newVisualX);
+    const targetLogicalY = Math.round(newVisualY);
+
+    // Only update logical position if we can move there
+    if (canMoveTo(targetLogicalX, targetLogicalY)) {
+      playerVisualPos.x = newVisualX;
+      playerVisualPos.y = newVisualY;
+
+      // Update logical position if we've moved to a new cell
+      if (targetLogicalX !== mazeModel.playerPos.x || targetLogicalY !== mazeModel.playerPos.y) {
+        const goalReached = mazeModel.movePlayer(
+          targetLogicalX - mazeModel.playerPos.x,
+          targetLogicalY - mazeModel.playerPos.y
+        );
+
+        if (goalReached) {
+          handleMazeComplete();
+        }
+      }
+    } else {
+      // Snap visual position to current logical position if movement is blocked
+      playerVisualPos.x = mazeModel.playerPos.x;
+      playerVisualPos.y = mazeModel.playerPos.y;
+    }
+  }
+}
+
+/**
+ * Check if player can move to a specific position
+ */
+function canMoveTo(x, y) {
+  return x >= 0 && x < mazeModel.size &&
+         y >= 0 && y < mazeModel.size &&
+         mazeModel.grid[y] && mazeModel.grid[y][x] !== WALL;
+}
+
+/**
+ * Handle player movement (legacy function - now just triggers movement state)
  */
 function movePlayer(dx, dy) {
+  // This function is kept for compatibility but movement is now handled by the animation loop
+  // We can still use it for instant movement in special cases (like debug commands)
   const goalReached = mazeModel.movePlayer(dx, dy);
 
-  renderMaze(mazeModel);
+  // Snap visual position to logical position for instant movement
+  playerVisualPos.x = mazeModel.playerPos.x;
+  playerVisualPos.y = mazeModel.playerPos.y;
 
-  // Check if goal reached
   if (goalReached) {
     handleMazeComplete();
   }
@@ -415,6 +580,12 @@ async function handleMazeComplete() {
 
   isHandlingCompletion = true;
   stopTimer();
+
+  // Stop animation loop
+  if (animationFrameId) {
+    cancelAnimationFrame(animationFrameId);
+    animationFrameId = null;
+  }
 
   // Show completion overlay with productivity tip and send completion message
   // Note: TabManager will mark the maze as completed when it receives the MAZE_COMPLETED message
@@ -616,35 +787,77 @@ async function loadStats() {
 }
 
 /**
- * Setup event listeners
+ * Setup event listeners with smooth movement support
  */
 function setupEventListeners() {
-  // Keyboard controls
+  // State-based keyboard controls for smooth movement
   document.addEventListener('keydown', (e) => {
+    if (e.repeat) return; // Ignore auto-repeat events
+
+    const currentTime = performance.now();
+
     switch (e.key) {
       case 'ArrowUp':
       case 'w':
       case 'W':
         e.preventDefault();
-        movePlayer(0, -1);
+        if (!movementState.up.pressed) {
+          movementState.up.pressed = true;
+          movementState.up.timePressed = currentTime;
+        }
         break;
       case 'ArrowDown':
       case 's':
       case 'S':
         e.preventDefault();
-        movePlayer(0, 1);
+        if (!movementState.down.pressed) {
+          movementState.down.pressed = true;
+          movementState.down.timePressed = currentTime;
+        }
         break;
       case 'ArrowLeft':
       case 'a':
       case 'A':
         e.preventDefault();
-        movePlayer(-1, 0);
+        if (!movementState.left.pressed) {
+          movementState.left.pressed = true;
+          movementState.left.timePressed = currentTime;
+        }
         break;
       case 'ArrowRight':
       case 'd':
       case 'D':
         e.preventDefault();
-        movePlayer(1, 0);
+        if (!movementState.right.pressed) {
+          movementState.right.pressed = true;
+          movementState.right.timePressed = currentTime;
+        }
+        break;
+    }
+  });
+
+  // Handle key releases
+  document.addEventListener('keyup', (e) => {
+    switch (e.key) {
+      case 'ArrowUp':
+      case 'w':
+      case 'W':
+        movementState.up.pressed = false;
+        break;
+      case 'ArrowDown':
+      case 's':
+      case 'S':
+        movementState.down.pressed = false;
+        break;
+      case 'ArrowLeft':
+      case 'a':
+      case 'A':
+        movementState.left.pressed = false;
+        break;
+      case 'ArrowRight':
+      case 'd':
+      case 'D':
+        movementState.right.pressed = false;
         break;
     }
   });
@@ -660,6 +873,14 @@ canvas?.addEventListener('contextmenu', (e) => {
 window.addEventListener('focus', () => {
   // Refresh stats when tab gains focus
   loadStats();
+});
+
+// Cleanup animation loop on page unload
+window.addEventListener('beforeunload', () => {
+  if (animationFrameId) {
+    cancelAnimationFrame(animationFrameId);
+    animationFrameId = null;
+  }
 });
 
 /**
