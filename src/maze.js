@@ -40,6 +40,17 @@ let lastFrameTime = 0;
 let eyeDirection = { x: 0, y: 0 }; // Current eye look direction
 let lastMovementDirection = { x: 0, y: 0 }; // Last significant movement direction
 
+// Wall pushing state for easter egg
+let wallPushingState = {
+  active: false,
+  startTime: 0,
+  direction: { x: 0, y: 0 },
+  sweatDrops: [],
+  gasping: false,
+  gaspStartTime: 0,
+  gaspDuration: 3000 // 3 seconds of gasping
+};
+
 // Goal celebration animation system
 let celebrationState = {
   active: false,
@@ -471,8 +482,34 @@ function renderMaze(model) {
 
   // Add player eyes with different states - only if cell is big enough
   if (cellSize >= 8) {
-    const eyeSize = Math.max(1, Math.floor(cellSize / 10));
+    let eyeSize = Math.max(1, Math.floor(cellSize / 10));
     const baseEyeOffset = Math.floor(cellSize * 0.3);
+    
+    // Wall pushing effects (easter egg)
+    let eyeSizeMultiplier = 1.0;
+    let isGaspingNow = false;
+    
+    if (wallPushingState.active) {
+      const pushingDuration = performance.now() - wallPushingState.startTime;
+      // Eyes grow bigger after 10 seconds
+      if (pushingDuration > 10000) {
+        const growthFactor = Math.min((pushingDuration - 10000) / 3000, 1); // Grow over 3 seconds
+        eyeSizeMultiplier = 1.0 + (growthFactor * 1.5); // Up to 2.5x size
+      }
+    } else if (wallPushingState.gasping) {
+      const gaspingDuration = performance.now() - wallPushingState.gaspStartTime;
+      if (gaspingDuration < wallPushingState.gaspDuration) {
+        isGaspingNow = true;
+        // Pulsing effect during gasping
+        const pulse = Math.sin((gaspingDuration / 200) * Math.PI) * 0.3 + 1.0;
+        eyeSizeMultiplier = pulse;
+      } else {
+        // Stop gasping
+        wallPushingState.gasping = false;
+      }
+    }
+    
+    eyeSize = Math.floor(eyeSize * eyeSizeMultiplier);
     
     // Calculate eye positions with directional offset
     const eyeShiftX = eyeDirection.x * (eyeSize * 2.0);
@@ -483,7 +520,22 @@ function renderMaze(model) {
     const eyeY = playerVisualPos.y * cellSize + baseEyeOffset + (hopOffset * cellSize) + eyeShiftY;
     
     // Draw eyes based on current state
-    if (celebrationState.active) {
+    if (isGaspingNow) {
+      // Draw gasping eyes (wide open and pulsing)
+      ctx.fillStyle = '#fff';
+      
+      // Left gasping eye (larger white eyes)
+      ctx.fillRect(leftEyeX - eyeSize/4, eyeY - eyeSize/4, eyeSize * 1.5, eyeSize * 1.5);
+      // Right gasping eye
+      ctx.fillRect(rightEyeX - eyeSize/4, eyeY - eyeSize/4, eyeSize * 1.5, eyeSize * 1.5);
+      
+      // Add black pupils in center
+      ctx.fillStyle = '#000';
+      const pupilSize = Math.max(1, eyeSize / 3);
+      ctx.fillRect(leftEyeX + eyeSize/3, eyeY + eyeSize/3, pupilSize, pupilSize);
+      ctx.fillRect(rightEyeX + eyeSize/3, eyeY + eyeSize/3, pupilSize, pupilSize);
+      
+    } else if (celebrationState.active) {
       // Draw happy celebration eyes as hyphens (like ^_^)
       ctx.fillStyle = '#000';
       const hyphenWidth = eyeSize * 2; // Make them bigger than normal sleepy eyes
@@ -541,6 +593,25 @@ function renderMaze(model) {
         sparkle.size,
         sparkle.size
       );
+    });
+    
+    // Reset alpha
+    ctx.globalAlpha = 1.0;
+  }
+
+  // Draw sweat drops (easter egg)
+  if (wallPushingState.sweatDrops.length > 0) {
+    ctx.fillStyle = '#87CEEB'; // Sky blue for sweat
+    wallPushingState.sweatDrops.forEach(drop => {
+      ctx.globalAlpha = drop.life;
+      const dropX = drop.x * cellSize;
+      const dropY = drop.y * cellSize;
+      const dropSize = Math.max(1, cellSize / 20);
+      
+      // Draw small oval for sweat drop
+      ctx.beginPath();
+      ctx.ellipse(dropX, dropY, dropSize, dropSize * 1.5, 0, 0, 2 * Math.PI);
+      ctx.fill();
     });
     
     // Reset alpha
@@ -671,12 +742,22 @@ function updateMovement(deltaTime) {
     currentVelocity.y = 0;
     isMoving = false;
     
+    // Handle wall pushing release (easter egg)
+    handleWallPushingRelease(currentTime);
+    
+    // Also reset wall pushing state when not moving
+    updateWallPushing(currentTime, { x: 0, y: 0 }, false);
+    
     // Update idle behavior
     updateIdleBehavior(currentTime, dt);
   }
 
   // Update visual position with precise collision detection
   if (isMoving) {
+    // Store previous position for wall pushing detection
+    const prevX = playerVisualPos.x;
+    const prevY = playerVisualPos.y;
+    
     let newVisualX = playerVisualPos.x + (currentVelocity.x * dt);
     let newVisualY = playerVisualPos.y + (currentVelocity.y * dt);
 
@@ -713,6 +794,11 @@ function updateMovement(deltaTime) {
         playerVisualPos.y = cellCenterY + Math.sign(newVisualY - cellCenterY) * maxDistance;
       }
     }
+
+    // Check for wall pushing (easter egg)
+    const positionChanged = Math.abs(playerVisualPos.x - prevX) > 0.001 ||
+                           Math.abs(playerVisualPos.y - prevY) > 0.001;
+    updateWallPushing(currentTime, intendedVelocity, positionChanged);
 
     // Check for goal completion - trigger when avatar center is close to goal center
     const distanceToGoal = Math.sqrt(
@@ -1034,6 +1120,83 @@ function isBlinking() {
   
   // Blink for 200ms every blinkInterval
   return blinkCycle < 200;
+}
+
+/**
+ * Update wall pushing state (easter egg)
+ */
+function updateWallPushing(currentTime, intendedVelocity, positionChanged) {
+  // Check if player is trying to move but position didn't change (blocked by wall)
+  const isBlocked = (intendedVelocity.x !== 0 || intendedVelocity.y !== 0) && !positionChanged;
+  
+  if (isBlocked) {
+    const direction = { x: Math.sign(intendedVelocity.x), y: Math.sign(intendedVelocity.y) };
+    
+    // Check if this is the same direction as before
+    if (wallPushingState.active && 
+        wallPushingState.direction.x === direction.x && 
+        wallPushingState.direction.y === direction.y) {
+      // Continue pushing in same direction - update sweat
+      updateSweat(currentTime);
+    } else {
+      // Start new wall pushing session
+      wallPushingState.active = true;
+      wallPushingState.startTime = currentTime;
+      wallPushingState.direction = direction;
+      wallPushingState.sweatDrops = [];
+      wallPushingState.gasping = false;
+    }
+  } else {
+    // Not blocked - reset pushing state
+    if (wallPushingState.active) {
+      wallPushingState.active = false;
+    }
+  }
+}
+
+/**
+ * Handle wall pushing release (easter egg)
+ */
+function handleWallPushingRelease(currentTime) {
+  if (wallPushingState.active) {
+    const pushingDuration = currentTime - wallPushingState.startTime;
+    
+    // If was pushing for more than 10 seconds, trigger gasping
+    if (pushingDuration > 10000) {
+      wallPushingState.gasping = true;
+      wallPushingState.gaspStartTime = currentTime;
+    }
+    
+    wallPushingState.active = false;
+  }
+}
+
+/**
+ * Update sweat drops during wall pushing
+ */
+function updateSweat(currentTime) {
+  const pushingDuration = currentTime - wallPushingState.startTime;
+  
+  // Start sweating after 13 seconds (10 + 3)
+  if (pushingDuration > 13000) {
+    // Add new sweat drop occasionally
+    if (Math.random() < 0.05) { // 5% chance per frame
+      wallPushingState.sweatDrops.push({
+        x: playerVisualPos.x + (Math.random() - 0.5) * 0.3,
+        y: playerVisualPos.y - 0.1,
+        life: 1.0,
+        speed: 0.5 + Math.random() * 0.3
+      });
+    }
+  }
+  
+  // Update existing sweat drops
+  const dt = 16 / 1000; // Approximate deltaTime
+  wallPushingState.sweatDrops = wallPushingState.sweatDrops.filter(drop => {
+    drop.y += drop.speed * dt;
+    drop.life -= dt;
+    return drop.life > 0 && drop.y < playerVisualPos.y + 1;
+  });
 }
 
 /**
