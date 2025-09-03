@@ -44,6 +44,15 @@ import {
   updateMovement,
   movePlayer as movePlayerInput
 } from './maze-game/maze-input.js';
+import { 
+  ambientAnimationTime,
+  startAnimationLoop,
+  stopAnimationLoop,
+  createAnimateFunction,
+  getFlagWaveOffset,
+  setupAnimationCleanup,
+  resetAnimationTiming
+} from './maze-game/maze-animation.js';
 
 // Create scoped logger for maze functionality
 const mazeLogger = new Logger('MAZE-GAME');
@@ -56,15 +65,9 @@ let gameStartTime;
 let timerInterval;
 let currentDifficulty = 0;
 let isHandlingCompletion = false; // Prevent multiple completion handlers
+const isHandlingCompletionRef = { current: false }; // Reference for animation system
 
-// Animation system
-let animationFrameId = null;
-let lastFrameTime = 0;
-
-// States and configurations now imported from maze-effects.js
-
-// Ambient animation system
-let ambientAnimationTime = 0; // Running time for ambient animations
+// Animation system now imported from maze-animation.js
 
 // Movement configuration is now imported from maze-input.js
 
@@ -327,12 +330,32 @@ async function initializeGame() {
   // Initial render
   renderMaze(mazeModel);
 
+  // Create animation function with all dependencies
+  const animate = createAnimateFunction(
+    canvas,
+    updateMovement,
+    updateCelebration,
+    updateSweat,
+    renderMaze,
+    handleMazeComplete,
+    // Dependencies
+    celebrationState,
+    playerVisualPos,
+    mazeModel,
+    WALL,
+    canMoveTo,
+    updateWallPushing,
+    handleWallPushingRelease,
+    resetIdleState,
+    updateEyeDirection,
+    updateIdleBehavior,
+    eyeDirection,
+    startCelebration,
+    isHandlingCompletionRef
+  );
+
   // Start animation loop for smooth movement
-  if (animationFrameId) {
-    cancelAnimationFrame(animationFrameId);
-  }
-  lastFrameTime = performance.now();
-  animationFrameId = requestAnimationFrame(animate);
+  startAnimationLoop(animate);
 }
 
 
@@ -507,54 +530,7 @@ function renderMaze(model) {
 /**
  * Animation loop for smooth movement and rendering
  */
-function animate(currentTime) {
-  if (!canvas) return;
-
-  const deltaTime = currentTime - lastFrameTime;
-  lastFrameTime = currentTime;
-
-  // Update movement physics
-  const previousPos = { x: playerVisualPos.x, y: playerVisualPos.y };
-  const result = updateMovement(
-    deltaTime,
-    celebrationState,
-    playerVisualPos,
-    mazeModel,
-    WALL,
-    canMoveTo,
-    updateWallPushing,
-    handleWallPushingRelease,
-    resetIdleState,
-    updateEyeDirection,
-    updateIdleBehavior,
-    eyeDirection,
-    startCelebration,
-    isHandlingCompletion
-  );
-  
-  if (result?.goalReached) {
-    isHandlingCompletion = true;
-    // Delay completion to show celebration animation
-    setTimeout(() => {
-      handleMazeComplete();
-    }, celebrationState.duration);
-  }
-
-  // Update celebration animation
-  updateCelebration(deltaTime, mazeModel.goalPos);
-
-  // Update wall pushing effects (including sweat fade-out)
-  updateSweat(currentTime, playerVisualPos);
-
-  // Update ambient animation time
-  ambientAnimationTime += deltaTime;
-
-  // Always render to ensure consistent ambient animations (flag waving, etc.)
-  renderMaze(mazeModel);
-
-  // Continue animation loop
-  animationFrameId = requestAnimationFrame(animate);
-}
+// animate function moved to maze-animation.js
 
 // updateMovement function moved to maze-input.js
 /*
@@ -727,25 +703,7 @@ function removeThisLater(deltaTime) {
 }
 */
 
-/**
- * Get flag wave offset for goal animation
- */
-function getFlagWaveOffset(position = 0.5) {
-  const waveSpeed = 2.5; // Speed of wave traveling across flag
-  const waveAmplitude = 0.08; // Gentler wave amplitude (in cells)
-
-  // Create a traveling wave that flows from left to right
-  // Position 0 = left edge (attached to pole), position 1 = right edge (free)
-  const time = ambientAnimationTime / 1000;
-  const wavePhase = (time * waveSpeed) - (position * Math.PI * 1.5);
-
-  // The wave amplitude increases towards the free end of the flag
-  // Attached edge (position=0) has no movement, free edge (position=1) has full movement
-  const amplitudeMultiplier = position * position; // Quadratic increase towards free end
-
-  // Simple sine wave that grows stronger towards the free end
-  return Math.sin(wavePhase) * waveAmplitude * amplitudeMultiplier;
-}
+// getFlagWaveOffset function moved to maze-animation.js
 
 /**
  * Handle player movement (legacy function - now just triggers movement state)
@@ -781,13 +739,11 @@ async function handleMazeComplete() {
   if (isHandlingCompletion) return; // Prevent multiple completion handlers
 
   isHandlingCompletion = true;
+  isHandlingCompletionRef.current = true;
   stopTimer();
 
   // Stop animation loop
-  if (animationFrameId) {
-    cancelAnimationFrame(animationFrameId);
-    animationFrameId = null;
-  }
+  stopAnimationLoop();
 
   // Show completion overlay with productivity tip and send completion message
   // Note: TabManager will mark the maze as completed when it receives the MAZE_COMPLETED message
@@ -1013,13 +969,8 @@ window.addEventListener('focus', () => {
   loadStats();
 });
 
-// Cleanup animation loop on page unload
-window.addEventListener('beforeunload', () => {
-  if (animationFrameId) {
-    cancelAnimationFrame(animationFrameId);
-    animationFrameId = null;
-  }
-});
+// Setup animation cleanup on page unload
+setupAnimationCleanup();
 
 /**
  * Setup maze debugging utilities for development environment
