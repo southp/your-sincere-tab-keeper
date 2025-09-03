@@ -35,6 +35,15 @@ import {
   updateEyeDirection,
   renderPlayer
 } from './maze-game/maze-player.js';
+import { 
+  movementState,
+  currentVelocity,
+  isMoving,
+  MOVEMENT_CONFIG,
+  setupEventListeners,
+  updateMovement,
+  movePlayer as movePlayerInput
+} from './maze-game/maze-input.js';
 
 // Create scoped logger for maze functionality
 const mazeLogger = new Logger('MAZE-GAME');
@@ -48,16 +57,8 @@ let timerInterval;
 let currentDifficulty = 0;
 let isHandlingCompletion = false; // Prevent multiple completion handlers
 
-// Smooth movement system
+// Animation system
 let animationFrameId = null;
-let movementState = {
-  up: { pressed: false, timePressed: 0 },
-  down: { pressed: false, timePressed: 0 },
-  left: { pressed: false, timePressed: 0 },
-  right: { pressed: false, timePressed: 0 }
-};
-let currentVelocity = { x: 0, y: 0 };
-let isMoving = false;
 let lastFrameTime = 0;
 
 // States and configurations now imported from maze-effects.js
@@ -65,14 +66,7 @@ let lastFrameTime = 0;
 // Ambient animation system
 let ambientAnimationTime = 0; // Running time for ambient animations
 
-// Movement configuration
-const MOVEMENT_CONFIG = {
-  baseSpeed: 4.0,          // Base movement speed (cells per second)
-  maxSpeed: 16.0,           // Maximum movement speed (cells per second)
-  acceleration: 6.0,       // Acceleration rate (cells/s² per second)
-  smoothingFactor: 0.85,   // Position interpolation smoothing (0-1)
-  keyRepeatDelay: 150      // ms before acceleration starts
-};
+// Movement configuration is now imported from maze-input.js
 
 // Maze session data (will be loaded from storage)
 let action = null;
@@ -521,7 +515,30 @@ function animate(currentTime) {
 
   // Update movement physics
   const previousPos = { x: playerVisualPos.x, y: playerVisualPos.y };
-  updateMovement(deltaTime);
+  const result = updateMovement(
+    deltaTime,
+    celebrationState,
+    playerVisualPos,
+    mazeModel,
+    WALL,
+    canMoveTo,
+    updateWallPushing,
+    handleWallPushingRelease,
+    resetIdleState,
+    updateEyeDirection,
+    updateIdleBehavior,
+    eyeDirection,
+    startCelebration,
+    isHandlingCompletion
+  );
+  
+  if (result?.goalReached) {
+    isHandlingCompletion = true;
+    // Delay completion to show celebration animation
+    setTimeout(() => {
+      handleMazeComplete();
+    }, celebrationState.duration);
+  }
 
   // Update celebration animation
   updateCelebration(deltaTime, mazeModel.goalPos);
@@ -539,10 +556,10 @@ function animate(currentTime) {
   animationFrameId = requestAnimationFrame(animate);
 }
 
-/**
- * Update player movement with smooth physics
- */
-function updateMovement(deltaTime) {
+// updateMovement function moved to maze-input.js
+/*
+Duplicate updateMovement function removed - now imported from maze-input.js
+function removeThisLater(deltaTime) {
   if (!deltaTime || deltaTime > 100) return; // Skip large time jumps or pauses
 
   const dt = deltaTime / 1000; // Convert to seconds
@@ -708,6 +725,7 @@ function updateMovement(deltaTime) {
     }
   }
 }
+*/
 
 /**
  * Get flag wave offset for goal animation
@@ -732,23 +750,7 @@ function getFlagWaveOffset(position = 0.5) {
 /**
  * Handle player movement (legacy function - now just triggers movement state)
  */
-function movePlayer(dx, dy) {
-  // This function is kept for compatibility but movement is now handled by the animation loop
-  // We can still use it for instant movement in special cases (like debug commands)
-  const goalReached = mazeModel.movePlayer(dx, dy);
-
-  // Snap visual position to logical position for instant movement
-  playerVisualPos.x = mazeModel.playerPos.x;
-  playerVisualPos.y = mazeModel.playerPos.y;
-
-  if (goalReached) {
-    startCelebration(mazeModel.goalPos);
-    // Delay completion to show celebration animation
-    setTimeout(() => {
-      handleMazeComplete();
-    }, celebrationState.duration);
-  }
-}
+// movePlayer function moved to maze-input.js as movePlayerInput
 
 /**
  * Show completion message with productivity tip
@@ -998,80 +1000,7 @@ async function loadStats() {
 /**
  * Setup event listeners with smooth movement support
  */
-function setupEventListeners() {
-  // State-based keyboard controls for smooth movement
-  document.addEventListener('keydown', (e) => {
-    if (e.repeat) return; // Ignore auto-repeat events
-
-    const currentTime = performance.now();
-
-    switch (e.key) {
-      case 'ArrowUp':
-      case 'w':
-      case 'W':
-        e.preventDefault();
-        if (!movementState.up.pressed) {
-          movementState.up.pressed = true;
-          movementState.up.timePressed = currentTime;
-        }
-        break;
-      case 'ArrowDown':
-      case 's':
-      case 'S':
-        e.preventDefault();
-        if (!movementState.down.pressed) {
-          movementState.down.pressed = true;
-          movementState.down.timePressed = currentTime;
-        }
-        break;
-      case 'ArrowLeft':
-      case 'a':
-      case 'A':
-        e.preventDefault();
-        if (!movementState.left.pressed) {
-          movementState.left.pressed = true;
-          movementState.left.timePressed = currentTime;
-        }
-        break;
-      case 'ArrowRight':
-      case 'd':
-      case 'D':
-        e.preventDefault();
-        if (!movementState.right.pressed) {
-          movementState.right.pressed = true;
-          movementState.right.timePressed = currentTime;
-        }
-        break;
-    }
-  });
-
-  // Handle key releases
-  document.addEventListener('keyup', (e) => {
-    switch (e.key) {
-      case 'ArrowUp':
-      case 'w':
-      case 'W':
-        movementState.up.pressed = false;
-        break;
-      case 'ArrowDown':
-      case 's':
-      case 'S':
-        movementState.down.pressed = false;
-        break;
-      case 'ArrowLeft':
-      case 'a':
-      case 'A':
-        movementState.left.pressed = false;
-        break;
-      case 'ArrowRight':
-      case 'd':
-      case 'D':
-        movementState.right.pressed = false;
-        break;
-    }
-  });
-
-}
+// setupEventListeners function moved to maze-input.js
 
 // Prevent context menu on canvas
 canvas?.addEventListener('contextmenu', (e) => {
