@@ -144,6 +144,35 @@ export class TabManager {
   }
 
   /**
+   * Calculate maze difficulty based on daily completed mazes and action type
+   */
+  calculateMazeDifficulty(action = 'limitExceeded', providedDifficulty = 0) {
+    const dailyMazesCompleted = this.dailyMazesCompleted;
+    let calculatedDifficulty = dailyMazesCompleted;
+
+    // For updateLimit actions, ensure minimum Hard difficulty (index 3)
+    if (action === 'updateLimit') {
+      const minHardDifficulty = 3; // Hard level index
+      calculatedDifficulty = Math.max(dailyMazesCompleted, minHardDifficulty, providedDifficulty);
+    }
+    // For regular maze creation (limitExceeded), use actual daily count
+
+    // Cap at maximum difficulty level (5 = Master level)
+    const maxDifficulty = 5;
+    const finalDifficulty = Math.min(calculatedDifficulty, maxDifficulty);
+
+    this.mazeLogger.log('Calculated maze difficulty:', {
+      action,
+      dailyMazesCompleted,
+      providedDifficulty,
+      calculatedDifficulty,
+      finalDifficulty
+    });
+
+    return finalDifficulty;
+  }
+
+  /**
    * Handle tab limit exceeded - redirect to maze
    */
   async handleTabLimitExceeded(tab) {
@@ -158,10 +187,12 @@ export class TabManager {
         this.tabLogger.log('No URL to store for tab', tab.id, '- will default to new tab page');
       }
 
-      // Store maze session data using data store
+      // Calculate difficulty and store maze session data
+      const difficulty = this.calculateMazeDifficulty('limitExceeded');
       const store = usageDataStore();
       await store.setMazeSession({
-        difficulty: this.dailyMazesCompleted,
+        action: 'limitExceeded',
+        difficulty: difficulty,
         timestamp: Date.now()
       });
 
@@ -571,19 +602,17 @@ export class TabManager {
         return { created: 'blob' };
       }
 
-      // For limit update actions, store maze session data and determine difficulty
+      // For limit update actions, store maze session data with calculated difficulty
       if (action === 'updateLimit') {
-        const currentDifficulty = this.dailyMazesCompleted || 0;
-        const minHardDifficulty = 3; // Hard level index
-        const updateLimitDifficulty = Math.max(currentDifficulty, minHardDifficulty, difficulty || 0);
-
+        const calculatedDifficulty = this.calculateMazeDifficulty('updateLimit', difficulty || 0);
+        
         const store = usageDataStore();
         await store.setMazeSession({
           action: 'updateLimit',
-          difficulty: updateLimitDifficulty,
+          difficulty: calculatedDifficulty,
           timestamp: Date.now()
         });
-        this.mazeLogger.log('Stored maze session for limit update with difficulty:', updateLimitDifficulty);
+        this.mazeLogger.log('Stored maze session for limit update with difficulty:', calculatedDifficulty);
       }
 
       // Create new maze tab

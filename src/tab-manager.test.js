@@ -392,6 +392,7 @@ describe('TabManager', () => {
       expect(tabManager.blockedUrls.get(1)).toBe('http://example.com');
       expect(mockChrome.storage.local.set).toHaveBeenCalledWith({
         currentMazeSession: {
+          action: 'limitExceeded',
           difficulty: 0,
           timestamp: expect.any(Number)
         }
@@ -1189,10 +1190,62 @@ describe('TabManager', () => {
 
         expect(mockChrome.storage.local.set).toHaveBeenCalledWith({
           currentMazeSession: {
+            action: 'limitExceeded',
             difficulty: 4,
             timestamp: expect.any(Number)
           }
         });
+      });
+
+      test('calculateMazeDifficulty returns correct difficulty for limitExceeded action', () => {
+        tabManager.dailyMazesCompleted = 3;
+        
+        const result = tabManager.calculateMazeDifficulty('limitExceeded');
+        
+        expect(result).toBe(3);
+      });
+
+      test('calculateMazeDifficulty enforces minimum hard difficulty for updateLimit', () => {
+        tabManager.dailyMazesCompleted = 1;
+        
+        const result = tabManager.calculateMazeDifficulty('updateLimit', 2);
+        
+        expect(result).toBe(3); // Should be minimum hard difficulty
+      });
+
+      test('calculateMazeDifficulty uses highest value for updateLimit', () => {
+        tabManager.dailyMazesCompleted = 5;
+        
+        const result = tabManager.calculateMazeDifficulty('updateLimit', 2);
+        
+        expect(result).toBe(5); // Should use dailyMazesCompleted as it's highest
+      });
+
+      test('calculateMazeDifficulty caps at maximum difficulty', () => {
+        tabManager.dailyMazesCompleted = 10;
+        
+        const result = tabManager.calculateMazeDifficulty('limitExceeded');
+        
+        expect(result).toBe(5); // Should be capped at master level
+      });
+
+      test('difficulty is consistent between multiple tab creations without completion', async () => {
+        tabManager.dailyMazesCompleted = 2;
+        
+        // Create first maze tab
+        await tabManager.handleTabLimitExceeded({ id: 1, url: 'http://example.com' });
+        
+        // Create second maze tab (simulating closing first without completion)
+        await tabManager.handleTabLimitExceeded({ id: 2, url: 'http://example2.com' });
+        
+        // Both should have the same difficulty since no maze was completed
+        const calls = mockChrome.storage.local.set.mock.calls.filter(call => 
+          call[0].currentMazeSession && call[0].currentMazeSession.action === 'limitExceeded'
+        );
+        
+        expect(calls).toHaveLength(2);
+        expect(calls[0][0].currentMazeSession.difficulty).toBe(2);
+        expect(calls[1][0].currentMazeSession.difficulty).toBe(2);
       });
     });
   });

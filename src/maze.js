@@ -287,37 +287,14 @@ async function initializeGame() {
   canvas = document.getElementById('mazeCanvas');
   ctx = canvas.getContext('2d');
 
-  // Get current daily stats to determine difficulty
-  let dailyMazesCompleted = 0;
-  try {
-    const response = await chrome.runtime.sendMessage({ type: 'GET_STATS' });
-    if (response && !response.error) {
-      dailyMazesCompleted = response.dailyMazesCompleted || 0;
-    }
-  } catch (error) {
-    mazeLogger.error('Error getting daily stats for difficulty:', error);
-  }
-
-  // Set difficulty based on daily completed mazes and action type
-  let calculatedDifficulty = dailyMazesCompleted;
-
-  // For updateLimit actions, ensure minimum Hard difficulty (index 3)
-  if (action === 'updateLimit') {
-    const minHardDifficulty = 3; // Hard level index
-    calculatedDifficulty = Math.max(dailyMazesCompleted, minHardDifficulty);
-  }
-
-  // Use stored difficulty as fallback, but prioritize calculated difficulty
-  calculatedDifficulty = Math.max(difficulty, calculatedDifficulty);
+  // Use difficulty calculated by background script (single source of truth)
   const difficultySettings = getDifficultySettings();
-  currentDifficulty = Math.min(calculatedDifficulty, difficultySettings.length - 1);
+  currentDifficulty = Math.min(difficulty, difficultySettings.length - 1);
   const currentDifficultySettings = difficultySettings[currentDifficulty];
 
-  mazeLogger.log('Difficulty calculation:', {
+  mazeLogger.log('Using difficulty from background script:', {
     action,
     storedDifficulty: difficulty,
-    dailyMazesCompleted,
-    calculatedDifficulty,
     finalDifficulty: currentDifficulty
   });
 

@@ -162,12 +162,30 @@ class UsageDataStore {
   }
 
   /**
-   * Reset all statistics
+   * Reset all statistics and usage data
    */
   async resetStatistics() {
     try {
-      await this.storage.remove(['mazesCompleted', 'blockedAttempts']);
-      this.logger.log('Reset all statistics');
+      // Remove all statistics and tracking data
+      const keysToRemove = [
+        // Basic statistics
+        'mazesCompleted',
+        'blockedAttempts',
+        
+        // Daily tracking data (trends)
+        'dailyMazes',
+        'dailyTabLimits', 
+        'dailyBlockedAttempts',
+        
+        // Activity tracking
+        'limitHitTimestamps',
+        
+        // Current session data
+        'currentMazeSession'
+      ];
+      
+      await this.storage.remove(keysToRemove);
+      this.logger.log('Reset all statistics and tracking data:', keysToRemove);
     } catch (error) {
       this.logger.error('Failed to reset statistics:', error);
       throw error;

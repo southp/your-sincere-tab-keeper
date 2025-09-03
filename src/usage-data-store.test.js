@@ -250,7 +250,15 @@ describe('UsageDataStore', () => {
       it('should remove statistics keys', async () => {
         await store.resetStatistics();
 
-        expect(mockStorage.remove).toHaveBeenCalledWith(['mazesCompleted', 'blockedAttempts']);
+        expect(mockStorage.remove).toHaveBeenCalledWith([
+          'mazesCompleted',
+          'blockedAttempts',
+          'dailyMazes',
+          'dailyTabLimits', 
+          'dailyBlockedAttempts',
+          'limitHitTimestamps',
+          'currentMazeSession'
+        ]);
       });
     });
   });

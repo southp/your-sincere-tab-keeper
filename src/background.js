@@ -8,6 +8,7 @@ import { TabManager } from './tab-manager.js';
 import { isSpecialTab, isMazeTab } from './utils.js';
 import { isDevelopment } from './env.js';
 import { setLocaleOverride } from './ui-utils.js';
+import { usageDataStore } from './usage-data-store.js';
 
 // Create scoped loggers for service worker functionality
 const initLogger = new Logger('SERVICE-WORKER-INIT');
@@ -174,6 +175,9 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     case 'GET_STATS':
       handleGetStats(sendResponse);
       return true; // Keep message channel open for async response
+    case 'RESET_STATS':
+      handleResetStats(sendResponse);
+      return true; // Keep message channel open for async response
     case 'FOCUS_MAZE_TAB':
       tabManager.focusMazeTab();
       break;
@@ -207,6 +211,26 @@ async function handleGetStats(sendResponse) {
   } catch (error) {
     generalLogger.error('Failed to get stats:', error);
     sendResponse({ error: 'Failed to load statistics' });
+  }
+}
+
+/**
+ * Handle stats reset including TabManager state
+ */
+async function handleResetStats(sendResponse) {
+  try {
+    // Reset storage data using data store
+    const store = usageDataStore();
+    await store.resetStatistics();
+    
+    // Reset TabManager's in-memory state
+    tabManager.dailyMazesCompleted = 0;
+    
+    generalLogger.log('Statistics reset successfully');
+    sendResponse({ success: true });
+  } catch (error) {
+    generalLogger.error('Failed to reset stats:', error);
+    sendResponse({ error: 'Failed to reset statistics' });
   }
 }
 

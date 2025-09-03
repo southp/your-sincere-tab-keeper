@@ -239,11 +239,11 @@ async function handleCompleteOnboarding() {
     await loadTrendData();
 
     // Show success message
-    showNotification('Tab limit set successfully! Your journey begins now.', 'success');
+    showNotification(getI18nMessage('tabLimitSetSuccess'), 'success');
 
   } catch (error) {
     optionsLogger.error('Error completing onboarding:', error);
-    showNotification('Failed to save settings. Please try again.', 'error');
+    showNotification(getI18nMessage('settingsSaveFailed'), 'error');
   } finally {
     completeOnboardingBtn.classList.remove('loading');
     completeOnboardingBtn.disabled = false;
@@ -268,7 +268,7 @@ async function handleChangeLimit() {
 
   } catch (error) {
     optionsLogger.error('Error starting limit change:', error);
-    showNotification('Failed to start limit update process.', 'error');
+    showNotification(getI18nMessage('failedToStartUpdate'), 'error');
   } finally {
     changeLimitBtn.classList.remove('loading');
     changeLimitBtn.disabled = false;
@@ -287,19 +287,22 @@ async function handleResetStats() {
   try {
     resetStatsBtn.classList.add('loading');
 
-    // Reset statistics using data store
-    const store = usageDataStore();
-    await store.resetStatistics();
+    // Reset statistics using background script message
+    const response = await chrome.runtime.sendMessage({ type: 'RESET_STATS' });
+    
+    if (response.error) {
+      throw new Error(response.error);
+    }
 
     // Reload statistics display
     await loadStatistics();
     await loadTrendData();
 
-    showNotification('Statistics reset successfully!', 'success');
+    showNotification(getI18nMessage('statsResetSuccess'), 'success');
 
   } catch (error) {
     optionsLogger.error('Error resetting statistics:', error);
-    showNotification('Failed to reset statistics.', 'error');
+    showNotification(getI18nMessage('statsResetFailed'), 'error');
   } finally {
     resetStatsBtn.classList.remove('loading');
   }
@@ -327,11 +330,11 @@ async function handleExportStats() {
 
     URL.revokeObjectURL(url);
 
-    showNotification('Statistics exported successfully!', 'success');
+    showNotification(getI18nMessage('dataExportSuccess'), 'success');
 
   } catch (error) {
     optionsLogger.error('Error exporting statistics:', error);
-    showNotification('Failed to export statistics.', 'error');
+    showNotification(getI18nMessage('dataExportFailed'), 'error');
   } finally {
     exportStatsBtn.classList.remove('loading');
   }
