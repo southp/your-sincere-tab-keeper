@@ -472,16 +472,20 @@ function renderMaze(model) {
   // Draw player using smooth visual position with celebration hopping
   ctx.fillStyle = COLORS.player;
   const hopOffset = getPlayerHopOffset();
-  const playerX = playerVisualPos.x * cellSize + 3;
-  const playerY = playerVisualPos.y * cellSize + 3 + (hopOffset * cellSize);
-  const playerSize = Math.max(4, cellSize - 6);
+  
+  // Calculate player size and centering for better alignment
+  const playerSize = Math.max(2, Math.floor(cellSize * 0.9)); // 90% of cell size, minimum 2px
+  const centerOffset = (cellSize - playerSize) / 2; // Center the player in the cell
+  
+  const playerX = playerVisualPos.x * cellSize + centerOffset;
+  const playerY = playerVisualPos.y * cellSize + centerOffset + (hopOffset * cellSize);
 
   ctx.fillRect(playerX, playerY, playerSize, playerSize);
 
   // Add player eyes with different states - only if cell is big enough
-  if (cellSize >= 8) {
-    let eyeSize = Math.max(1, Math.floor(cellSize / 10));
-    const baseEyeOffset = Math.floor(cellSize * 0.3);
+  if (cellSize >= 4) { // Lower threshold for smaller mazes
+    let eyeSize = Math.max(1, Math.floor(cellSize / 10)); // Size relative to cell (original sizing)
+    const baseEyeOffset = Math.floor(playerSize * 0.25); // Offset relative to player size
 
     // Wall pushing effects (easter egg)
     let eyeSizeMultiplier = 1.0;
@@ -519,15 +523,15 @@ function renderMaze(model) {
 
     // Calculate eye positions with directional offset (use original eye size for positioning)
     const originalEyeSize = Math.max(1, Math.floor(cellSize / 10));
-    const eyeShiftX = eyeDirection.x * (originalEyeSize * 2.0);
-    const eyeShiftY = eyeDirection.y * (originalEyeSize * 2.0);
+    const eyeShiftX = eyeDirection.x * (originalEyeSize * 1.5);
+    const eyeShiftY = eyeDirection.y * (originalEyeSize * 1.5);
 
     // Center the grown eyes properly
     const eyeGrowthOffset = (eyeSize - originalEyeSize) / 2;
     const breathingOffset = wallPushingState.breathOffset || 0;
-    const leftEyeX = playerVisualPos.x * cellSize + baseEyeOffset + eyeShiftX - eyeGrowthOffset;
-    const rightEyeX = playerVisualPos.x * cellSize + Math.floor(cellSize * 0.6) + eyeShiftX - eyeGrowthOffset;
-    const eyeY = playerVisualPos.y * cellSize + baseEyeOffset + (hopOffset * cellSize) + eyeShiftY - eyeGrowthOffset + breathingOffset;
+    const leftEyeX = playerX + baseEyeOffset + eyeShiftX - eyeGrowthOffset;
+    const rightEyeX = playerX + playerSize - baseEyeOffset - eyeSize + eyeShiftX - eyeGrowthOffset;
+    const eyeY = playerY + baseEyeOffset + (hopOffset * cellSize) + eyeShiftY - eyeGrowthOffset + breathingOffset;
 
     // Draw eyes based on current state
     if (isGaspingNow) {
