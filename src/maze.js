@@ -482,8 +482,19 @@ function renderMaze(model) {
     const rightEyeX = playerVisualPos.x * cellSize + Math.floor(cellSize * 0.6) + eyeShiftX;
     const eyeY = playerVisualPos.y * cellSize + baseEyeOffset + (hopOffset * cellSize) + eyeShiftY;
     
-    // Draw eyes based on current idle state
-    if (idleState.currentState === 'napping' || idleState.currentState === 'sleeping') {
+    // Draw eyes based on current state
+    if (celebrationState.active) {
+      // Draw happy celebration eyes as hyphens (like ^_^)
+      ctx.fillStyle = '#000';
+      const hyphenWidth = eyeSize * 2; // Make them bigger than normal sleepy eyes
+      const hyphenHeight = Math.max(2, eyeSize / 3); // Thick enough to be visible
+      
+      // Left happy hyphen eye
+      ctx.fillRect(leftEyeX - eyeSize/4, eyeY + eyeSize/2, hyphenWidth, hyphenHeight);
+      // Right happy hyphen eye
+      ctx.fillRect(rightEyeX - eyeSize/4, eyeY + eyeSize/2, hyphenWidth, hyphenHeight);
+      
+    } else if (idleState.currentState === 'napping' || idleState.currentState === 'sleeping') {
       // Draw sleepy hyphen-shaped eyes
       ctx.fillStyle = '#000';
       const hyphenWidth = eyeSize * 1.5;
@@ -595,6 +606,14 @@ function updateMovement(deltaTime) {
 
   // Skip update if delta time is too small to prevent floating point precision issues
   if (dt < 0.001) return;
+
+  // Stop all movement during celebration
+  if (celebrationState.active) {
+    currentVelocity.x = 0;
+    currentVelocity.y = 0;
+    isMoving = false;
+    return;
+  }
 
   // Calculate intended movement direction
   let intendedVelocity = { x: 0, y: 0 };
