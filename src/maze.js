@@ -567,16 +567,8 @@ function animate(currentTime) {
   // Update ambient animation time
   ambientAnimationTime += deltaTime;
 
-  // Render if position changed, moving, celebrating, or idle animations are active
-  const positionChanged =
-    Math.abs(playerVisualPos.x - previousPos.x) > 0.001 ||
-    Math.abs(playerVisualPos.y - previousPos.y) > 0.001;
-
-  const hasIdleAnimations = idleState.currentState !== 'awake' || idleState.sleepParticles.length > 0;
-
-  if (positionChanged || isMoving || celebrationState.active || hasIdleAnimations) {
-    renderMaze(mazeModel);
-  }
+  // Always render to ensure consistent ambient animations (flag waving, etc.)
+  renderMaze(mazeModel);
 
   // Continue animation loop
   animationFrameId = requestAnimationFrame(animate);
