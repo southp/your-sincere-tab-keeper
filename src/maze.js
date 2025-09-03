@@ -68,43 +68,23 @@ import {
 } from './maze-game/maze-session.js';
 import { 
   initializeUI,
-  getMotivationMessages,
   showCompletedMazeMessage,
-  updateGameUI,
-  showCompletionMessage,
-  startTimer,
-  stopTimer,
-  loadStats,
-  showUpdateLimitModal,
-  hideCompletionOverlay,
-  getMazeOverlay
+  loadStats
 } from './maze-game/maze-ui.js';
+import { 
+  initializeGame,
+  handleMazeComplete,
+  sendMazeCompletionMessage,
+  setupGameEventListeners,
+  getGameState,
+  resetGame
+} from './maze-game/maze-game.js';
 
 // Create scoped logger for maze functionality
 const mazeLogger = new Logger('MAZE-GAME');
 
-// Game state
-let mazeModel = new MazeModel();
-let canvas, ctx;
-let gameStartTime;
-let currentDifficulty = 0;
-let isHandlingCompletion = false; // Prevent multiple completion handlers
-const isHandlingCompletionRef = { current: false }; // Reference for animation system
-
-// Animation system now imported from maze-animation.js
-// Movement configuration is now imported from maze-input.js
-// Session data will be managed by maze-session.js module
-// DOM elements and UI state will be managed by maze-ui.js module
-
-// Colors (Chrome Dino inspired)
-const COLORS = {
-  wall: '#535353',
-  path: '#f7f7f7',
-  player: PLAYER_COLORS.player,
-  goal: '#4ecdc4',
-  background: '#2a2a2a',
-  border: '#666'
-};
+// All game state, animation, movement, session data, and UI management 
+// is now handled by their respective modules in maze-game/
 
 // Difficulty settings - streamlined progression
 // Note: All sizes must be odd for proper maze generation algorithm
@@ -140,9 +120,14 @@ document.addEventListener('DOMContentLoaded', async () => {
     return; // Don't initialize the game
   }
 
-  await initializeGame(sessionInfo);
-  setupEventListeners();
+  await initializeGame(sessionInfo, getDifficultySettings(), mazeLogger);
+  setupGameEventListeners();
   await loadStats(mazeLogger);
+
+  // Focus handling for stats refresh
+  window.addEventListener('focus', () => {
+    loadStats(mazeLogger);
+  });
 
   // Setup development debugging utilities
   setupMazeDebugUtilities();
@@ -152,96 +137,6 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 
 
-/**
- * Initialize the maze game
- */
-async function initializeGame(sessionInfo) {
-  canvas = document.getElementById('mazeCanvas');
-  
-  // Initialize the renderer
-  const rendererResult = initializeRenderer(canvas);
-  ctx = rendererResult.ctx;
-
-  // Use difficulty from session data (single source of truth)
-  const difficultySettings = getDifficultySettings();
-  currentDifficulty = Math.min(sessionInfo.difficulty, difficultySettings.length - 1);
-  const currentDifficultySettings = difficultySettings[currentDifficulty];
-
-  mazeLogger.log('Using difficulty from session data:', {
-    action: sessionInfo.action,
-    storedDifficulty: sessionInfo.difficulty,
-    finalDifficulty: currentDifficulty
-  });
-
-  // Initialize maze model with difficulty settings
-  mazeModel.initialize(currentDifficultySettings);
-  isHandlingCompletion = false; // Reset completion handler flag
-
-  // Create renderMaze function with all dependencies
-  const renderMaze = createRenderMazeFunction(
-    COLORS,
-    getFlagWaveOffset,
-    renderPlayer,
-    getPlayerHopOffset,
-    celebrationState,
-    wallPushingState,
-    idleState,
-    isBlinking
-  );
-
-  // Calculate responsive canvas size after model is initialized
-  updateCanvasSize(mazeModel, renderMaze);
-
-  // Add debounced resize listener for responsive updates
-  let resizeTimeout;
-  window.addEventListener('resize', () => {
-    clearTimeout(resizeTimeout);
-    resizeTimeout = setTimeout(() => updateCanvasSize(mazeModel, renderMaze), 100);
-  });
-
-  // Update UI with game information
-  updateGameUI(currentDifficultySettings, mazeModel.size, sessionInfo.action, currentDifficulty);
-
-  // Start timer
-  gameStartTime = Date.now();
-  startTimer(gameStartTime);
-
-  // Initialize smooth movement system
-  initializePlayer(mazeModel.playerPos);
-
-  // Initialize idle behavior system
-  resetIdleState();
-
-  // Initial render
-  renderMaze(mazeModel);
-
-  // Create animation function with all dependencies
-  const animate = createAnimateFunction(
-    canvas,
-    updateMovement,
-    updateCelebration,
-    updateSweat,
-    renderMaze,
-    handleMazeComplete,
-    // Dependencies
-    celebrationState,
-    playerVisualPos,
-    mazeModel,
-    WALL,
-    canMoveTo,
-    updateWallPushing,
-    handleWallPushingRelease,
-    resetIdleState,
-    updateEyeDirection,
-    updateIdleBehavior,
-    eyeDirection,
-    startCelebration,
-    isHandlingCompletionRef
-  );
-
-  // Start animation loop for smooth movement
-  startAnimationLoop(animate);
-}
 
 
 
@@ -429,64 +324,6 @@ function removeThisLater(deltaTime) {
 // movePlayer function moved to maze-input.js as movePlayerInput
 
 
-/**
- * Handle maze completion
- */
-async function handleMazeComplete() {
-  if (isHandlingCompletion) return; // Prevent multiple completion handlers
-
-  isHandlingCompletion = true;
-  isHandlingCompletionRef.current = true;
-  stopTimer();
-
-  // Stop animation loop
-  stopAnimationLoop();
-
-  // Show completion overlay with productivity tip and send completion message
-  // Note: TabManager will mark the maze as completed when it receives the MAZE_COMPLETED message
-  showCompletionMessage();
-  await sendMazeCompletionMessage();
-
-  // Clear the maze session now that it's completed
-  await clearMazeSession(mazeLogger);
-}
-
-/**
- * Send maze completion message
- */
-async function sendMazeCompletionMessage() {
-  try {
-    mazeLogger.log('Sending maze completion message...');
-
-    await chrome.runtime.sendMessage({
-      type: 'MAZE_COMPLETED',
-      data: {
-        difficulty: currentDifficulty,
-        time: mazeModel.getElapsedTime(),
-        size: mazeModel.size,
-        action: getSessionAction()
-      }
-    });
-
-    mazeLogger.log('Maze completion message sent successfully');
-
-    // Handle different completion types
-    if (getSessionAction() === 'updateLimit') {
-      // Extended delay to show productivity tip, then show limit update modal
-      setTimeout(async () => {
-        hideCompletionOverlay();
-        await showUpdateLimitModal(mazeLogger);
-      }, 5000);
-    } else {
-      // Normal maze completion - show tip for 5 seconds, then background will handle URL loading
-      mazeLogger.log('Normal maze completion - showing productivity tip for 5 seconds');
-      // Note: Background script will wait for this delay before redirecting
-    }
-
-  } catch (error) {
-    mazeLogger.error('Error sending maze completion message:', error);
-  }
-}
 
 
 
@@ -497,19 +334,7 @@ async function sendMazeCompletionMessage() {
  */
 // setupEventListeners function moved to maze-input.js
 
-// Prevent context menu on canvas
-canvas?.addEventListener('contextmenu', (e) => {
-  e.preventDefault();
-});
-
-// Focus handling
-window.addEventListener('focus', () => {
-  // Refresh stats when tab gains focus
-  loadStats();
-});
-
-// Setup animation cleanup on page unload
-setupAnimationCleanup();
+// Event listeners are now handled by the game controller
 
 /**
  * Setup maze debugging utilities for development environment
@@ -524,13 +349,10 @@ async function setupMazeDebugUtilities() {
   // Expose maze debugging utilities
   /* eslint-disable no-console */
   globalThis.debugMaze = {
-    // Core maze inspection
-    mazeModel: mazeModel,
-    currentDifficulty: () => currentDifficulty,
+    // Core maze inspection - delegate to game controller
+    ...getGameState(),
     gameState: () => ({
-      gameStartTime,
-      cellSize: getCellSize(),
-      isHandlingCompletion,
+      ...getGameState(),
       action: getSessionAction(),
       difficulty: getSessionDifficulty()
     }),
