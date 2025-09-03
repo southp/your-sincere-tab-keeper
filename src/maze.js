@@ -66,6 +66,19 @@ import {
   getSessionDifficulty,
   initializeSession
 } from './maze-game/maze-session.js';
+import { 
+  initializeUI,
+  getMotivationMessages,
+  showCompletedMazeMessage,
+  updateGameUI,
+  showCompletionMessage,
+  startTimer,
+  stopTimer,
+  loadStats,
+  showUpdateLimitModal,
+  hideCompletionOverlay,
+  getMazeOverlay
+} from './maze-game/maze-ui.js';
 
 // Create scoped logger for maze functionality
 const mazeLogger = new Logger('MAZE-GAME');
@@ -74,26 +87,14 @@ const mazeLogger = new Logger('MAZE-GAME');
 let mazeModel = new MazeModel();
 let canvas, ctx;
 let gameStartTime;
-let timerInterval;
 let currentDifficulty = 0;
 let isHandlingCompletion = false; // Prevent multiple completion handlers
 const isHandlingCompletionRef = { current: false }; // Reference for animation system
 
 // Animation system now imported from maze-animation.js
-
 // Movement configuration is now imported from maze-input.js
-
 // Session data will be managed by maze-session.js module
-
-// DOM elements
-const difficultyLevelEl = document.getElementById('difficultyLevel');
-const mazeSizeEl = document.getElementById('mazeSize');
-const timerEl = document.getElementById('timer');
-const challengeMessageEl = document.getElementById('challengeMessage');
-const motivationMessageEl = document.getElementById('motivationMessage');
-const dailyMazesEl = document.getElementById('dailyMazes');
-const totalMazesEl = document.getElementById('totalMazes');
-const mazeOverlay = document.getElementById('mazeOverlay');
+// DOM elements and UI state will be managed by maze-ui.js module
 
 // Colors (Chrome Dino inspired)
 const COLORS = {
@@ -119,37 +120,17 @@ function getDifficultySettings() {
   ];
 }
 
-// Motivational messages
-function getMotivationMessages() {
-  return [
-    getI18nMessage('motivation1'),
-    getI18nMessage('motivation2'),
-    getI18nMessage('motivation3'),
-    getI18nMessage('motivation4'),
-    getI18nMessage('motivation5'),
-    getI18nMessage('motivation6'),
-    getI18nMessage('motivation7'),
-    getI18nMessage('motivation8')
-  ];
-}
 
 
-/**
- * Show completed maze message instead of the game
- */
-function showCompletedMazeMessage() {
-  // Hide the normal maze interface
-  document.querySelector('.maze-container').style.display = 'none';
-
-  // Show the completed maze message
-  document.getElementById('completedMazeMessage').style.display = 'flex';
-}
 
 
 // Initialize game when DOM is loaded
 document.addEventListener('DOMContentLoaded', async () => {
   // Initialize internationalization
   initializeI18n();
+  
+  // Initialize UI system
+  initializeUI();
 
   // Initialize session management and check completion status
   const sessionInfo = await initializeSession(mazeLogger);
@@ -161,7 +142,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   await initializeGame(sessionInfo);
   setupEventListeners();
-  await loadStats();
+  await loadStats(mazeLogger);
 
   // Setup development debugging utilities
   setupMazeDebugUtilities();
@@ -218,40 +199,12 @@ async function initializeGame(sessionInfo) {
     resizeTimeout = setTimeout(() => updateCanvasSize(mazeModel, renderMaze), 100);
   });
 
-  // Update UI
-  difficultyLevelEl.textContent = currentDifficultySettings.name;
-  mazeSizeEl.textContent = `${mazeModel.size}x${mazeModel.size}`;
-
-  // Set challenge message based on action and difficulty level
-  if (sessionInfo.action === 'updateLimit') {
-    challengeMessageEl.setAttribute('data-i18n', 'solveMazeToUpdateLimit');
-    challengeMessageEl.textContent = getI18nMessage('solveMazeToUpdateLimit');
-  } else {
-    // Set challenge message based on difficulty level
-    if (currentDifficulty === 6) { // Insane level
-      challengeMessageEl.setAttribute('data-i18n', 'solveMazeToOpenInsane');
-      challengeMessageEl.textContent = getI18nMessage('solveMazeToOpenInsane');
-    } else {
-      challengeMessageEl.setAttribute('data-i18n', 'solveMazeToOpen');
-      challengeMessageEl.textContent = getI18nMessage('solveMazeToOpen');
-    }
-  }
-
-  // Apply inferno theme for insane difficulty
-  if (currentDifficulty === 6) { // Insane level
-    document.body.classList.add('inferno-theme');
-  } else {
-    document.body.classList.remove('inferno-theme');
-  }
+  // Update UI with game information
+  updateGameUI(currentDifficultySettings, mazeModel.size, sessionInfo.action, currentDifficulty);
 
   // Start timer
   gameStartTime = Date.now();
-  startTimer();
-
-  // Set random motivation message
-  const motivationMessages = getMotivationMessages();
-  const randomMessage = motivationMessages[Math.floor(Math.random() * motivationMessages.length)];
-  motivationMessageEl.textContent = randomMessage;
+  startTimer(gameStartTime);
 
   // Initialize smooth movement system
   initializePlayer(mazeModel.playerPos);
@@ -475,27 +428,6 @@ function removeThisLater(deltaTime) {
  */
 // movePlayer function moved to maze-input.js as movePlayerInput
 
-/**
- * Show completion message with productivity tip
- */
-function showCompletionMessage() {
-  const tip = getRandomTip();
-
-  // Update the overlay content with the productivity tip
-  const overlayContent = document.querySelector('#mazeOverlay .overlay-content');
-  overlayContent.innerHTML = `
-    <div class="success-icon">🎉</div>
-    <h3>${getI18nMessage('congratulations')}</h3>
-    <p class="completion-message">${getI18nMessage('mazeCompletionWithTip')}</p>
-    <div class="productivity-tip">
-      <h4>💡 ${tip.title}</h4>
-      <p>${tip.message}</p>
-    </div>
-    <div class="loading-spinner"></div>
-  `;
-
-  mazeOverlay.style.display = 'flex';
-}
 
 /**
  * Handle maze completion
@@ -542,8 +474,8 @@ async function sendMazeCompletionMessage() {
     if (getSessionAction() === 'updateLimit') {
       // Extended delay to show productivity tip, then show limit update modal
       setTimeout(async () => {
-        mazeOverlay.style.display = 'none';
-        await showUpdateLimitModal();
+        hideCompletionOverlay();
+        await showUpdateLimitModal(mazeLogger);
       }, 5000);
     } else {
       // Normal maze completion - show tip for 5 seconds, then background will handle URL loading
@@ -557,160 +489,8 @@ async function sendMazeCompletionMessage() {
 }
 
 
-/**
- * Show the update limit modal
- */
-async function showUpdateLimitModal() {
-  const modal = document.getElementById('updateLimitModal');
-  if (!modal) {
-    mazeLogger.error('Update limit modal not found');
-    return;
-  }
 
-  // Set up the limit selector BEFORE showing the modal to prevent flash
-  await setupLimitSelector();
-  modal.style.display = 'flex';
-}
 
-/**
- * Setup limit selector in modal
- */
-async function setupLimitSelector() {
-  // Get current tab limit from background script
-  let currentLimit = TAB_LIMITS.DEFAULT; // Default fallback
-  try {
-    const response = await chrome.runtime.sendMessage({ type: 'GET_STATS' });
-    if (response && !response.error) {
-      currentLimit = response.tabLimit || TAB_LIMITS.DEFAULT;
-    }
-  } catch (error) {
-    mazeLogger.error('Failed to get current tab limit:', error);
-  }
-
-  let selectedLimit = currentLimit;
-
-  // Generate buttons dynamically with current limit selected and highlighted
-  renderLimitButtons('limitOptions', currentLimit, currentLimit);
-
-  // Query elements fresh from the modal
-  const modalLimitDesc = document.getElementById('modalLimitDescription');
-  const confirmBtn = document.getElementById('confirmLimitBtn');
-  const cancelBtn = document.getElementById('cancelLimitBtn');
-
-  if (!modalLimitDesc || !confirmBtn || !cancelBtn) {
-    mazeLogger.error('Modal elements not found');
-    return;
-  }
-
-  // Function to update confirm button state
-  const updateConfirmButton = (newSelectedLimit) => {
-    const isUnchanged = newSelectedLimit === currentLimit;
-    confirmBtn.disabled = isUnchanged;
-    confirmBtn.textContent = isUnchanged ?
-      getI18nMessage('currentLimitSelected') :
-      getI18nMessage('setLimitTo', [newSelectedLimit.toString()]);
-  };
-
-  // Set up button event listeners using shared utility
-  setupLimitButtonListeners('#limitOptions', (limit) => {
-    selectedLimit = limit;
-    updateLimitDescription('modalLimitDescription', limit);
-    updateConfirmButton(limit);
-  });
-
-  // Set initial description and confirm button state
-  updateLimitDescription('modalLimitDescription', selectedLimit);
-  updateConfirmButton(selectedLimit);
-
-  // Confirm button handler
-  confirmBtn.addEventListener('click', async () => {
-    try {
-      confirmBtn.classList.add('loading');
-      confirmBtn.disabled = true;
-
-      // Send new limit to background
-      await chrome.runtime.sendMessage({
-        type: 'UPDATE_TAB_LIMIT',
-        limit: selectedLimit
-      });
-
-      // Show success message
-      const modal = document.getElementById('updateLimitModal');
-      modal.innerHTML = `
-        <div class="modal-content">
-          <div class="modal-header">
-            <h2>🎯 Tab Limit Updated!</h2>
-            <p>Your new tab limit is set to ${selectedLimit}.</p>
-            <p style="margin-top: 16px;">If you had more tabs open than your new limit, excess tabs have been automatically closed to keep your newest ones.</p>
-          </div>
-          <div class="modal-actions">
-            <button id="okBtn" class="primary-btn">
-              OK
-            </button>
-          </div>
-        </div>
-      `;
-
-      // Add event listener to the OK button
-      const okBtn = document.getElementById('okBtn');
-      okBtn.addEventListener('click', () => {
-        // Navigate current tab to options page instead of opening new tab
-        window.location.href = chrome.runtime.getURL('src/options.html');
-      });
-
-    } catch (error) {
-      mazeLogger.error('Error updating tab limit:', error);
-      // eslint-disable-next-line no-alert
-      alert(getI18nMessage('failedToUpdateTabLimit')); // Intentional: User needs immediate error feedback
-    } finally {
-      confirmBtn.classList.remove('loading');
-      confirmBtn.disabled = false;
-    }
-  });
-
-  // Cancel button handler
-  cancelBtn.addEventListener('click', () => {
-    window.close();
-  });
-}
-
-/**
- * Start the game timer
- */
-function startTimer() {
-  timerInterval = setInterval(() => {
-    const elapsed = Date.now() - gameStartTime;
-    const minutes = Math.floor(elapsed / 60000);
-    const seconds = Math.floor((elapsed % 60000) / 1000);
-    timerEl.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-  }, 1000);
-}
-
-/**
- * Stop the game timer
- */
-function stopTimer() {
-  if (timerInterval) {
-    clearInterval(timerInterval);
-    timerInterval = null;
-  }
-}
-
-/**
- * Load and display statistics
- */
-async function loadStats() {
-  try {
-    const response = await chrome.runtime.sendMessage({ type: 'GET_STATS' });
-
-    if (response && !response.error) {
-      dailyMazesEl.textContent = response.dailyMazesCompleted || 0;
-      totalMazesEl.textContent = response.mazesCompleted || 0;
-    }
-  } catch (error) {
-    mazeLogger.error('Error loading stats:', error);
-  }
-}
 
 /**
  * Setup event listeners with smooth movement support
