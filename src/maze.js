@@ -388,48 +388,6 @@ function renderMaze(model) {
     }
   }
 
-  // Draw goal with waving flag
-  const goalCenterX = model.goalPos.x * cellSize + cellSize / 2;
-  const goalCenterY = model.goalPos.y * cellSize + cellSize / 2;
-  const flagWave = getFlagWaveOffset();
-  
-  // Draw goal base (flagpole)
-  ctx.fillStyle = '#8B4513'; // Brown flagpole
-  const poleWidth = Math.max(1, cellSize / 12);
-  const poleHeight = cellSize * 0.7;
-  ctx.fillRect(
-    goalCenterX - poleWidth / 2,
-    goalCenterY - poleHeight / 2,
-    poleWidth,
-    poleHeight
-  );
-  
-  // Draw waving flag
-  ctx.fillStyle = COLORS.goal;
-  const flagWidth = cellSize * 0.4;
-  const flagHeight = cellSize * 0.25;
-  const flagX = goalCenterX;
-  const flagY = goalCenterY - poleHeight / 3;
-  
-  // Create simple waving flag effect using quadratic curves
-  ctx.beginPath();
-  ctx.moveTo(flagX, flagY);
-  ctx.quadraticCurveTo(
-    flagX + flagWidth / 2 + (flagWave * cellSize),
-    flagY - flagHeight / 4,
-    flagX + flagWidth,
-    flagY
-  );
-  ctx.lineTo(flagX + flagWidth, flagY + flagHeight);
-  ctx.quadraticCurveTo(
-    flagX + flagWidth / 2 + (flagWave * cellSize),
-    flagY + flagHeight + flagHeight / 4,
-    flagX,
-    flagY + flagHeight
-  );
-  ctx.closePath();
-  ctx.fill();
-
   // Only draw borders for smaller mazes to avoid performance issues
   if (model.size <= 25) {
     ctx.strokeStyle = COLORS.border;
@@ -449,6 +407,58 @@ function renderMaze(model) {
 
     ctx.stroke();
   }
+
+  // Draw goal with waving flag (after borders so flag appears on top)
+  const goalCenterX = model.goalPos.x * cellSize + cellSize / 2;
+  const goalCenterY = model.goalPos.y * cellSize + cellSize / 2;
+  
+  // Draw goal base (flagpole)
+  ctx.fillStyle = '#8B4513'; // Brown flagpole
+  const poleWidth = Math.max(1, cellSize / 12);
+  const poleHeight = cellSize * 0.7;
+  ctx.fillRect(
+    goalCenterX - poleWidth / 2,
+    goalCenterY - poleHeight / 2,
+    poleWidth,
+    poleHeight
+  );
+  
+  // Draw waving flag with flowing motion
+  ctx.fillStyle = COLORS.goal;
+  const flagWidth = cellSize * 0.6;
+  const flagHeight = cellSize * 0.25;
+  const flagX = goalCenterX;
+  const flagY = goalCenterY - poleHeight / 3;
+  
+  // Create simple waving flag effect with gentle curves
+  ctx.beginPath();
+  ctx.moveTo(flagX, flagY); // Left edge attached to pole - no movement
+  
+  // Top edge with gentle wave using quadratic curve
+  const midWaveTop = getFlagWaveOffset(0.5);
+  const endWaveTop = getFlagWaveOffset(1);
+  ctx.quadraticCurveTo(
+    flagX + flagWidth * 0.5,
+    flagY + (midWaveTop * cellSize),
+    flagX + flagWidth,
+    flagY + (endWaveTop * cellSize)
+  );
+  
+  // Right edge
+  const endWaveBottom = getFlagWaveOffset(1);
+  ctx.lineTo(flagX + flagWidth, flagY + flagHeight + (endWaveBottom * cellSize));
+  
+  // Bottom edge with matching gentle wave
+  const midWaveBottom = getFlagWaveOffset(0.5);
+  ctx.quadraticCurveTo(
+    flagX + flagWidth * 0.5,
+    flagY + flagHeight + (midWaveBottom * cellSize),
+    flagX,
+    flagY + flagHeight // Left edge attached to pole - no movement
+  );
+  
+  ctx.closePath();
+  ctx.fill();
 
   // Draw player using smooth visual position with celebration hopping
   ctx.fillStyle = COLORS.player;
@@ -1010,16 +1020,21 @@ function isBlinking() {
 /**
  * Get flag wave offset for goal animation
  */
-function getFlagWaveOffset() {
-  const waveFreq = 2.0; // Faster wave cycles per second
-  const waveAmplitude = 0.25; // Much more dramatic waving (in cells)
+function getFlagWaveOffset(position = 0.5) {
+  const waveSpeed = 2.5; // Speed of wave traveling across flag
+  const waveAmplitude = 0.08; // Gentler wave amplitude (in cells)
   
-  // Sine wave for flag waving motion with some variation
-  const phase = (ambientAnimationTime / 1000) * waveFreq * Math.PI * 2;
-  const secondaryPhase = (ambientAnimationTime / 1000) * waveFreq * 1.3 * Math.PI * 2;
+  // Create a traveling wave that flows from left to right
+  // Position 0 = left edge (attached to pole), position 1 = right edge (free)
+  const time = ambientAnimationTime / 1000;
+  const wavePhase = (time * waveSpeed) - (position * Math.PI * 1.5);
   
-  // Combine two sine waves for more natural flag motion
-  return (Math.sin(phase) * waveAmplitude) + (Math.sin(secondaryPhase) * waveAmplitude * 0.3);
+  // The wave amplitude increases towards the free end of the flag
+  // Attached edge (position=0) has no movement, free edge (position=1) has full movement
+  const amplitudeMultiplier = position * position; // Quadratic increase towards free end
+  
+  // Simple sine wave that grows stronger towards the free end
+  return Math.sin(wavePhase) * waveAmplitude * amplitudeMultiplier;
 }
 
 /**
