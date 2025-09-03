@@ -182,24 +182,24 @@ describe('TabManager - Maze Creation', () => {
       });
     });
 
-    test('uses current difficulty when higher than hard level', async () => {
+    test('uses current difficulty when higher than minimum hard level', async () => {
       const mockMazeUrl = 'chrome-extension://test/maze.html';
       const mockNewTab = { id: 123 };
       
       mockChrome.runtime.getURL.mockReturnValue(mockMazeUrl);
       mockChrome.tabs.create.mockResolvedValue(mockNewTab);
       
-      // Set up daily mazes completed to high value
-      tabManager.dailyMazesCompleted = 5;
+      // Set up daily mazes completed to high value that exceeds hard level
+      tabManager.dailyMazesCompleted = 15; // This would be Expert level (4), but updateLimit enforces minimum Hard (3)
 
       await tabManager.createMazeTabOrBlob({ 
         action: 'updateLimit'
       });
 
-      // Should use current difficulty (5)
+      // Should use Expert difficulty (4) since it's higher than minimum Hard (3)
       expect(mockUsageDataStore.setMazeSession).toHaveBeenCalledWith({
         action: 'updateLimit',
-        difficulty: 5,
+        difficulty: 4, // 15 mazes -> Expert (4)
         timestamp: expect.any(Number)
       });
     });

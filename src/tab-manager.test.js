@@ -1182,27 +1182,28 @@ describe('TabManager', () => {
         });
       });
 
-      test('difficulty calculation uses daily count', async () => {
-        // Set up initial daily count
-        tabManager.dailyMazesCompleted = 4;
+      test('difficulty calculation uses daily count with gaps', async () => {
+        // Set up initial daily count - 6 mazes should be Medium (level 2)
+        tabManager.dailyMazesCompleted = 6;
 
         await tabManager.handleTabLimitExceeded({ id: 1, url: 'http://example.com' });
 
         expect(mockChrome.storage.local.set).toHaveBeenCalledWith({
           currentMazeSession: {
             action: 'limitExceeded',
-            difficulty: 4,
+            difficulty: 2, // 6 mazes (>=5) -> Medium level
             timestamp: expect.any(Number)
           }
         });
       });
 
       test('calculateMazeDifficulty returns correct difficulty for limitExceeded action', () => {
+        // Test the gap-based progression
         tabManager.dailyMazesCompleted = 3;
         
         const result = tabManager.calculateMazeDifficulty('limitExceeded');
         
-        expect(result).toBe(3);
+        expect(result).toBe(1); // 3 mazes completed -> Easy (level 1)
       });
 
       test('calculateMazeDifficulty enforces minimum hard difficulty for updateLimit', () => {
@@ -1218,15 +1219,65 @@ describe('TabManager', () => {
         
         const result = tabManager.calculateMazeDifficulty('updateLimit', 2);
         
-        expect(result).toBe(5); // Should use dailyMazesCompleted as it's highest
+        expect(result).toBe(3); // 5 mazes = Medium (2), but updateLimit enforces minimum Hard (3)
       });
 
       test('calculateMazeDifficulty caps at maximum difficulty', () => {
-        tabManager.dailyMazesCompleted = 10;
+        tabManager.dailyMazesCompleted = 20; // Way above master level threshold
         
         const result = tabManager.calculateMazeDifficulty('limitExceeded');
         
         expect(result).toBe(5); // Should be capped at master level
+      });
+
+      describe('gap-based difficulty progression', () => {
+        test('level 0 (Beginner) for 0-1 mazes completed', () => {
+          tabManager.dailyMazesCompleted = 0;
+          expect(tabManager.calculateMazeDifficulty('limitExceeded')).toBe(0);
+
+          tabManager.dailyMazesCompleted = 1;
+          expect(tabManager.calculateMazeDifficulty('limitExceeded')).toBe(0);
+        });
+
+        test('level 1 (Easy) after 2 mazes completed', () => {
+          tabManager.dailyMazesCompleted = 2;
+          expect(tabManager.calculateMazeDifficulty('limitExceeded')).toBe(1);
+
+          tabManager.dailyMazesCompleted = 4;
+          expect(tabManager.calculateMazeDifficulty('limitExceeded')).toBe(1);
+        });
+
+        test('level 2 (Medium) after 5 mazes completed', () => {
+          tabManager.dailyMazesCompleted = 5;
+          expect(tabManager.calculateMazeDifficulty('limitExceeded')).toBe(2);
+
+          tabManager.dailyMazesCompleted = 7;
+          expect(tabManager.calculateMazeDifficulty('limitExceeded')).toBe(2);
+        });
+
+        test('level 3 (Hard) after 8 mazes completed', () => {
+          tabManager.dailyMazesCompleted = 8;
+          expect(tabManager.calculateMazeDifficulty('limitExceeded')).toBe(3);
+
+          tabManager.dailyMazesCompleted = 11;
+          expect(tabManager.calculateMazeDifficulty('limitExceeded')).toBe(3);
+        });
+
+        test('level 4 (Expert) after 12 mazes completed', () => {
+          tabManager.dailyMazesCompleted = 12;
+          expect(tabManager.calculateMazeDifficulty('limitExceeded')).toBe(4);
+
+          tabManager.dailyMazesCompleted = 16;
+          expect(tabManager.calculateMazeDifficulty('limitExceeded')).toBe(4);
+        });
+
+        test('level 5 (Master) after 17 mazes completed', () => {
+          tabManager.dailyMazesCompleted = 17;
+          expect(tabManager.calculateMazeDifficulty('limitExceeded')).toBe(5);
+
+          tabManager.dailyMazesCompleted = 25;
+          expect(tabManager.calculateMazeDifficulty('limitExceeded')).toBe(5);
+        });
       });
 
       test('difficulty is consistent between multiple tab creations without completion', async () => {
@@ -1244,8 +1295,8 @@ describe('TabManager', () => {
         );
         
         expect(calls).toHaveLength(2);
-        expect(calls[0][0].currentMazeSession.difficulty).toBe(2);
-        expect(calls[1][0].currentMazeSession.difficulty).toBe(2);
+        expect(calls[0][0].currentMazeSession.difficulty).toBe(1); // 2 mazes -> Easy (level 1)
+        expect(calls[1][0].currentMazeSession.difficulty).toBe(1); // Still 2 mazes -> Easy (level 1)
       });
     });
   });
