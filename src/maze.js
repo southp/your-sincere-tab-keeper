@@ -666,7 +666,7 @@ function updateMovement(deltaTime) {
     if (canMoveTo(targetLogicalX, Math.round(playerVisualPos.y))) {
       // Check if we're not going too far beyond the cell boundary
       const cellCenterX = Math.round(playerVisualPos.x);
-      const maxDistance = 0.4; // Allow 40% deviation from cell center
+      const maxDistance = 0.1; // Allow only 10% deviation from cell center
       
       if (Math.abs(newVisualX - cellCenterX) <= maxDistance || 
           canMoveTo(Math.floor(newVisualX), Math.round(playerVisualPos.y)) && 
@@ -683,7 +683,7 @@ function updateMovement(deltaTime) {
     if (canMoveTo(Math.round(playerVisualPos.x), targetLogicalY)) {
       // Check if we're not going too far beyond the cell boundary
       const cellCenterY = Math.round(playerVisualPos.y);
-      const maxDistance = 0.4; // Allow 40% deviation from cell center
+      const maxDistance = 0.1; // Allow only 10% deviation from cell center
       
       if (Math.abs(newVisualY - cellCenterY) <= maxDistance ||
           canMoveTo(Math.round(playerVisualPos.x), Math.floor(newVisualY)) &&
