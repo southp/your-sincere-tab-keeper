@@ -261,8 +261,7 @@ async function loadMazeSessionData() {
       mazeLogger.log('Loaded maze session data:', { action, difficulty });
       mazeLogger.log('Action loaded from storage:', action);
 
-      // Clear the session data to prevent reuse
-      await store.clearMazeSession();
+      // Note: Session data will be cleared when maze is completed, not on load
     } else {
       mazeLogger.warn('No maze session data found, using defaults');
       mazeLogger.log('Setting action to null (default)');
@@ -1295,6 +1294,15 @@ async function handleMazeComplete() {
   // Note: TabManager will mark the maze as completed when it receives the MAZE_COMPLETED message
   showCompletionMessage();
   await sendMazeCompletionMessage();
+
+  // Clear the maze session now that it's completed
+  try {
+    const store = usageDataStore();
+    await store.clearMazeSession();
+    mazeLogger.log('Cleared maze session after completion');
+  } catch (error) {
+    mazeLogger.error('Failed to clear maze session:', error);
+  }
 }
 
 /**
