@@ -60,6 +60,12 @@ import {
   createRenderMazeFunction,
   getCanvasContext
 } from './maze-game/maze-renderer.js';
+import { 
+  clearMazeSession,
+  getSessionAction,
+  getSessionDifficulty,
+  initializeSession
+} from './maze-game/maze-session.js';
 
 // Create scoped logger for maze functionality
 const mazeLogger = new Logger('MAZE-GAME');
@@ -77,9 +83,7 @@ const isHandlingCompletionRef = { current: false }; // Reference for animation s
 
 // Movement configuration is now imported from maze-input.js
 
-// Maze session data (will be loaded from storage)
-let action = null;
-let difficulty = 0;
+// Session data will be managed by maze-session.js module
 
 // DOM elements
 const difficultyLevelEl = document.getElementById('difficultyLevel');
@@ -129,18 +133,6 @@ function getMotivationMessages() {
   ];
 }
 
-/**
- * Check if this is a completed maze session that user navigated back to
- */
-async function isCompletedMazeSession() {
-  try {
-    const response = await chrome.runtime.sendMessage({ type: 'CHECK_MAZE_COMPLETED' });
-    return response?.isCompleted || false;
-  } catch (error) {
-    mazeLogger.error('Error checking completed maze session:', error);
-    return false;
-  }
-}
 
 /**
  * Show completed maze message instead of the game
@@ -159,16 +151,15 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Initialize internationalization
   initializeI18n();
 
-  // Check if this is a completed maze that user navigated back to
-  if (await isCompletedMazeSession()) {
+  // Initialize session management and check completion status
+  const sessionInfo = await initializeSession(mazeLogger);
+  
+  if (sessionInfo.isCompleted) {
     showCompletedMazeMessage();
     return; // Don't initialize the game
   }
 
-  // Load maze session data from storage first
-  await loadMazeSessionData();
-
-  await initializeGame();
+  await initializeGame(sessionInfo);
   setupEventListeners();
   await loadStats();
 
@@ -179,56 +170,25 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
 
 
-/**
- * Load maze session data from Chrome storage
- */
-async function loadMazeSessionData() {
-  try {
-    // Try to get existing session data
-    const store = usageDataStore();
-    const sessionData = await store.getMazeSession();
-
-    if (sessionData) {
-      action = sessionData.action;
-      difficulty = sessionData.difficulty || 0;
-
-      mazeLogger.log('Loaded maze session data:', { action, difficulty });
-      mazeLogger.log('Action loaded from storage:', action);
-
-      // Note: Session data will be cleared when maze is completed, not on load
-    } else {
-      mazeLogger.warn('No maze session data found, using defaults');
-      mazeLogger.log('Setting action to null (default)');
-      // Set defaults
-      action = null;
-      difficulty = 0;
-    }
-  } catch (error) {
-    mazeLogger.error('Error loading maze session data:', error);
-    // Use safe defaults
-    action = null;
-    difficulty = 0;
-  }
-}
 
 /**
  * Initialize the maze game
  */
-async function initializeGame() {
+async function initializeGame(sessionInfo) {
   canvas = document.getElementById('mazeCanvas');
   
   // Initialize the renderer
   const rendererResult = initializeRenderer(canvas);
   ctx = rendererResult.ctx;
 
-  // Use difficulty calculated by background script (single source of truth)
+  // Use difficulty from session data (single source of truth)
   const difficultySettings = getDifficultySettings();
-  currentDifficulty = Math.min(difficulty, difficultySettings.length - 1);
+  currentDifficulty = Math.min(sessionInfo.difficulty, difficultySettings.length - 1);
   const currentDifficultySettings = difficultySettings[currentDifficulty];
 
-  mazeLogger.log('Using difficulty from background script:', {
-    action,
-    storedDifficulty: difficulty,
+  mazeLogger.log('Using difficulty from session data:', {
+    action: sessionInfo.action,
+    storedDifficulty: sessionInfo.difficulty,
     finalDifficulty: currentDifficulty
   });
 
@@ -263,7 +223,7 @@ async function initializeGame() {
   mazeSizeEl.textContent = `${mazeModel.size}x${mazeModel.size}`;
 
   // Set challenge message based on action and difficulty level
-  if (action === 'updateLimit') {
+  if (sessionInfo.action === 'updateLimit') {
     challengeMessageEl.setAttribute('data-i18n', 'solveMazeToUpdateLimit');
     challengeMessageEl.textContent = getI18nMessage('solveMazeToUpdateLimit');
   } else {
@@ -556,13 +516,7 @@ async function handleMazeComplete() {
   await sendMazeCompletionMessage();
 
   // Clear the maze session now that it's completed
-  try {
-    const store = usageDataStore();
-    await store.clearMazeSession();
-    mazeLogger.log('Cleared maze session after completion');
-  } catch (error) {
-    mazeLogger.error('Failed to clear maze session:', error);
-  }
+  await clearMazeSession(mazeLogger);
 }
 
 /**
@@ -578,14 +532,14 @@ async function sendMazeCompletionMessage() {
         difficulty: currentDifficulty,
         time: mazeModel.getElapsedTime(),
         size: mazeModel.size,
-        action: action
+        action: getSessionAction()
       }
     });
 
     mazeLogger.log('Maze completion message sent successfully');
 
     // Handle different completion types
-    if (action === 'updateLimit') {
+    if (getSessionAction() === 'updateLimit') {
       // Extended delay to show productivity tip, then show limit update modal
       setTimeout(async () => {
         mazeOverlay.style.display = 'none';
@@ -797,8 +751,8 @@ async function setupMazeDebugUtilities() {
       gameStartTime,
       cellSize: getCellSize(),
       isHandlingCompletion,
-      action,
-      difficulty
+      action: getSessionAction(),
+      difficulty: getSessionDifficulty()
     }),
 
     // Difficulty manipulation
