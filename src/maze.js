@@ -69,7 +69,8 @@ const IDLE_CONFIG = {
   sleepingStartDelay: 25000, // 25 seconds before ZZZ appears
   blinkInterval: 3000,      // Blink every 3 seconds when idle
   lookInterval: 2000,       // Change look direction every 2 seconds
-  zzzInterval: 2000         // New ZZZ every 2 seconds
+  zzzInterval: 1500,        // New ZZZ every 1.5 seconds
+  maxZzzParticles: 3        // Maximum ZZZ particles at any time
 };
 
 // Movement configuration
@@ -527,13 +528,12 @@ function renderMaze(model) {
 
   // Draw ZZZ particles when sleeping
   if (idleState.currentState === 'sleeping' && idleState.sleepParticles.length > 0) {
-    ctx.fillStyle = '#888';
-    ctx.font = `${Math.max(8, cellSize * 0.4)}px monospace`;
+    ctx.fillStyle = '#888'; // Gentle gray color
+    ctx.font = `${Math.max(12, cellSize * 0.4)}px serif`; // Elegant serif font
     ctx.textAlign = 'center';
     
     idleState.sleepParticles.forEach(particle => {
-      const alpha = Math.max(0, 1 - (particle.age / 3)); // Fade out over 3 seconds
-      ctx.globalAlpha = alpha;
+      ctx.globalAlpha = particle.alpha; // Use the particle's computed alpha
       
       ctx.fillText(
         'z',
@@ -941,30 +941,65 @@ function updateLookingBehavior(currentTime) {
  * Update sleeping behavior with ZZZ particles
  */
 function updateSleepingBehavior(currentTime, deltaTime) {
-  // Add new ZZZ particles periodically
-  if (idleState.sleepParticles.length === 0 || 
-      (idleState.sleepParticles.length > 0 && 
-       currentTime - idleState.sleepParticles[idleState.sleepParticles.length - 1].birthTime > IDLE_CONFIG.zzzInterval)) {
-    
-    idleState.sleepParticles.push({
-      x: playerVisualPos.x + 0.2 + (Math.random() - 0.5) * 0.3,
-      y: playerVisualPos.y - 0.3,
-      age: 0,
-      birthTime: currentTime,
-      drift: (Math.random() - 0.5) * 0.5,
-      size: 0.8 + Math.random() * 0.4
-    });
-  }
+  // Ensure minimum deltaTime to prevent particles getting stuck
+  const dt = Math.max(deltaTime, 16) / 1000; // Minimum 16ms (60fps)
   
   // Update existing ZZZ particles
-  const dt = deltaTime / 1000;
   idleState.sleepParticles = idleState.sleepParticles.filter(particle => {
     particle.age += dt;
-    particle.y -= 0.5 * dt; // Float upward
-    particle.x += particle.drift * dt; // Gentle horizontal drift
+    
+    // Smooth fade in during first 0.3 seconds
+    if (particle.age < 0.3) {
+      particle.alpha = particle.age / 0.3;
+    } 
+    // Fade out during last 0.3 seconds (faster fade-out)
+    else if (particle.age > 2.7) {
+      particle.alpha = Math.max(0, (3 - particle.age) / 0.3);
+    } 
+    // Full opacity in middle phase
+    else {
+      particle.alpha = 1.0;
+    }
+    
+    // Float upward with slight deceleration
+    particle.y -= (0.8 - (particle.age * 0.1)) * dt;
+    // Gentle horizontal drift
+    particle.x += particle.drift * dt;
     
     return particle.age < 3; // Remove after 3 seconds
   });
+  
+  // Add new ZZZ particle if under limit and enough time has passed
+  if (idleState.sleepParticles.length < IDLE_CONFIG.maxZzzParticles) {
+    const lastParticle = idleState.sleepParticles[idleState.sleepParticles.length - 1];
+    const shouldSpawn = idleState.sleepParticles.length === 0 || 
+      (lastParticle && currentTime - lastParticle.birthTime > IDLE_CONFIG.zzzInterval);
+    
+    if (shouldSpawn) {
+      // Create predefined spawn positions to avoid overlapping
+      const spawnPositions = [
+        { x: 0.1, y: -0.1 },    // Left position - very close to avatar
+        { x: 0.25, y: -0.12 },  // Center position - slightly higher  
+        { x: 0.4, y: -0.1 }     // Right position - very close to avatar
+      ];
+      
+      const positionIndex = idleState.sleepParticles.length % spawnPositions.length;
+      const basePos = spawnPositions[positionIndex];
+      
+      const newParticle = {
+        x: playerVisualPos.x + basePos.x + (Math.random() - 0.5) * 0.1, // Small random variation
+        y: playerVisualPos.y + basePos.y + (Math.random() - 0.5) * 0.05,
+        age: 0,
+        birthTime: currentTime,
+        drift: (Math.random() - 0.5) * 0.3, // Reduced drift for less chaos
+        size: 0.9 + Math.random() * 0.2, // More consistent sizing
+        alpha: 0 // Start transparent
+      };
+      
+      idleState.sleepParticles.push(newParticle);
+    
+    }
+  }
 }
 
 /**
