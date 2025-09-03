@@ -25,6 +25,16 @@ import {
   isBlinking,
   resetIdleState
 } from './maze-game/maze-effects.js';
+import { 
+  playerVisualPos,
+  eyeDirection,
+  lastMovementDirection,
+  PLAYER_COLORS,
+  initializePlayer,
+  canMoveTo,
+  updateEyeDirection,
+  renderPlayer
+} from './maze-game/maze-player.js';
 
 // Create scoped logger for maze functionality
 const mazeLogger = new Logger('MAZE-GAME');
@@ -40,7 +50,6 @@ let isHandlingCompletion = false; // Prevent multiple completion handlers
 
 // Smooth movement system
 let animationFrameId = null;
-let playerVisualPos = { x: 1, y: 1 }; // Smooth interpolated position for rendering
 let movementState = {
   up: { pressed: false, timePressed: 0 },
   down: { pressed: false, timePressed: 0 },
@@ -50,10 +59,6 @@ let movementState = {
 let currentVelocity = { x: 0, y: 0 };
 let isMoving = false;
 let lastFrameTime = 0;
-
-// Eye direction tracking
-let eyeDirection = { x: 0, y: 0 }; // Current eye look direction
-let lastMovementDirection = { x: 0, y: 0 }; // Last significant movement direction
 
 // States and configurations now imported from maze-effects.js
 
@@ -87,7 +92,7 @@ const mazeOverlay = document.getElementById('mazeOverlay');
 const COLORS = {
   wall: '#535353',
   path: '#f7f7f7',
-  player: '#ff6b6b',
+  player: PLAYER_COLORS.player,
   goal: '#4ecdc4',
   background: '#2a2a2a',
   border: '#666'
@@ -320,8 +325,7 @@ async function initializeGame() {
   motivationMessageEl.textContent = randomMessage;
 
   // Initialize smooth movement system
-  playerVisualPos.x = mazeModel.playerPos.x;
-  playerVisualPos.y = mazeModel.playerPos.y;
+  initializePlayer(mazeModel.playerPos);
 
   // Initialize idle behavior system
   resetIdleState();
@@ -441,122 +445,8 @@ function renderMaze(model) {
   ctx.closePath();
   ctx.fill();
 
-  // Draw player using smooth visual position with celebration hopping
-  ctx.fillStyle = COLORS.player;
-  const hopOffset = getPlayerHopOffset();
-  
-  // Calculate player size and centering for better alignment
-  const playerSize = Math.max(2, Math.floor(cellSize * 0.9)); // 90% of cell size, minimum 2px
-  const centerOffset = (cellSize - playerSize) / 2; // Center the player in the cell
-  
-  const playerX = playerVisualPos.x * cellSize + centerOffset;
-  const playerY = playerVisualPos.y * cellSize + centerOffset + (hopOffset * cellSize);
-
-  ctx.fillRect(playerX, playerY, playerSize, playerSize);
-
-  // Add player eyes with different states - only if cell is big enough
-  if (cellSize >= 4) { // Lower threshold for smaller mazes
-    let eyeSize = Math.max(1, Math.floor(cellSize / 10)); // Size relative to cell (original sizing)
-    const baseEyeOffset = Math.floor(playerSize * 0.25); // Offset relative to player size
-
-    // Wall pushing effects (easter egg)
-    let eyeSizeMultiplier = 1.0;
-    let isGaspingNow = false;
-
-    if (wallPushingState.active) {
-      const pushingDuration = performance.now() - wallPushingState.startTime;
-      // Eyes grow bigger after 10 seconds
-      if (pushingDuration > 10000) {
-        const growthTime = Math.min((pushingDuration - 10000) / 3000, 1); // Grow over 3 seconds
-        // Use smooth easing function for natural growth
-        const smoothGrowth = Math.sin(growthTime * Math.PI * 0.5); // Sine easing
-        eyeSizeMultiplier = 1.0 + (smoothGrowth * 1.0); // Up to 2x size (more reasonable)
-      }
-    } else if (wallPushingState.gasping) {
-      const gaspingDuration = performance.now() - wallPushingState.gaspStartTime;
-      if (gaspingDuration < wallPushingState.gaspDuration) {
-        isGaspingNow = true;
-        // Breathing rhythm - slower and more natural (800ms per breath cycle)
-        const breathCycle = (gaspingDuration / 800) * Math.PI * 2;
-        const breathIntensity = Math.sin(breathCycle) * 0.4 + 1.0; // 40% variation
-        eyeSizeMultiplier = breathIntensity;
-
-        // Add vertical breathing movement
-        const breathOffset = Math.sin(breathCycle) * 2; // 2 pixels up/down
-        wallPushingState.breathOffset = breathOffset;
-      } else {
-        // Stop gasping
-        wallPushingState.gasping = false;
-        wallPushingState.breathOffset = 0;
-      }
-    }
-
-    eyeSize = Math.floor(eyeSize * eyeSizeMultiplier);
-
-    // Calculate eye positions with directional offset (use original eye size for positioning)
-    const originalEyeSize = Math.max(1, Math.floor(cellSize / 10));
-    const eyeShiftX = eyeDirection.x * (originalEyeSize * 1.5);
-    const eyeShiftY = eyeDirection.y * (originalEyeSize * 1.5);
-
-    // Center the grown eyes properly
-    const eyeGrowthOffset = (eyeSize - originalEyeSize) / 2;
-    const breathingOffset = wallPushingState.breathOffset || 0;
-    const leftEyeX = playerX + baseEyeOffset + eyeShiftX - eyeGrowthOffset;
-    const rightEyeX = playerX + playerSize - baseEyeOffset - eyeSize + eyeShiftX - eyeGrowthOffset;
-    const eyeY = playerY + baseEyeOffset + (hopOffset * cellSize) + eyeShiftY - eyeGrowthOffset + breathingOffset;
-
-    // Draw eyes based on current state
-    if (isGaspingNow) {
-      // Draw gasping eyes (wide open white rectangles, pulsing with breathing)
-      ctx.fillStyle = '#fff';
-
-      // Left gasping eye (white rectangle, no pupils to match avatar style)
-      ctx.fillRect(leftEyeX, eyeY, eyeSize, eyeSize);
-      // Right gasping eye
-      ctx.fillRect(rightEyeX, eyeY, eyeSize, eyeSize);
-
-    } else if (celebrationState.active) {
-      // Draw happy celebration eyes as hyphens (like ^_^)
-      ctx.fillStyle = '#000';
-      const hyphenWidth = eyeSize * 2; // Make them bigger than normal sleepy eyes
-      const hyphenHeight = Math.max(2, eyeSize / 3); // Thick enough to be visible
-
-      // Left happy hyphen eye
-      ctx.fillRect(leftEyeX - eyeSize/4, eyeY + eyeSize/2, hyphenWidth, hyphenHeight);
-      // Right happy hyphen eye
-      ctx.fillRect(rightEyeX - eyeSize/4, eyeY + eyeSize/2, hyphenWidth, hyphenHeight);
-
-    } else if (idleState.currentState === 'napping' || idleState.currentState === 'sleeping') {
-      // Draw sleepy hyphen-shaped eyes
-      ctx.fillStyle = '#000';
-      const hyphenWidth = eyeSize * 1.5;
-      const hyphenHeight = Math.max(1, eyeSize / 3);
-
-      // Left sleepy eye
-      ctx.fillRect(leftEyeX - eyeSize/4, eyeY + eyeSize/3, hyphenWidth, hyphenHeight);
-      // Right sleepy eye
-      ctx.fillRect(rightEyeX - eyeSize/4, eyeY + eyeSize/3, hyphenWidth, hyphenHeight);
-
-    } else if (idleState.currentState === 'blinking' && isBlinking()) {
-      // Draw closed eyes (thin horizontal lines)
-      ctx.fillStyle = '#000';
-      const blinkHeight = Math.max(1, eyeSize / 4);
-
-      // Left closed eye
-      ctx.fillRect(leftEyeX, eyeY + eyeSize/2, eyeSize, blinkHeight);
-      // Right closed eye
-      ctx.fillRect(rightEyeX, eyeY + eyeSize/2, eyeSize, blinkHeight);
-
-    } else {
-      // Draw normal white eyes
-      ctx.fillStyle = '#fff';
-
-      // Left eye
-      ctx.fillRect(leftEyeX, eyeY, eyeSize, eyeSize);
-      // Right eye
-      ctx.fillRect(rightEyeX, eyeY, eyeSize, eyeSize);
-    }
-  }
+  // Draw player using the player rendering module
+  renderPlayer(ctx, cellSize, getPlayerHopOffset, celebrationState, wallPushingState, idleState, isBlinking);
 
   // Draw celebration sparkles
   if (celebrationState.active) {
@@ -744,14 +634,14 @@ function updateMovement(deltaTime) {
 
     // Check X-axis movement separately to allow sliding along walls
     const targetLogicalX = Math.round(newVisualX);
-    if (canMoveTo(targetLogicalX, Math.round(playerVisualPos.y))) {
+    if (canMoveTo(targetLogicalX, Math.round(playerVisualPos.y), mazeModel, WALL)) {
       // Check if we're not going too far beyond the cell boundary
       const cellCenterX = Math.round(playerVisualPos.x);
       const maxDistance = 0.1; // Allow only 10% deviation from cell center
 
       if (Math.abs(newVisualX - cellCenterX) <= maxDistance ||
-          canMoveTo(Math.floor(newVisualX), Math.round(playerVisualPos.y)) &&
-          canMoveTo(Math.ceil(newVisualX), Math.round(playerVisualPos.y))) {
+          canMoveTo(Math.floor(newVisualX), Math.round(playerVisualPos.y), mazeModel, WALL) &&
+          canMoveTo(Math.ceil(newVisualX), Math.round(playerVisualPos.y), mazeModel, WALL)) {
         playerVisualPos.x = newVisualX;
       } else {
         // Stop at the boundary
@@ -761,14 +651,14 @@ function updateMovement(deltaTime) {
 
     // Check Y-axis movement separately to allow sliding along walls
     const targetLogicalY = Math.round(newVisualY);
-    if (canMoveTo(Math.round(playerVisualPos.x), targetLogicalY)) {
+    if (canMoveTo(Math.round(playerVisualPos.x), targetLogicalY, mazeModel, WALL)) {
       // Check if we're not going too far beyond the cell boundary
       const cellCenterY = Math.round(playerVisualPos.y);
       const maxDistance = 0.1; // Allow only 10% deviation from cell center
 
       if (Math.abs(newVisualY - cellCenterY) <= maxDistance ||
-          canMoveTo(Math.round(playerVisualPos.x), Math.floor(newVisualY)) &&
-          canMoveTo(Math.round(playerVisualPos.x), Math.ceil(newVisualY))) {
+          canMoveTo(Math.round(playerVisualPos.x), Math.floor(newVisualY), mazeModel, WALL) &&
+          canMoveTo(Math.round(playerVisualPos.x), Math.ceil(newVisualY), mazeModel, WALL)) {
         playerVisualPos.y = newVisualY;
       } else {
         // Stop at the boundary
@@ -808,7 +698,7 @@ function updateMovement(deltaTime) {
 
       if (currentLogicalX !== mazeModel.playerPos.x || currentLogicalY !== mazeModel.playerPos.y) {
         // Double-check that the logical position is valid
-        if (canMoveTo(currentLogicalX, currentLogicalY)) {
+        if (canMoveTo(currentLogicalX, currentLogicalY, mazeModel, WALL)) {
           mazeModel.movePlayer(
             currentLogicalX - mazeModel.playerPos.x,
             currentLogicalY - mazeModel.playerPos.y
@@ -818,42 +708,6 @@ function updateMovement(deltaTime) {
     }
   }
 }
-
-/**
- * Check if player can move to a specific position
- */
-function canMoveTo(x, y) {
-  return x >= 0 && x < mazeModel.size &&
-         y >= 0 && y < mazeModel.size &&
-         mazeModel.grid[y] && mazeModel.grid[y][x] !== WALL;
-}
-
-
-/**
- * Update eye direction based on movement
- */
-function updateEyeDirection(velocity, deltaTime) {
-  // Normalize velocity for eye direction (max strength of 1.0)
-  const speed = Math.sqrt(velocity.x ** 2 + velocity.y ** 2);
-  if (speed < 0.5) return; // Don't update for very slow movement
-
-  const normalizedX = velocity.x / speed;
-  const normalizedY = velocity.y / speed;
-
-  // Smoothly interpolate eye direction toward movement direction
-  const lerpSpeed = 8.0; // How quickly eyes follow movement direction
-  const targetX = normalizedX * 1.0; // Max eye offset (100% for obvious movement)
-  const targetY = normalizedY * 1.0;
-
-  eyeDirection.x += (targetX - eyeDirection.x) * lerpSpeed * deltaTime;
-  eyeDirection.y += (targetY - eyeDirection.y) * lerpSpeed * deltaTime;
-
-  // Update last movement direction for reference
-  lastMovementDirection.x = normalizedX;
-  lastMovementDirection.y = normalizedY;
-}
-
-
 
 /**
  * Get flag wave offset for goal animation
