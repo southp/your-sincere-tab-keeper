@@ -48,7 +48,8 @@ let wallPushingState = {
   sweatDrops: [],
   gasping: false,
   gaspStartTime: 0,
-  gaspDuration: 3000 // 3 seconds of gasping
+  gaspDuration: 3000, // 3 seconds of gasping
+  breathOffset: 0 // Vertical breathing offset during gasping
 };
 
 // Goal celebration animation system
@@ -493,47 +494,53 @@ function renderMaze(model) {
       const pushingDuration = performance.now() - wallPushingState.startTime;
       // Eyes grow bigger after 10 seconds
       if (pushingDuration > 10000) {
-        const growthFactor = Math.min((pushingDuration - 10000) / 3000, 1); // Grow over 3 seconds
-        eyeSizeMultiplier = 1.0 + (growthFactor * 1.5); // Up to 2.5x size
+        const growthTime = Math.min((pushingDuration - 10000) / 3000, 1); // Grow over 3 seconds
+        // Use smooth easing function for natural growth
+        const smoothGrowth = Math.sin(growthTime * Math.PI * 0.5); // Sine easing
+        eyeSizeMultiplier = 1.0 + (smoothGrowth * 1.0); // Up to 2x size (more reasonable)
       }
     } else if (wallPushingState.gasping) {
       const gaspingDuration = performance.now() - wallPushingState.gaspStartTime;
       if (gaspingDuration < wallPushingState.gaspDuration) {
         isGaspingNow = true;
-        // Pulsing effect during gasping
-        const pulse = Math.sin((gaspingDuration / 200) * Math.PI) * 0.3 + 1.0;
-        eyeSizeMultiplier = pulse;
+        // Breathing rhythm - slower and more natural (800ms per breath cycle)
+        const breathCycle = (gaspingDuration / 800) * Math.PI * 2;
+        const breathIntensity = Math.sin(breathCycle) * 0.4 + 1.0; // 40% variation
+        eyeSizeMultiplier = breathIntensity;
+        
+        // Add vertical breathing movement
+        const breathOffset = Math.sin(breathCycle) * 2; // 2 pixels up/down
+        wallPushingState.breathOffset = breathOffset;
       } else {
         // Stop gasping
         wallPushingState.gasping = false;
+        wallPushingState.breathOffset = 0;
       }
     }
     
     eyeSize = Math.floor(eyeSize * eyeSizeMultiplier);
     
-    // Calculate eye positions with directional offset
-    const eyeShiftX = eyeDirection.x * (eyeSize * 2.0);
-    const eyeShiftY = eyeDirection.y * (eyeSize * 2.0);
+    // Calculate eye positions with directional offset (use original eye size for positioning)
+    const originalEyeSize = Math.max(1, Math.floor(cellSize / 10));
+    const eyeShiftX = eyeDirection.x * (originalEyeSize * 2.0);
+    const eyeShiftY = eyeDirection.y * (originalEyeSize * 2.0);
     
-    const leftEyeX = playerVisualPos.x * cellSize + baseEyeOffset + eyeShiftX;
-    const rightEyeX = playerVisualPos.x * cellSize + Math.floor(cellSize * 0.6) + eyeShiftX;
-    const eyeY = playerVisualPos.y * cellSize + baseEyeOffset + (hopOffset * cellSize) + eyeShiftY;
+    // Center the grown eyes properly
+    const eyeGrowthOffset = (eyeSize - originalEyeSize) / 2;
+    const breathingOffset = wallPushingState.breathOffset || 0;
+    const leftEyeX = playerVisualPos.x * cellSize + baseEyeOffset + eyeShiftX - eyeGrowthOffset;
+    const rightEyeX = playerVisualPos.x * cellSize + Math.floor(cellSize * 0.6) + eyeShiftX - eyeGrowthOffset;
+    const eyeY = playerVisualPos.y * cellSize + baseEyeOffset + (hopOffset * cellSize) + eyeShiftY - eyeGrowthOffset + breathingOffset;
     
     // Draw eyes based on current state
     if (isGaspingNow) {
-      // Draw gasping eyes (wide open and pulsing)
+      // Draw gasping eyes (wide open white rectangles, pulsing with breathing)
       ctx.fillStyle = '#fff';
       
-      // Left gasping eye (larger white eyes)
-      ctx.fillRect(leftEyeX - eyeSize/4, eyeY - eyeSize/4, eyeSize * 1.5, eyeSize * 1.5);
-      // Right gasping eye
-      ctx.fillRect(rightEyeX - eyeSize/4, eyeY - eyeSize/4, eyeSize * 1.5, eyeSize * 1.5);
-      
-      // Add black pupils in center
-      ctx.fillStyle = '#000';
-      const pupilSize = Math.max(1, eyeSize / 3);
-      ctx.fillRect(leftEyeX + eyeSize/3, eyeY + eyeSize/3, pupilSize, pupilSize);
-      ctx.fillRect(rightEyeX + eyeSize/3, eyeY + eyeSize/3, pupilSize, pupilSize);
+      // Left gasping eye (white rectangle, no pupils to match avatar style)
+      ctx.fillRect(leftEyeX, eyeY, eyeSize, eyeSize);
+      // Right gasping eye  
+      ctx.fillRect(rightEyeX, eyeY, eyeSize, eyeSize);
       
     } else if (celebrationState.active) {
       // Draw happy celebration eyes as hyphens (like ^_^)
@@ -655,6 +662,9 @@ function animate(currentTime) {
   
   // Update celebration animation
   updateCelebration(deltaTime);
+  
+  // Update wall pushing effects (including sweat fade-out)
+  updateSweat(currentTime);
   
   // Update ambient animation time
   ambientAnimationTime += deltaTime;
@@ -1175,22 +1185,25 @@ function handleWallPushingRelease(currentTime) {
  * Update sweat drops during wall pushing
  */
 function updateSweat(currentTime) {
-  const pushingDuration = currentTime - wallPushingState.startTime;
-  
-  // Start sweating after 13 seconds (10 + 3)
-  if (pushingDuration > 13000) {
-    // Add new sweat drop occasionally
-    if (Math.random() < 0.05) { // 5% chance per frame
-      wallPushingState.sweatDrops.push({
-        x: playerVisualPos.x + (Math.random() - 0.5) * 0.3,
-        y: playerVisualPos.y - 0.1,
-        life: 1.0,
-        speed: 0.5 + Math.random() * 0.3
-      });
+  // Only create new sweat drops if actively pushing against wall
+  if (wallPushingState.active) {
+    const pushingDuration = currentTime - wallPushingState.startTime;
+    
+    // Start sweating after 13 seconds (10 + 3)
+    if (pushingDuration > 13000) {
+      // Add new sweat drop occasionally
+      if (Math.random() < 0.05) { // 5% chance per frame
+        wallPushingState.sweatDrops.push({
+          x: playerVisualPos.x + (Math.random() - 0.5) * 0.3,
+          y: playerVisualPos.y - 0.1,
+          life: 1.0,
+          speed: 0.5 + Math.random() * 0.3
+        });
+      }
     }
   }
   
-  // Update existing sweat drops
+  // Always update existing sweat drops (so they fade out naturally)
   const dt = 16 / 1000; // Approximate deltaTime
   wallPushingState.sweatDrops = wallPushingState.sweatDrops.filter(drop => {
     drop.y += drop.speed * dt;
