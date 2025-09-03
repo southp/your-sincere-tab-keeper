@@ -215,6 +215,9 @@
   "solveMazeToOpen": {
     "message": "Solve this maze to open your new tab!"
   },
+  "solveMazeToOpenInsane": {
+    "message": "Solve this maze to open your new tab... why don't you just close the tab?"
+  },
   "solveMazeToUpdate": {
     "message": "Solve this maze to update your tab limit!"
   },
@@ -292,6 +295,12 @@
   },
   "difficultyMasterDesc": {
     "message": "Serious commitment required"
+  },
+  "difficultyInsane": {
+    "message": "Insane"
+  },
+  "difficultyInsaneDesc": {
+    "message": "For the truly dedicated... or stubborn"
   },
   "tabLimitDesc2": {
     "message": "Minimalist mode - perfect for focused work sessions"

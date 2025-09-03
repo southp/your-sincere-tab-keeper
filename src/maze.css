@@ -6,11 +6,34 @@
   box-sizing: border-box;
 }
 
+/* CSS Variables for theme switching */
+:root {
+  /* Default theme (normal difficulty) */
+  --header-bg: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  --container-bg: #2c2c2c;
+  --body-bg: #1a1a1a;
+  --text-primary: #333;
+  --text-light: white;
+  --accent-primary: #667eea;
+  --accent-secondary: #764ba2;
+}
+
+/* Inferno theme for insane difficulty */
+body.inferno-theme {
+  --header-bg: linear-gradient(135deg, #ff6b35 0%, #8b0000 50%, #2d0000 100%);
+  --container-bg: #3d1a1a;
+  --body-bg: #2a1010;
+  --text-primary: #ff8a65;
+  --text-light: #ffccbc;
+  --accent-primary: #ff5722;
+  --accent-secondary: #d84315;
+}
+
 body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   line-height: 1.4;
-  color: #333;
-  background: #1a1a1a;
+  color: var(--text-primary);
+  background: var(--body-bg);
   height: 100vh;
   overflow: hidden;
   margin: 0;
@@ -19,7 +42,7 @@ body {
 
 .maze-container {
   height: 100vh;
-  background: #2c2c2c;
+  background: var(--container-bg);
   display: flex;
   flex-direction: column;
 }
@@ -28,8 +51,8 @@ body {
 .maze-header {
   text-align: center;
   padding: 12px 20px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
+  background: var(--header-bg);
+  color: var(--text-light);
   flex-shrink: 0;
 }
 

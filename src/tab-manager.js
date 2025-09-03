@@ -150,14 +150,15 @@ export class TabManager {
     const dailyMazesCompleted = this.dailyMazesCompleted;
     
     // Calculate difficulty level based on completed mazes with gaps
-    // Gaps: 0→1 (2 mazes), 1→2 (3 mazes), 2→3 (3 mazes), 3→4 (4 mazes), 4→5 (5 mazes)
+    // Gaps: 0→1 (2 mazes), 1→2 (3 mazes), 2→3 (3 mazes), 3→4 (4 mazes), 4→5 (5 mazes), 5→6 (100 mazes)
     let calculatedDifficulty = 0;
     
-    if (dailyMazesCompleted >= 2) calculatedDifficulty = 1;  // After 2 mazes -> Easy
-    if (dailyMazesCompleted >= 5) calculatedDifficulty = 2;  // After 5 mazes (2+3) -> Medium  
-    if (dailyMazesCompleted >= 8) calculatedDifficulty = 3;  // After 8 mazes (2+3+3) -> Hard
-    if (dailyMazesCompleted >= 12) calculatedDifficulty = 4; // After 12 mazes (2+3+3+4) -> Expert
-    if (dailyMazesCompleted >= 17) calculatedDifficulty = 5; // After 17 mazes (2+3+3+4+5) -> Master
+    if (dailyMazesCompleted >= 2) calculatedDifficulty = 1;   // After 2 mazes -> Easy
+    if (dailyMazesCompleted >= 5) calculatedDifficulty = 2;   // After 5 mazes (2+3) -> Medium  
+    if (dailyMazesCompleted >= 8) calculatedDifficulty = 3;   // After 8 mazes (2+3+3) -> Hard
+    if (dailyMazesCompleted >= 12) calculatedDifficulty = 4;  // After 12 mazes (2+3+3+4) -> Expert
+    if (dailyMazesCompleted >= 17) calculatedDifficulty = 5;  // After 17 mazes (2+3+3+4+5) -> Master
+    if (dailyMazesCompleted >= 117) calculatedDifficulty = 6; // After 117 mazes (2+3+3+4+5+100) -> Insane
 
     // For updateLimit actions, ensure minimum Hard difficulty (index 3)
     if (action === 'updateLimit') {
@@ -165,8 +166,8 @@ export class TabManager {
       calculatedDifficulty = Math.max(calculatedDifficulty, minHardDifficulty, providedDifficulty);
     }
 
-    // Cap at maximum difficulty level (5 = Master level)
-    const maxDifficulty = 5;
+    // Cap at maximum difficulty level (6 = Insane level)
+    const maxDifficulty = 6;
     const finalDifficulty = Math.min(calculatedDifficulty, maxDifficulty);
 
     this.mazeLogger.log('Calculated maze difficulty:', {

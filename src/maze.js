@@ -127,7 +127,8 @@ function getDifficultySettings() {
     { name: getI18nMessage('difficultyMedium'), size: 15, description: getI18nMessage('difficultyMediumDesc') },
     { name: getI18nMessage('difficultyHard'), size: 21, description: getI18nMessage('difficultyHardDesc') },
     { name: getI18nMessage('difficultyExpert'), size: 27, description: getI18nMessage('difficultyExpertDesc') },
-    { name: getI18nMessage('difficultyMaster'), size: 39, description: getI18nMessage('difficultyMasterDesc') }
+    { name: getI18nMessage('difficultyMaster'), size: 39, description: getI18nMessage('difficultyMasterDesc') },
+    { name: getI18nMessage('difficultyInsane'), size: 101, description: getI18nMessage('difficultyInsaneDesc') }
   ];
 }
 
@@ -191,10 +192,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Setup development debugging utilities
   setupMazeDebugUtilities();
 
-  // Handle different actions
-  if (action === 'updateLimit') {
-    challengeMessageEl.textContent = getI18nMessage('solveMazeToUpdateLimit');
-  }
+  // Note: Challenge message and theme will be set after difficulty is loaded
 });
 
 /**
@@ -315,6 +313,28 @@ async function initializeGame() {
   // Update UI
   difficultyLevelEl.textContent = currentDifficultySettings.name;
   mazeSizeEl.textContent = `${mazeModel.size}x${mazeModel.size}`;
+
+  // Set challenge message based on action and difficulty level
+  if (action === 'updateLimit') {
+    challengeMessageEl.setAttribute('data-i18n', 'solveMazeToUpdateLimit');
+    challengeMessageEl.textContent = getI18nMessage('solveMazeToUpdateLimit');
+  } else {
+    // Set challenge message based on difficulty level
+    if (currentDifficulty === 6) { // Insane level
+      challengeMessageEl.setAttribute('data-i18n', 'solveMazeToOpenInsane');
+      challengeMessageEl.textContent = getI18nMessage('solveMazeToOpenInsane');
+    } else {
+      challengeMessageEl.setAttribute('data-i18n', 'solveMazeToOpen');
+      challengeMessageEl.textContent = getI18nMessage('solveMazeToOpen');
+    }
+  }
+
+  // Apply inferno theme for insane difficulty
+  if (currentDifficulty === 6) { // Insane level
+    document.body.classList.add('inferno-theme');
+  } else {
+    document.body.classList.remove('inferno-theme');
+  }
 
   // Start timer
   gameStartTime = Date.now();

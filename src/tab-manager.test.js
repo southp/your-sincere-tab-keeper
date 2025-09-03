@@ -1223,11 +1223,11 @@ describe('TabManager', () => {
       });
 
       test('calculateMazeDifficulty caps at maximum difficulty', () => {
-        tabManager.dailyMazesCompleted = 20; // Way above master level threshold
+        tabManager.dailyMazesCompleted = 500; // Way above insane level threshold
         
         const result = tabManager.calculateMazeDifficulty('limitExceeded');
         
-        expect(result).toBe(5); // Should be capped at master level
+        expect(result).toBe(6); // Should be capped at insane level
       });
 
       describe('gap-based difficulty progression', () => {
@@ -1275,8 +1275,31 @@ describe('TabManager', () => {
           tabManager.dailyMazesCompleted = 17;
           expect(tabManager.calculateMazeDifficulty('limitExceeded')).toBe(5);
 
-          tabManager.dailyMazesCompleted = 25;
+          tabManager.dailyMazesCompleted = 100;
           expect(tabManager.calculateMazeDifficulty('limitExceeded')).toBe(5);
+        });
+
+        test('level 6 (Insane) after 117 mazes completed', () => {
+          tabManager.dailyMazesCompleted = 117;
+          expect(tabManager.calculateMazeDifficulty('limitExceeded')).toBe(6);
+
+          tabManager.dailyMazesCompleted = 200;
+          expect(tabManager.calculateMazeDifficulty('limitExceeded')).toBe(6);
+        });
+      });
+
+      test('creates insane difficulty maze when daily mazes exceed threshold', async () => {
+        // Set up daily mazes completed to insane level
+        tabManager.dailyMazesCompleted = 120; // Way above insane threshold (117)
+
+        await tabManager.handleTabLimitExceeded({ id: 1, url: 'http://example.com' });
+
+        expect(mockChrome.storage.local.set).toHaveBeenCalledWith({
+          currentMazeSession: {
+            action: 'limitExceeded',
+            difficulty: 6, // 120 mazes -> Insane (6)
+            timestamp: expect.any(Number)
+          }
         });
       });
 

@@ -215,6 +215,9 @@
   "solveMazeToOpen": {
     "message": "解決這個迷宮以開啟你的新分頁！"
   },
+  "solveMazeToOpenInsane": {
+    "message": "解決這個迷宮以開啟你的新分頁...何不直接關閉分頁？"
+  },
   "solveMazeToUpdate": {
     "message": "解決這個迷宮以更新你的分頁限制！"
   },
@@ -292,6 +295,12 @@
   },
   "difficultyMasterDesc": {
     "message": "需要認真的承諾"
+  },
+  "difficultyInsane": {
+    "message": "瘋狂"
+  },
+  "difficultyInsaneDesc": {
+    "message": "給真正堅持的人...或頑固的人"
   },
   "tabLimitDesc2": {
     "message": "極簡模式 - 非常適合專注的工作時段"

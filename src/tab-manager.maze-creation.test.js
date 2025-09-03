@@ -204,6 +204,7 @@ describe('TabManager - Maze Creation', () => {
       });
     });
 
+
     test('does not store maze session for limitExceeded action', async () => {
       const mockMazeUrl = 'chrome-extension://test/maze.html';
       const mockNewTab = { id: 123 };

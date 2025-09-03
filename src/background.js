@@ -328,6 +328,23 @@ async function setupDebugUtilities() {
       generalLogger.log(`🎯 Set tab limit to ${limit} for testing`);
     },
 
+    setDailyMazeCount: async (count) => {
+      // Update the TabManager's in-memory count
+      tabManager.dailyMazesCompleted = count;
+      
+      // Also update the storage for consistency
+      const store = usageDataStore();
+      const todayKey = store.getTodayKey();
+      const result = await chrome.storage.local.get(['dailyMazes']);
+      const dailyMazes = result.dailyMazes || {};
+      dailyMazes[todayKey] = count;
+      await chrome.storage.local.set({ dailyMazes });
+      
+      generalLogger.log(`🎮 Set daily maze count to ${count} for testing`);
+      generalLogger.log(`💡 This will give you difficulty level: ${tabManager.calculateMazeDifficulty('limitExceeded')}`);
+      return count;
+    },
+
     forceBlock: async (url) => {
       const tabs = await chrome.tabs.query({});
       const regularTabs = tabs.filter(tab => !isSpecialTab(tab) && !isMazeTab(tab));
@@ -401,6 +418,7 @@ State Management:
 
 Testing Helpers:
   debugTabKeeper.simulateTabLimit(n)   - Set tab limit for testing
+  debugTabKeeper.setDailyMazeCount(n)  - Set daily maze count for testing difficulty levels
   debugTabKeeper.forceBlock(url)       - Check if URL would be blocked
 
 Component Testing:
@@ -421,6 +439,7 @@ Example Usage:
   debugTabKeeper.getAllTabs().then(console.table)
   debugTabKeeper.setLocale('zh_TW')  // Test Chinese localization
   debugTabKeeper.simulateTabLimit(3)
+  debugTabKeeper.setDailyMazeCount(120)  // Test insane difficulty (inferno theme!)
       `);
     }
   };
