@@ -18,7 +18,8 @@ import {
   initializeUI,
   showCompletedMazeMessage,
   loadStats,
-  resetTimer as resetUITimer
+  resetTimer as resetUITimer,
+  updateGameUI
 } from './maze/maze-ui.js';
 import {
   initializeGame,
@@ -125,6 +126,9 @@ async function setupMazeDebugUtilities() {
       }
 
       const result = setGameDifficulty(newDifficulty, allDifficultySettings);
+
+      // Update UI elements (inferno theme, tagline, etc.)
+      updateGameUI(result.settings, result.mazeModel.size, getSessionAction(), newDifficulty);
       console.log(`✅ Set difficulty to: ${result.settings.name} (${result.settings.size}x${result.settings.size})`);
       return result;
     },
