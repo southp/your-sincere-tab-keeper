@@ -6,6 +6,10 @@
 import { TAB_LIMITS } from '../constants.js';
 import { renderLimitButtons, setupLimitButtonListeners, updateLimitDescription, getI18nMessage } from '../ui-utils.js';
 import { getRandomTip } from '../productivity-tips.js';
+import { Logger } from '../debug.js';
+
+// Create logger for this module
+const logger = new Logger('MAZE-UI');
 
 // DOM elements (cached for performance)
 let difficultyLevelEl, mazeSizeEl, timerEl, challengeMessageEl;
@@ -136,7 +140,7 @@ export function stopTimer() {
 /**
  * Load and display statistics
  */
-export async function loadStats(mazeLogger) {
+export async function loadStats() {
   try {
     const response = await chrome.runtime.sendMessage({ type: 'GET_STATS' });
 
@@ -145,29 +149,29 @@ export async function loadStats(mazeLogger) {
       totalMazesEl.textContent = response.mazesCompleted || 0;
     }
   } catch (error) {
-    mazeLogger.error('Error loading stats:', error);
+    logger.error('Error loading stats:', error);
   }
 }
 
 /**
  * Show the update limit modal
  */
-export async function showUpdateLimitModal(mazeLogger) {
+export async function showUpdateLimitModal() {
   const modal = document.getElementById('updateLimitModal');
   if (!modal) {
-    mazeLogger.error('Update limit modal not found');
+    logger.error('Update limit modal not found');
     return;
   }
 
   // Set up the limit selector BEFORE showing the modal to prevent flash
-  await setupLimitSelector(mazeLogger);
+  await setupLimitSelector();
   modal.style.display = 'flex';
 }
 
 /**
  * Setup limit selector in modal
  */
-async function setupLimitSelector(mazeLogger) {
+async function setupLimitSelector() {
   // Get current tab limit from background script
   let currentLimit = TAB_LIMITS.DEFAULT; // Default fallback
   try {
@@ -176,7 +180,7 @@ async function setupLimitSelector(mazeLogger) {
       currentLimit = response.tabLimit || TAB_LIMITS.DEFAULT;
     }
   } catch (error) {
-    mazeLogger.error('Failed to get current tab limit:', error);
+    logger.error('Failed to get current tab limit:', error);
   }
 
   let selectedLimit = currentLimit;
@@ -190,7 +194,7 @@ async function setupLimitSelector(mazeLogger) {
   const cancelBtn = document.getElementById('cancelLimitBtn');
 
   if (!modalLimitDesc || !confirmBtn || !cancelBtn) {
-    mazeLogger.error('Modal elements not found');
+    logger.error('Modal elements not found');
     return;
   }
 
@@ -251,7 +255,7 @@ async function setupLimitSelector(mazeLogger) {
       });
 
     } catch (error) {
-      mazeLogger.error('Error updating tab limit:', error);
+      logger.error('Error updating tab limit:', error);
       // eslint-disable-next-line no-alert
       alert(getI18nMessage('failedToUpdateTabLimit')); // Intentional: User needs immediate error feedback
     } finally {
@@ -280,4 +284,14 @@ export function hideCompletionOverlay() {
  */
 export function getMazeOverlay() {
   return mazeOverlay;
+}
+
+/**
+ * Reset timer to current time (for debug utilities)
+ */
+export function resetTimer(newGameStartTime) {
+  if (timerInterval) {
+    clearInterval(timerInterval);
+  }
+  startTimer(newGameStartTime);
 }

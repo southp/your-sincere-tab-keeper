@@ -82,7 +82,7 @@ describe('TabManager - Maze Creation', () => {
     mockChrome.tabs.create.mockResolvedValue({ id: 123 });
     mockChrome.windows.update.mockResolvedValue();
     mockChrome.runtime.getURL.mockImplementation(path => `chrome-extension://test/${path}`);
-    
+
     // Reset usage data store mocks
     mockUsageDataStore.getTabLimit.mockResolvedValue(TAB_LIMITS.DEFAULT);
     mockUsageDataStore.setTabLimit.mockResolvedValue();
@@ -107,7 +107,7 @@ describe('TabManager - Maze Creation', () => {
     test('creates maze tab when no maze exists', async () => {
       const mockMazeUrl = 'chrome-extension://test/maze.html';
       const mockNewTab = { id: 123 };
-      
+
       mockChrome.runtime.getURL.mockReturnValue(mockMazeUrl);
       mockChrome.tabs.create.mockResolvedValue(mockNewTab);
 
@@ -122,7 +122,7 @@ describe('TabManager - Maze Creation', () => {
     test('creates blob page when maze already exists', async () => {
       tabManager.mazeTabId = 456; // Existing maze
       const mockBlobUrl = 'chrome-extension://test/blob.html';
-      
+
       mockChrome.runtime.getURL.mockReturnValue(mockBlobUrl);
       mockChrome.tabs.create.mockResolvedValue({ id: 789 });
 
@@ -137,20 +137,20 @@ describe('TabManager - Maze Creation', () => {
     test('stores maze session for updateLimit action', async () => {
       const mockMazeUrl = 'chrome-extension://test/maze.html';
       const mockNewTab = { id: 123 };
-      
+
       mockChrome.runtime.getURL.mockReturnValue(mockMazeUrl);
       mockChrome.tabs.create.mockResolvedValue(mockNewTab);
-      
+
       // Set up daily mazes completed
       tabManager.dailyMazesCompleted = 2;
 
-      const result = await tabManager.createMazeTabOrBlob({ 
+      const result = await tabManager.createMazeTabOrBlob({
         action: 'updateLimit',
         difficulty: 1
       });
 
       expect(result).toEqual({ created: 'maze', tabId: 123 });
-      
+
       // Verify maze session was stored (difficulty should be max of current, min hard, and provided)
       // Expected: max(2, 3, 1) = 3
       expect(mockUsageDataStore.setMazeSession).toHaveBeenCalledWith({
@@ -163,14 +163,14 @@ describe('TabManager - Maze Creation', () => {
     test('uses minimum hard difficulty for updateLimit', async () => {
       const mockMazeUrl = 'chrome-extension://test/maze.html';
       const mockNewTab = { id: 123 };
-      
+
       mockChrome.runtime.getURL.mockReturnValue(mockMazeUrl);
       mockChrome.tabs.create.mockResolvedValue(mockNewTab);
-      
+
       // Set up daily mazes completed to 0 (below hard level)
       tabManager.dailyMazesCompleted = 0;
 
-      await tabManager.createMazeTabOrBlob({ 
+      await tabManager.createMazeTabOrBlob({
         action: 'updateLimit'
       });
 
@@ -185,14 +185,14 @@ describe('TabManager - Maze Creation', () => {
     test('uses current difficulty when higher than minimum hard level', async () => {
       const mockMazeUrl = 'chrome-extension://test/maze.html';
       const mockNewTab = { id: 123 };
-      
+
       mockChrome.runtime.getURL.mockReturnValue(mockMazeUrl);
       mockChrome.tabs.create.mockResolvedValue(mockNewTab);
-      
+
       // Set up daily mazes completed to high value that exceeds hard level
       tabManager.dailyMazesCompleted = 15; // This would be Expert level (4), but updateLimit enforces minimum Hard (3)
 
-      await tabManager.createMazeTabOrBlob({ 
+      await tabManager.createMazeTabOrBlob({
         action: 'updateLimit'
       });
 
@@ -208,7 +208,7 @@ describe('TabManager - Maze Creation', () => {
     test('does not store maze session for limitExceeded action', async () => {
       const mockMazeUrl = 'chrome-extension://test/maze.html';
       const mockNewTab = { id: 123 };
-      
+
       mockChrome.runtime.getURL.mockReturnValue(mockMazeUrl);
       mockChrome.tabs.create.mockResolvedValue(mockNewTab);
 
@@ -220,20 +220,20 @@ describe('TabManager - Maze Creation', () => {
 
     test('handles tab creation errors gracefully', async () => {
       const mockMazeUrl = 'chrome-extension://test/maze.html';
-      
+
       mockChrome.runtime.getURL.mockReturnValue(mockMazeUrl);
       mockChrome.tabs.create.mockRejectedValue(new Error('Tab creation failed'));
 
       await expect(tabManager.createMazeTabOrBlob({ action: 'limitExceeded' }))
         .rejects.toThrow('Tab creation failed');
-      
+
       expect(tabManager.mazeTabId).toBeNull(); // Should not set maze tab ID on failure
     });
 
     test('handles default options correctly', async () => {
       const mockMazeUrl = 'chrome-extension://test/maze.html';
       const mockNewTab = { id: 123 };
-      
+
       mockChrome.runtime.getURL.mockReturnValue(mockMazeUrl);
       mockChrome.tabs.create.mockResolvedValue(mockNewTab);
 

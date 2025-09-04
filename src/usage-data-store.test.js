@@ -254,7 +254,7 @@ describe('UsageDataStore', () => {
           'mazesCompleted',
           'blockedAttempts',
           'dailyMazes',
-          'dailyTabLimits', 
+          'dailyTabLimits',
           'dailyBlockedAttempts',
           'limitHitTimestamps',
           'currentMazeSession'

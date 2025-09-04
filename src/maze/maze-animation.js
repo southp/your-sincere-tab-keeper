@@ -77,7 +77,7 @@ export function createAnimateFunction(
       startCelebration,
       isHandlingCompletionRef.current
     );
-    
+
     if (result?.goalReached) {
       isHandlingCompletionRef.current = true;
       // Delay completion to show celebration animation

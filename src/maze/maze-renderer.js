@@ -3,7 +3,7 @@
  * Handles all canvas rendering, visual effects, and drawing operations
  */
 
-import { WALL, PATH, GOAL } from '../maze-model.js';
+import { WALL, PATH, GOAL } from './maze-model.js';
 
 // Rendering state
 let cellSize = 30;

@@ -253,7 +253,7 @@ export function updateMovement(deltaTime, celebrationState, playerVisualPos, maz
     // Update logical position if moved significantly
     if (Math.abs(playerVisualPos.x - mazeModel.playerPos.x) > 0.5 ||
         Math.abs(playerVisualPos.y - mazeModel.playerPos.y) > 0.5) {
-      
+
       const currentLogicalX = Math.round(playerVisualPos.x);
       const currentLogicalY = Math.round(playerVisualPos.y);
 

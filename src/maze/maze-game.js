@@ -3,10 +3,11 @@
  * Coordinates all maze game modules and handles core game lifecycle
  */
 
-import { MazeModel, WALL } from '../maze-model.js';
-import { 
-  celebrationState, 
-  wallPushingState, 
+import { Logger } from '../debug.js';
+import { MazeModel, WALL } from './maze-model.js';
+import {
+  celebrationState,
+  wallPushingState,
   idleState,
   startCelebration,
   updateCelebration,
@@ -18,7 +19,7 @@ import {
   isBlinking,
   resetIdleState
 } from './maze-effects.js';
-import { 
+import {
   playerVisualPos,
   eyeDirection,
   initializePlayer,
@@ -26,11 +27,11 @@ import {
   updateEyeDirection,
   renderPlayer
 } from './maze-player.js';
-import { 
+import {
   setupEventListeners,
   updateMovement
 } from './maze-input.js';
-import { 
+import {
   startAnimationLoop,
   stopAnimationLoop,
   createAnimateFunction,
@@ -38,16 +39,16 @@ import {
   setupAnimationCleanup,
   resetAnimationTiming
 } from './maze-animation.js';
-import { 
+import {
   initializeRenderer,
   updateCanvasSize,
   createRenderMazeFunction
 } from './maze-renderer.js';
-import { 
+import {
   clearMazeSession,
   getSessionAction
 } from './maze-session.js';
-import { 
+import {
   updateGameUI,
   showCompletionMessage,
   startTimer,
@@ -55,6 +56,9 @@ import {
   showUpdateLimitModal,
   hideCompletionOverlay
 } from './maze-ui.js';
+
+// Create logger for this module
+const logger = new Logger('MAZE-GAME');
 
 // Game state
 let mazeModel = new MazeModel();
@@ -77,9 +81,9 @@ const COLORS = {
 /**
  * Initialize the maze game with session information
  */
-export async function initializeGame(sessionInfo, difficultySettings, mazeLogger) {
+export function initializeGame(sessionInfo, difficultySettings) {
   canvas = document.getElementById('mazeCanvas');
-  
+
   // Initialize the renderer
   const rendererResult = initializeRenderer(canvas);
   ctx = rendererResult.ctx;
@@ -88,7 +92,7 @@ export async function initializeGame(sessionInfo, difficultySettings, mazeLogger
   currentDifficulty = Math.min(sessionInfo.difficulty, difficultySettings.length - 1);
   const currentDifficultySettings = difficultySettings[currentDifficulty];
 
-  mazeLogger.log('Using difficulty from session data:', {
+  logger.log('Using difficulty from session data:', {
     action: sessionInfo.action,
     storedDifficulty: sessionInfo.difficulty,
     finalDifficulty: currentDifficulty
@@ -174,7 +178,7 @@ export async function initializeGame(sessionInfo, difficultySettings, mazeLogger
 /**
  * Handle maze completion
  */
-export async function handleMazeComplete(mazeLogger) {
+export async function handleMazeComplete() {
   if (isHandlingCompletion) return; // Prevent multiple completion handlers
 
   isHandlingCompletion = true;
@@ -186,18 +190,18 @@ export async function handleMazeComplete(mazeLogger) {
 
   // Show completion overlay with productivity tip and send completion message
   showCompletionMessage();
-  await sendMazeCompletionMessage(mazeLogger);
+  await sendMazeCompletionMessage();
 
   // Clear the maze session now that it's completed
-  await clearMazeSession(mazeLogger);
+  await clearMazeSession();
 }
 
 /**
  * Send maze completion message with UI handling
  */
-export async function sendMazeCompletionMessage(mazeLogger) {
+export async function sendMazeCompletionMessage() {
   try {
-    mazeLogger.log('Sending maze completion message...');
+    logger.log('Sending maze completion message...');
 
     await chrome.runtime.sendMessage({
       type: 'MAZE_COMPLETED',
@@ -209,23 +213,23 @@ export async function sendMazeCompletionMessage(mazeLogger) {
       }
     });
 
-    mazeLogger.log('Maze completion message sent successfully');
+    logger.log('Maze completion message sent successfully');
 
     // Handle different completion types
     if (getSessionAction() === 'updateLimit') {
       // Extended delay to show productivity tip, then show limit update modal
       setTimeout(async () => {
         hideCompletionOverlay();
-        await showUpdateLimitModal(mazeLogger);
+        await showUpdateLimitModal();
       }, 5000);
     } else {
       // Normal maze completion - show tip for 5 seconds, then background will handle URL loading
-      mazeLogger.log('Normal maze completion - showing productivity tip for 5 seconds');
+      logger.log('Normal maze completion - showing productivity tip for 5 seconds');
       // Note: Background script will wait for this delay before redirecting
     }
 
   } catch (error) {
-    mazeLogger.error('Error sending maze completion message:', error);
+    logger.error('Error sending maze completion message:', error);
   }
 }
 
@@ -266,4 +270,96 @@ export function resetGame() {
   resetAnimationTiming();
   isHandlingCompletion = false;
   isHandlingCompletionRef.current = false;
+}
+
+/**
+ * Regenerate maze with current difficulty
+ */
+export function regenerateMaze(difficultySettings) {
+  if (!difficultySettings) {
+    const gameState = getGameState();
+    if (!gameState.mazeModel) return;
+    difficultySettings = gameState.mazeModel.getConfig();
+  }
+
+  mazeModel.initialize(difficultySettings);
+
+  // Get the current renderMaze function and re-render
+  const renderMaze = createRenderMazeFunction(
+    COLORS,
+    getFlagWaveOffset,
+    renderPlayer,
+    getPlayerHopOffset,
+    celebrationState,
+    wallPushingState,
+    idleState,
+    isBlinking
+  );
+
+  renderMaze(mazeModel);
+
+  return mazeModel;
+}
+
+/**
+ * Re-render the current maze
+ */
+export function rerenderMaze() {
+  const renderMaze = createRenderMazeFunction(
+    COLORS,
+    getFlagWaveOffset,
+    renderPlayer,
+    getPlayerHopOffset,
+    celebrationState,
+    wallPushingState,
+    idleState,
+    isBlinking
+  );
+
+  renderMaze(mazeModel);
+}
+
+/**
+ * Update game start time (for timer reset)
+ */
+export function updateGameStartTime(newStartTime = Date.now()) {
+  gameStartTime = newStartTime;
+  return gameStartTime;
+}
+
+/**
+ * Set difficulty and reinitialize game
+ */
+export function setGameDifficulty(newDifficulty, difficultySettings) {
+  currentDifficulty = newDifficulty;
+  const settings = difficultySettings[newDifficulty];
+
+  // Reinitialize maze with new difficulty
+  mazeModel.initialize(settings);
+
+  // Create renderMaze function and update canvas size
+  const renderMaze = createRenderMazeFunction(
+    COLORS,
+    getFlagWaveOffset,
+    renderPlayer,
+    getPlayerHopOffset,
+    celebrationState,
+    wallPushingState,
+    idleState,
+    isBlinking
+  );
+
+  // Update canvas size
+  updateCanvasSize(mazeModel, renderMaze);
+
+  // Re-render
+  renderMaze(mazeModel);
+
+  logger.log(`🎯 Set difficulty to ${newDifficulty} (${settings.name})`);
+
+  return {
+    difficulty: newDifficulty,
+    settings,
+    mazeModel
+  };
 }

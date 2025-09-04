@@ -222,10 +222,10 @@ async function handleResetStats(sendResponse) {
     // Reset storage data using data store
     const store = usageDataStore();
     await store.resetStatistics();
-    
+
     // Reset TabManager's in-memory state
     tabManager.dailyMazesCompleted = 0;
-    
+
     generalLogger.log('Statistics reset successfully');
     sendResponse({ success: true });
   } catch (error) {
@@ -331,7 +331,7 @@ async function setupDebugUtilities() {
     setDailyMazeCount: async (count) => {
       // Update the TabManager's in-memory count
       tabManager.dailyMazesCompleted = count;
-      
+
       // Also update the storage for consistency
       const store = usageDataStore();
       const todayKey = store.getTodayKey();
@@ -339,7 +339,7 @@ async function setupDebugUtilities() {
       const dailyMazes = result.dailyMazes || {};
       dailyMazes[todayKey] = count;
       await chrome.storage.local.set({ dailyMazes });
-      
+
       generalLogger.log(`🎮 Set daily maze count to ${count} for testing`);
       generalLogger.log(`💡 This will give you difficulty level: ${tabManager.calculateMazeDifficulty('limitExceeded')}`);
       return count;

@@ -43,6 +43,14 @@ export default [
         Blob: 'readonly',
         getComputedStyle: 'readonly',
 
+        // Browser animation/timing APIs
+        requestAnimationFrame: 'readonly',
+        cancelAnimationFrame: 'readonly',
+        performance: 'readonly',
+
+        // Global this for debugging utilities
+        globalThis: 'readonly',
+
         // Node.js globals for build scripts
         process: 'readonly',
         Buffer: 'readonly',

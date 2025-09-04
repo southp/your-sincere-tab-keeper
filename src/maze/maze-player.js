@@ -61,11 +61,11 @@ export function renderPlayer(ctx, cellSize, getPlayerHopOffset, celebrationState
   // Draw player using smooth visual position with celebration hopping
   ctx.fillStyle = PLAYER_COLORS.player;
   const hopOffset = getPlayerHopOffset();
-  
+
   // Calculate player size and centering for better alignment
   const playerSize = Math.max(2, Math.floor(cellSize * 0.9)); // 90% of cell size, minimum 2px
   const centerOffset = (cellSize - playerSize) / 2; // Center the player in the cell
-  
+
   const playerX = playerVisualPos.x * cellSize + centerOffset;
   const playerY = playerVisualPos.y * cellSize + centerOffset + (hopOffset * cellSize);
 

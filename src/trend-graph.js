@@ -326,7 +326,7 @@ class TrendGraph extends HTMLElement {
 
   updateChart() {
     const chartContainer = this.shadowRoot.querySelector('.chart-container');
-    
+
     // This should never happen with proper initialization, but add assertion for debugging
     if (!chartContainer) {
       console.error('TrendGraph: Chart container not found - this indicates a component lifecycle bug');

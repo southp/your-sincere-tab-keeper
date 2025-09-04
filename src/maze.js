@@ -3,88 +3,38 @@
  * A challenging maze game with Chrome Dino aesthetic
  */
 
-import { TAB_LIMITS } from './constants.js';
-import { renderLimitButtons, setupLimitButtonListeners, updateLimitDescription, initializeI18n, getI18nMessage } from './ui-utils.js';
+import { initializeI18n, getI18nMessage } from './ui-utils.js';
 import { Logger } from './debug.js';
-import { MazeModel, WALL, PATH, GOAL } from './maze-model.js';
-import { getRandomTip } from './productivity-tips.js';
 import { isDevelopment } from './env.js';
-import { usageDataStore } from './usage-data-store.js';
-import { 
-  celebrationState, 
-  wallPushingState, 
-  idleState,
-  IDLE_CONFIG,
-  startCelebration,
-  updateCelebration,
-  getPlayerHopOffset,
-  updateWallPushing,
-  handleWallPushingRelease,
-  updateSweat,
-  updateIdleBehavior,
-  isBlinking,
-  resetIdleState
-} from './maze-game/maze-effects.js';
-import { 
-  playerVisualPos,
-  eyeDirection,
-  lastMovementDirection,
-  PLAYER_COLORS,
-  initializePlayer,
-  canMoveTo,
-  updateEyeDirection,
-  renderPlayer
-} from './maze-game/maze-player.js';
-import { 
-  movementState,
-  currentVelocity,
-  isMoving,
-  MOVEMENT_CONFIG,
-  setupEventListeners,
-  updateMovement,
-  movePlayer as movePlayerInput
-} from './maze-game/maze-input.js';
-import { 
-  ambientAnimationTime,
-  startAnimationLoop,
-  stopAnimationLoop,
-  createAnimateFunction,
-  getFlagWaveOffset,
-  setupAnimationCleanup,
-  resetAnimationTiming
-} from './maze-game/maze-animation.js';
-import { 
-  initializeRenderer,
-  getCellSize,
-  updateCanvasSize,
-  createRenderMazeFunction,
-  getCanvasContext
-} from './maze-game/maze-renderer.js';
-import { 
-  clearMazeSession,
+import { WALL } from './maze/maze-model.js';
+import { getCellSize } from './maze/maze-renderer.js';
+import {
   getSessionAction,
   getSessionDifficulty,
   initializeSession
-} from './maze-game/maze-session.js';
-import { 
+} from './maze/maze-session.js';
+import {
   initializeUI,
   showCompletedMazeMessage,
-  loadStats
-} from './maze-game/maze-ui.js';
-import { 
+  loadStats,
+  resetTimer as resetUITimer
+} from './maze/maze-ui.js';
+import {
   initializeGame,
   handleMazeComplete,
-  sendMazeCompletionMessage,
   setupGameEventListeners,
   getGameState,
-  resetGame
-} from './maze-game/maze-game.js';
+  regenerateMaze,
+  rerenderMaze,
+  updateGameStartTime,
+  setGameDifficulty
+} from './maze/maze-game.js';
 
 // Create scoped logger for maze functionality
 const mazeLogger = new Logger('MAZE-GAME');
 
-// All game state, animation, movement, session data, and UI management 
-// is now handled by their respective modules in maze-game/
+// All game state, animation, movement, session data, and UI management
+// is now handled by their respective modules in maze/
 
 // Difficulty settings - streamlined progression
 // Note: All sizes must be odd for proper maze generation algorithm
@@ -101,28 +51,25 @@ function getDifficultySettings() {
 }
 
 
-
-
-
 // Initialize game when DOM is loaded
 document.addEventListener('DOMContentLoaded', async () => {
   // Initialize internationalization
   initializeI18n();
-  
+
   // Initialize UI system
   initializeUI();
 
   // Initialize session management and check completion status
-  const sessionInfo = await initializeSession(mazeLogger);
-  
+  const sessionInfo = await initializeSession();
+
   if (sessionInfo.isCompleted) {
     showCompletedMazeMessage();
     return; // Don't initialize the game
   }
 
-  await initializeGame(sessionInfo, getDifficultySettings(), mazeLogger);
+  initializeGame(sessionInfo, getDifficultySettings());
   setupGameEventListeners();
-  await loadStats(mazeLogger);
+  await loadStats();
 
   // Focus handling for stats refresh
   window.addEventListener('focus', () => {
@@ -136,185 +83,12 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
 
 
-
-
-
-
 /**
  * Animation loop for smooth movement and rendering
  */
 // animate function moved to maze-animation.js
 
 // updateMovement function moved to maze-input.js
-/*
-Duplicate updateMovement function removed - now imported from maze-input.js
-function removeThisLater(deltaTime) {
-  if (!deltaTime || deltaTime > 100) return; // Skip large time jumps or pauses
-
-  const dt = deltaTime / 1000; // Convert to seconds
-  const currentTime = performance.now();
-
-  // Skip update if delta time is too small to prevent floating point precision issues
-  if (dt < 0.001) return;
-
-  // Stop all movement during celebration
-  if (celebrationState.active) {
-    currentVelocity.x = 0;
-    currentVelocity.y = 0;
-    isMoving = false;
-    return;
-  }
-
-  // Calculate intended movement direction
-  let intendedVelocity = { x: 0, y: 0 };
-  let anyKeyPressed = false;
-
-  // Check each direction and calculate velocity with acceleration
-  Object.keys(movementState).forEach(direction => {
-    const state = movementState[direction];
-    if (!state.pressed) return;
-
-    anyKeyPressed = true;
-    const timeHeld = currentTime - state.timePressed;
-    let speed = MOVEMENT_CONFIG.baseSpeed;
-
-    // Apply smooth acceleration after initial delay
-    if (timeHeld > MOVEMENT_CONFIG.keyRepeatDelay) {
-      const accelerationTime = (timeHeld - MOVEMENT_CONFIG.keyRepeatDelay) / 1000;
-      speed = Math.min(
-        MOVEMENT_CONFIG.maxSpeed,
-        MOVEMENT_CONFIG.baseSpeed + (MOVEMENT_CONFIG.acceleration * accelerationTime)
-      );
-    }
-
-    // Apply direction
-    switch (direction) {
-      case 'up': intendedVelocity.y = -speed; break;
-      case 'down': intendedVelocity.y = speed; break;
-      case 'left': intendedVelocity.x = -speed; break;
-      case 'right': intendedVelocity.x = speed; break;
-    }
-  });
-
-  // Handle diagonal movement (normalize)
-  if (intendedVelocity.x !== 0 && intendedVelocity.y !== 0) {
-    const magnitude = Math.sqrt(intendedVelocity.x ** 2 + intendedVelocity.y ** 2);
-    intendedVelocity.x = (intendedVelocity.x / magnitude) * Math.abs(intendedVelocity.x);
-    intendedVelocity.y = (intendedVelocity.y / magnitude) * Math.abs(intendedVelocity.y);
-  }
-
-  // Smooth velocity changes
-  if (anyKeyPressed) {
-    currentVelocity.x = intendedVelocity.x;
-    currentVelocity.y = intendedVelocity.y;
-    isMoving = true;
-
-    // Reset idle state when moving
-    resetIdleState();
-
-    // Update eye direction based on movement
-    updateEyeDirection(intendedVelocity, dt);
-  } else {
-    currentVelocity.x = 0;
-    currentVelocity.y = 0;
-    isMoving = false;
-
-    // Handle wall pushing release (easter egg)
-    handleWallPushingRelease(currentTime);
-
-    // Also reset wall pushing state when not moving
-    updateWallPushing(currentTime, { x: 0, y: 0 }, false);
-
-    // Update idle behavior
-    updateIdleBehavior(currentTime, dt, playerVisualPos, eyeDirection);
-  }
-
-  // Update visual position with precise collision detection
-  if (isMoving) {
-    // Store previous position for wall pushing detection
-    const prevX = playerVisualPos.x;
-    const prevY = playerVisualPos.y;
-
-    let newVisualX = playerVisualPos.x + (currentVelocity.x * dt);
-    let newVisualY = playerVisualPos.y + (currentVelocity.y * dt);
-
-    // Check X-axis movement separately to allow sliding along walls
-    const targetLogicalX = Math.round(newVisualX);
-    if (canMoveTo(targetLogicalX, Math.round(playerVisualPos.y), mazeModel, WALL)) {
-      // Check if we're not going too far beyond the cell boundary
-      const cellCenterX = Math.round(playerVisualPos.x);
-      const maxDistance = 0.1; // Allow only 10% deviation from cell center
-
-      if (Math.abs(newVisualX - cellCenterX) <= maxDistance ||
-          canMoveTo(Math.floor(newVisualX), Math.round(playerVisualPos.y), mazeModel, WALL) &&
-          canMoveTo(Math.ceil(newVisualX), Math.round(playerVisualPos.y), mazeModel, WALL)) {
-        playerVisualPos.x = newVisualX;
-      } else {
-        // Stop at the boundary
-        playerVisualPos.x = cellCenterX + Math.sign(newVisualX - cellCenterX) * maxDistance;
-      }
-    }
-
-    // Check Y-axis movement separately to allow sliding along walls
-    const targetLogicalY = Math.round(newVisualY);
-    if (canMoveTo(Math.round(playerVisualPos.x), targetLogicalY, mazeModel, WALL)) {
-      // Check if we're not going too far beyond the cell boundary
-      const cellCenterY = Math.round(playerVisualPos.y);
-      const maxDistance = 0.1; // Allow only 10% deviation from cell center
-
-      if (Math.abs(newVisualY - cellCenterY) <= maxDistance ||
-          canMoveTo(Math.round(playerVisualPos.x), Math.floor(newVisualY), mazeModel, WALL) &&
-          canMoveTo(Math.round(playerVisualPos.x), Math.ceil(newVisualY), mazeModel, WALL)) {
-        playerVisualPos.y = newVisualY;
-      } else {
-        // Stop at the boundary
-        playerVisualPos.y = cellCenterY + Math.sign(newVisualY - cellCenterY) * maxDistance;
-      }
-    }
-
-    // Check for wall pushing (easter egg)
-    const positionChanged = Math.abs(playerVisualPos.x - prevX) > 0.001 ||
-                           Math.abs(playerVisualPos.y - prevY) > 0.001;
-    updateWallPushing(currentTime, intendedVelocity, positionChanged);
-
-    // Check for goal completion - trigger when avatar center is close to goal center
-    const distanceToGoal = Math.sqrt(
-      Math.pow(playerVisualPos.x - mazeModel.goalPos.x, 2) +
-      Math.pow(playerVisualPos.y - mazeModel.goalPos.y, 2)
-    );
-
-    if (distanceToGoal < 0.3 && !celebrationState.active && !isHandlingCompletion) {
-      // Goal reached! Trigger celebration immediately
-      startCelebration(mazeModel.goalPos);
-
-      // Update logical position to goal for consistency
-      mazeModel.playerPos.x = mazeModel.goalPos.x;
-      mazeModel.playerPos.y = mazeModel.goalPos.y;
-      playerVisualPos.x = mazeModel.goalPos.x;
-      playerVisualPos.y = mazeModel.goalPos.y;
-
-      // Delay completion to show celebration animation
-      setTimeout(() => {
-        handleMazeComplete();
-      }, celebrationState.duration);
-    } else {
-      // Update logical position if we've moved to a new cell (for normal movement)
-      const currentLogicalX = Math.round(playerVisualPos.x);
-      const currentLogicalY = Math.round(playerVisualPos.y);
-
-      if (currentLogicalX !== mazeModel.playerPos.x || currentLogicalY !== mazeModel.playerPos.y) {
-        // Double-check that the logical position is valid
-        if (canMoveTo(currentLogicalX, currentLogicalY, mazeModel, WALL)) {
-          mazeModel.movePlayer(
-            currentLogicalX - mazeModel.playerPos.x,
-            currentLogicalY - mazeModel.playerPos.y
-          );
-        }
-      }
-    }
-  }
-}
-*/
 
 // getFlagWaveOffset function moved to maze-animation.js
 
@@ -322,11 +96,6 @@ function removeThisLater(deltaTime) {
  * Handle player movement (legacy function - now just triggers movement state)
  */
 // movePlayer function moved to maze-input.js as movePlayerInput
-
-
-
-
-
 
 
 /**
@@ -349,13 +118,14 @@ async function setupMazeDebugUtilities() {
   // Expose maze debugging utilities
   /* eslint-disable no-console */
   globalThis.debugMaze = {
-    // Core maze inspection - delegate to game controller
-    ...getGameState(),
+    // Core game state access
+    getGameState,
     gameState: () => ({
       ...getGameState(),
       action: getSessionAction(),
       difficulty: getSessionDifficulty()
     }),
+    getDifficultySettings,
 
     // Difficulty manipulation
     setDifficulty: (newDifficulty) => {
@@ -365,19 +135,9 @@ async function setupMazeDebugUtilities() {
         return;
       }
 
-      currentDifficulty = newDifficulty;
-      const difficultySettings = allDifficultySettings[currentDifficulty];
-
-      // Regenerate maze with new difficulty
-      mazeModel.initialize(difficultySettings);
-      updateCanvasSize();
-      renderMaze(mazeModel);
-
-      // Update UI
-      difficultyLevelEl.textContent = difficultySettings.name;
-      mazeSizeEl.textContent = `${mazeModel.size}x${mazeModel.size}`;
-
-      mazeLogger.log(`🎯 Set difficulty to ${currentDifficulty} (${difficultySettings.name})`);
+      const result = setGameDifficulty(newDifficulty, allDifficultySettings);
+      console.log(`✅ Set difficulty to: ${result.settings.name} (${result.settings.size}x${result.settings.size})`);
+      return result;
     },
 
     // Maze completion helpers
@@ -387,27 +147,52 @@ async function setupMazeDebugUtilities() {
     },
 
     solveInstantly: () => {
+      const gameState = getGameState();
+      if (!gameState.mazeModel) {
+        console.error('❌ No maze model available');
+        return;
+      }
+
       // Move player to goal position
-      mazeModel.playerPos.x = mazeModel.goalPos.x;
-      mazeModel.playerPos.y = mazeModel.goalPos.y;
-      renderMaze(mazeModel);
+      gameState.mazeModel.playerPos.x = gameState.mazeModel.goalPos.x;
+      gameState.mazeModel.playerPos.y = gameState.mazeModel.goalPos.y;
 
       mazeLogger.log('✨ Teleported player to goal');
 
-      // Trigger completion
+      // Trigger completion after a short delay
       setTimeout(() => {
         handleMazeComplete();
       }, 500);
     },
 
-    // Maze inspection utilities
-    getMazeGrid: () => mazeModel.grid,
-    getPlayerPos: () => ({ ...mazeModel.playerPos }),
-    getGoalPos: () => ({ ...mazeModel.goalPos }),
-    getMazeSize: () => mazeModel.size,
+    // Maze inspection utilities (using game state)
+    getMazeGrid: () => {
+      const gameState = getGameState();
+      return gameState.mazeModel ? gameState.mazeModel.grid : null;
+    },
+    getPlayerPos: () => {
+      const gameState = getGameState();
+      return gameState.mazeModel ? { ...gameState.mazeModel.playerPos } : null;
+    },
+    getGoalPos: () => {
+      const gameState = getGameState();
+      return gameState.mazeModel ? { ...gameState.mazeModel.goalPos } : null;
+    },
+    getMazeSize: () => {
+      const gameState = getGameState();
+      return gameState.mazeModel ? gameState.mazeModel.size : null;
+    },
 
     // Path finding helpers
     findPath: () => {
+      const gameState = getGameState();
+      if (!gameState.mazeModel) {
+        console.error('❌ No maze model available');
+        return null;
+      }
+
+      const { mazeModel } = gameState;
+
       // Simple pathfinding to show solution
       const visited = new Set();
       const queue = [{ ...mazeModel.playerPos, path: [{ ...mazeModel.playerPos }] }];
@@ -453,8 +238,14 @@ async function setupMazeDebugUtilities() {
 
       console.log(`🗺️ Path to goal (${path.length} steps):`, path);
 
+      const gameState = getGameState();
+      if (!gameState.canvas) {
+        console.error('❌ No canvas available for highlighting');
+        return path;
+      }
+
       // Visual highlight on canvas
-      const pathCtx = canvas.getContext('2d');
+      const pathCtx = gameState.canvas.getContext('2d');
       pathCtx.strokeStyle = '#ffff00';
       pathCtx.lineWidth = 3;
       pathCtx.beginPath();
@@ -480,22 +271,28 @@ async function setupMazeDebugUtilities() {
 
     // Timer manipulation
     resetTimer: () => {
-      gameStartTime = Date.now();
+      const newStartTime = updateGameStartTime();
+      resetUITimer(newStartTime);
       mazeLogger.log('⏱️ Reset timer');
+      return newStartTime;
     },
 
     // Render helpers
     rerender: () => {
-      renderMaze(mazeModel);
+      rerenderMaze();
       mazeLogger.log('🎨 Re-rendered maze');
     },
 
     regenerate: () => {
-      const difficultySettings = getDifficultySettings()[currentDifficulty];
-      mazeModel.initialize(difficultySettings);
-      updateCanvasSize();
-      renderMaze(mazeModel);
+      const gameState = getGameState();
+      if (!gameState.mazeModel) {
+        console.error('❌ No maze model available');
+        return;
+      }
+
+      const result = regenerateMaze();
       mazeLogger.log('🔄 Regenerated maze');
+      return result;
     },
 
     // Help function

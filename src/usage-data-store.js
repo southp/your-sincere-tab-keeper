@@ -171,19 +171,19 @@ class UsageDataStore {
         // Basic statistics
         'mazesCompleted',
         'blockedAttempts',
-        
+
         // Daily tracking data (trends)
         'dailyMazes',
-        'dailyTabLimits', 
+        'dailyTabLimits',
         'dailyBlockedAttempts',
-        
+
         // Activity tracking
         'limitHitTimestamps',
-        
+
         // Current session data
         'currentMazeSession'
       ];
-      
+
       await this.storage.remove(keysToRemove);
       this.logger.log('Reset all statistics and tracking data:', keysToRemove);
     } catch (error) {

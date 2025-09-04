@@ -289,7 +289,7 @@ async function handleResetStats() {
 
     // Reset statistics using background script message
     const response = await chrome.runtime.sendMessage({ type: 'RESET_STATS' });
-    
+
     if (response.error) {
       throw new Error(response.error);
     }
