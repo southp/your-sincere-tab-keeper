@@ -152,6 +152,9 @@ export function createRenderMazeFunction(
 
     // Draw ZZZ particles when sleeping
     renderSleepParticles(idleState);
+
+    // Draw debug path highlighting (if active)
+    renderDebugPathHighlight();
   };
 }
 
@@ -289,4 +292,58 @@ function renderSleepParticles(idleState) {
  */
 export function getCanvasContext() {
   return { canvas, ctx };
+}
+
+// Debug path highlighting state
+let debugHighlightedPath = null;
+
+/**
+ * Set a path to be highlighted during rendering (for debugging)
+ */
+export function setDebugHighlightedPath(path) {
+  debugHighlightedPath = path;
+}
+
+/**
+ * Clear the debug highlighted path
+ */
+export function clearDebugHighlightedPath() {
+  debugHighlightedPath = null;
+}
+
+/**
+ * Render debug path highlighting if active
+ */
+function renderDebugPathHighlight() {
+  if (!debugHighlightedPath || !ctx || debugHighlightedPath.length < 2) return;
+
+  // Draw highlighted path
+  ctx.strokeStyle = '#ffff00'; // Bright yellow
+  ctx.lineWidth = Math.max(2, cellSize / 8); // Scale with cell size
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+  ctx.globalAlpha = 0.8; // Semi-transparent
+  ctx.beginPath();
+
+  for (let i = 0; i < debugHighlightedPath.length - 1; i++) {
+    const from = debugHighlightedPath[i];
+    const to = debugHighlightedPath[i + 1];
+
+    const fromX = from.x * cellSize + cellSize / 2;
+    const fromY = from.y * cellSize + cellSize / 2;
+    const toX = to.x * cellSize + cellSize / 2;
+    const toY = to.y * cellSize + cellSize / 2;
+
+    if (i === 0) {
+      ctx.moveTo(fromX, fromY);
+    }
+    ctx.lineTo(toX, toY);
+  }
+
+  ctx.stroke();
+
+  // Reset drawing state
+  ctx.globalAlpha = 1.0;
+  ctx.lineCap = 'butt';
+  ctx.lineJoin = 'miter';
 }

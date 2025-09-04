@@ -8,7 +8,7 @@ import { getDifficultySettings } from './constants.js';
 import { Logger } from './debug.js';
 import { isDevelopment } from './env.js';
 import { WALL } from './maze/maze-model.js';
-import { getCellSize } from './maze/maze-renderer.js';
+import { setDebugHighlightedPath, clearDebugHighlightedPath } from './maze/maze-renderer.js';
 import {
   getSessionAction,
   getSessionDifficulty,
@@ -129,12 +129,12 @@ async function setupMazeDebugUtilities() {
       return result;
     },
 
-    // Maze completion helpers
-    finishMaze: () => {
-      mazeLogger.log('🏁 Force finishing maze...');
-      handleMazeComplete();
+    getCurrentDifficulty: () => {
+      const gameState = getGameState();
+      return gameState.currentDifficulty;
     },
 
+    // Maze completion helpers
     solveInstantly: () => {
       const gameState = getGameState();
       if (!gameState.mazeModel) {
@@ -222,40 +222,26 @@ async function setupMazeDebugUtilities() {
       const path = globalThis.debugMaze.findPath();
       if (!path) {
         console.log('❌ No path found to goal');
-        return;
+        return null;
       }
 
       console.log(`🗺️ Path to goal (${path.length} steps):`, path);
 
-      const gameState = getGameState();
-      if (!gameState.canvas) {
-        console.error('❌ No canvas available for highlighting');
-        return path;
-      }
+      // Set the path to be highlighted during rendering
+      setDebugHighlightedPath(path);
 
-      // Visual highlight on canvas
-      const pathCtx = gameState.canvas.getContext('2d');
-      pathCtx.strokeStyle = '#ffff00';
-      pathCtx.lineWidth = 3;
-      pathCtx.beginPath();
+      // Force a re-render to show the highlight immediately
+      rerenderMaze();
 
-      for (let i = 0; i < path.length - 1; i++) {
-        const from = path[i];
-        const to = path[i + 1];
-
-        const cellSize = getCellSize();
-        pathCtx.moveTo(
-          from.x * cellSize + cellSize / 2,
-          from.y * cellSize + cellSize / 2
-        );
-        pathCtx.lineTo(
-          to.x * cellSize + cellSize / 2,
-          to.y * cellSize + cellSize / 2
-        );
-      }
-      pathCtx.stroke();
-
+      console.log('✨ Path highlighted! Call debugMaze.clearHighlight() to remove it.');
       return path;
+    },
+
+    // Clear path highlighting
+    clearHighlight: () => {
+      clearDebugHighlightedPath();
+      rerenderMaze();
+      console.log('🧹 Path highlight cleared');
     },
 
     // Timer manipulation
@@ -291,15 +277,13 @@ async function setupMazeDebugUtilities() {
 =======================
 
 Difficulty Control:
-  debugMaze.setDifficulty(0-5)     - Set difficulty (0=Beginner, 5=Master)
-  debugMaze.currentDifficulty()    - Get current difficulty level
+  debugMaze.setDifficulty(0-6)     - Set difficulty (0=Beginner, 6=Insane)
+  debugMaze.getCurrentDifficulty() - Get current difficulty level
 
 Maze Completion:
-  debugMaze.finishMaze()           - Force finish maze (triggers completion)
   debugMaze.solveInstantly()       - Teleport to goal and finish
 
 Maze Inspection:
-  debugMaze.mazeModel              - Direct access to maze model
   debugMaze.gameState()            - Get current game state
   debugMaze.getMazeGrid()          - Get maze grid (2D array)
   debugMaze.getPlayerPos()         - Get player position {x, y}
@@ -308,6 +292,7 @@ Maze Inspection:
 Pathfinding & Hints:
   debugMaze.findPath()             - Find solution path to goal
   debugMaze.highlightPath()        - Visually highlight solution path
+  debugMaze.clearHighlight()       - Clear path highlighting
 
 Visual & Testing:
   debugMaze.rerender()             - Re-render maze canvas
@@ -319,7 +304,9 @@ Utilities:
 
 Example Usage:
   debugMaze.setDifficulty(3)       // Set to Hard difficulty
-  debugMaze.highlightPath()        // Show solution
+  debugMaze.getCurrentDifficulty() // Check current difficulty
+  debugMaze.highlightPath()        // Show solution path
+  debugMaze.clearHighlight()       // Clear path highlighting
   debugMaze.solveInstantly()       // Skip to completion
       `);
     }
