@@ -3,7 +3,8 @@
  * A challenging maze game with Chrome Dino aesthetic
  */
 
-import { initializeI18n, getI18nMessage } from './ui-utils.js';
+import { initializeI18n } from './ui-utils.js';
+import { getDifficultySettings } from './constants.js';
 import { Logger } from './debug.js';
 import { isDevelopment } from './env.js';
 import { WALL } from './maze/maze-model.js';
@@ -36,19 +37,7 @@ const mazeLogger = new Logger('MAZE-GAME');
 // All game state, animation, movement, session data, and UI management
 // is now handled by their respective modules in maze/
 
-// Difficulty settings - streamlined progression
-// Note: All sizes must be odd for proper maze generation algorithm
-function getDifficultySettings() {
-  return [
-    { name: getI18nMessage('difficultyBeginner'), size: 9, description: getI18nMessage('difficultyBeginnerDesc') },
-    { name: getI18nMessage('difficultyEasy'), size: 11, description: getI18nMessage('difficultyEasyDesc') },
-    { name: getI18nMessage('difficultyMedium'), size: 15, description: getI18nMessage('difficultyMediumDesc') },
-    { name: getI18nMessage('difficultyHard'), size: 21, description: getI18nMessage('difficultyHardDesc') },
-    { name: getI18nMessage('difficultyExpert'), size: 27, description: getI18nMessage('difficultyExpertDesc') },
-    { name: getI18nMessage('difficultyMaster'), size: 39, description: getI18nMessage('difficultyMasterDesc') },
-    { name: getI18nMessage('difficultyInsane'), size: 101, description: getI18nMessage('difficultyInsaneDesc') }
-  ];
-}
+// Difficulty settings are now centralized in constants.js
 
 
 // Initialize game when DOM is loaded

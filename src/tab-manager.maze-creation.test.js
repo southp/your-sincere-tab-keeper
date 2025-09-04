@@ -5,7 +5,7 @@
 
 import { describe, test, expect, beforeEach, jest, afterEach } from '@jest/globals';
 import { TabManager } from './tab-manager.js';
-import { TAB_LIMITS } from './constants.js';
+import { TAB_LIMITS, DIFFICULTY_LEVELS } from './constants.js';
 
 // Mock Chrome APIs
 const mockChrome = {
@@ -146,7 +146,7 @@ describe('TabManager - Maze Creation', () => {
 
       const result = await tabManager.createMazeTabOrBlob({
         action: 'updateLimit',
-        difficulty: 1
+        difficulty: DIFFICULTY_LEVELS.EASY
       });
 
       expect(result).toEqual({ created: 'maze', tabId: 123 });
@@ -155,7 +155,7 @@ describe('TabManager - Maze Creation', () => {
       // Expected: max(2, 3, 1) = 3
       expect(mockUsageDataStore.setMazeSession).toHaveBeenCalledWith({
         action: 'updateLimit',
-        difficulty: 3,
+        difficulty: DIFFICULTY_LEVELS.HARD,
         timestamp: expect.any(Number)
       });
     });
@@ -177,7 +177,7 @@ describe('TabManager - Maze Creation', () => {
       // Should use minimum hard difficulty (3)
       expect(mockUsageDataStore.setMazeSession).toHaveBeenCalledWith({
         action: 'updateLimit',
-        difficulty: 3,
+        difficulty: DIFFICULTY_LEVELS.HARD,
         timestamp: expect.any(Number)
       });
     });
@@ -199,7 +199,7 @@ describe('TabManager - Maze Creation', () => {
       // Should use Expert difficulty (4) since it's higher than minimum Hard (3)
       expect(mockUsageDataStore.setMazeSession).toHaveBeenCalledWith({
         action: 'updateLimit',
-        difficulty: 4, // 15 mazes -> Expert (4)
+        difficulty: DIFFICULTY_LEVELS.EXPERT, // 15 mazes -> Expert
         timestamp: expect.any(Number)
       });
     });

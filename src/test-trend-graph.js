@@ -143,7 +143,7 @@ const MockDataGenerator = {
 let currentData = null;
 
 function loadScenario(scenarioType) {
-  console.log(`🔄 Loading scenario: ${scenarioType}`);
+  console.log(`🔄 Loading scenario: ${scenarioType}`); // eslint-disable-line no-console
 
   const generators = {
     'rich': () => MockDataGenerator.generateRichData(),
@@ -154,13 +154,13 @@ function loadScenario(scenarioType) {
 
   const generator = generators[scenarioType];
   if (!generator) {
-    console.error('Unknown scenario type:', scenarioType);
+    console.error('Unknown scenario type:', scenarioType); // eslint-disable-line no-console
     return;
   }
 
   try {
     currentData = generator();
-    console.log(`✅ Generated data for ${scenarioType}:`, currentData);
+    console.log(`✅ Generated data for ${scenarioType}:`, currentData); // eslint-disable-line no-console
 
     // Update both graphs
     const mainGraph = document.getElementById('testGraph');
@@ -178,10 +178,10 @@ function loadScenario(scenarioType) {
     updateDataPreview();
     updateStatistics();
 
-    console.log(`✅ Successfully loaded ${scenarioType} scenario`);
+    console.log(`✅ Successfully loaded ${scenarioType} scenario`); // eslint-disable-line no-console
 
   } catch (error) {
-    console.error(`❌ Error loading ${scenarioType} scenario:`, error);
+    console.error(`❌ Error loading ${scenarioType} scenario:`, error); // eslint-disable-line no-console
   }
 }
 
@@ -270,8 +270,8 @@ document.addEventListener('DOMContentLoaded', () => {
     loadScenario('rich');
   }, 500);
 
-  console.log('🧪 Trend Graph Extension Test Page Loaded');
-  console.log('📊 Available test scenarios: rich, sparse, empty, extreme');
+  console.log('🧪 Trend Graph Extension Test Page Loaded'); // eslint-disable-line no-console
+  console.log('📊 Available test scenarios: rich, sparse, empty, extreme'); // eslint-disable-line no-console
 });
 
 // Make functions available globally for console testing

@@ -5,7 +5,7 @@
 
 import { describe, test, expect, beforeEach, jest, afterEach } from '@jest/globals';
 import { TabManager } from './tab-manager.js';
-import { TAB_LIMITS } from './constants.js';
+import { TAB_LIMITS, DIFFICULTY_LEVELS, DIFFICULTY_THRESHOLDS } from './constants.js';
 
 // Import mocked functions and TabManager after mocking
 import { isSpecialTab, isMazeTab, isPopupWindow } from './utils.js';
@@ -1191,7 +1191,7 @@ describe('TabManager', () => {
         expect(mockChrome.storage.local.set).toHaveBeenCalledWith({
           currentMazeSession: {
             action: 'limitExceeded',
-            difficulty: 2, // 6 mazes (>=5) -> Medium level
+            difficulty: DIFFICULTY_LEVELS.MEDIUM, // 6 mazes (>=5) -> Medium level
             timestamp: expect.any(Number)
           }
         });
@@ -1203,7 +1203,7 @@ describe('TabManager', () => {
 
         const result = tabManager.calculateMazeDifficulty('limitExceeded');
 
-        expect(result).toBe(1); // 3 mazes completed -> Easy (level 1)
+        expect(result).toBe(DIFFICULTY_LEVELS.EASY); // 3 mazes completed -> Easy (level 1)
       });
 
       test('calculateMazeDifficulty enforces minimum hard difficulty for updateLimit', () => {
@@ -1211,7 +1211,7 @@ describe('TabManager', () => {
 
         const result = tabManager.calculateMazeDifficulty('updateLimit', 2);
 
-        expect(result).toBe(3); // Should be minimum hard difficulty
+        expect(result).toBe(DIFFICULTY_LEVELS.HARD); // Should be minimum hard difficulty
       });
 
       test('calculateMazeDifficulty uses highest value for updateLimit', () => {
@@ -1219,7 +1219,7 @@ describe('TabManager', () => {
 
         const result = tabManager.calculateMazeDifficulty('updateLimit', 2);
 
-        expect(result).toBe(3); // 5 mazes = Medium (2), but updateLimit enforces minimum Hard (3)
+        expect(result).toBe(DIFFICULTY_LEVELS.HARD); // 5 mazes = Medium (2), but updateLimit enforces minimum Hard (3)
       });
 
       test('calculateMazeDifficulty caps at maximum difficulty', () => {
@@ -1227,84 +1227,84 @@ describe('TabManager', () => {
 
         const result = tabManager.calculateMazeDifficulty('limitExceeded');
 
-        expect(result).toBe(6); // Should be capped at insane level
+        expect(result).toBe(DIFFICULTY_LEVELS.INSANE); // Should be capped at insane level
       });
 
       describe('gap-based difficulty progression', () => {
         test('level 0 (Beginner) for 0-1 mazes completed', () => {
           tabManager.dailyMazesCompleted = 0;
-          expect(tabManager.calculateMazeDifficulty('limitExceeded')).toBe(0);
+          expect(tabManager.calculateMazeDifficulty('limitExceeded')).toBe(DIFFICULTY_LEVELS.BEGINNER);
 
           tabManager.dailyMazesCompleted = 1;
-          expect(tabManager.calculateMazeDifficulty('limitExceeded')).toBe(0);
+          expect(tabManager.calculateMazeDifficulty('limitExceeded')).toBe(DIFFICULTY_LEVELS.BEGINNER);
         });
 
         test('level 1 (Easy) after 2 mazes completed', () => {
-          tabManager.dailyMazesCompleted = 2;
-          expect(tabManager.calculateMazeDifficulty('limitExceeded')).toBe(1);
+          tabManager.dailyMazesCompleted = DIFFICULTY_THRESHOLDS[DIFFICULTY_LEVELS.EASY];
+          expect(tabManager.calculateMazeDifficulty('limitExceeded')).toBe(DIFFICULTY_LEVELS.EASY);
 
           tabManager.dailyMazesCompleted = 4;
-          expect(tabManager.calculateMazeDifficulty('limitExceeded')).toBe(1);
+          expect(tabManager.calculateMazeDifficulty('limitExceeded')).toBe(DIFFICULTY_LEVELS.EASY);
         });
 
         test('level 2 (Medium) after 5 mazes completed', () => {
-          tabManager.dailyMazesCompleted = 5;
-          expect(tabManager.calculateMazeDifficulty('limitExceeded')).toBe(2);
+          tabManager.dailyMazesCompleted = DIFFICULTY_THRESHOLDS[DIFFICULTY_LEVELS.MEDIUM];
+          expect(tabManager.calculateMazeDifficulty('limitExceeded')).toBe(DIFFICULTY_LEVELS.MEDIUM);
 
           tabManager.dailyMazesCompleted = 7;
-          expect(tabManager.calculateMazeDifficulty('limitExceeded')).toBe(2);
+          expect(tabManager.calculateMazeDifficulty('limitExceeded')).toBe(DIFFICULTY_LEVELS.MEDIUM);
         });
 
         test('level 3 (Hard) after 8 mazes completed', () => {
-          tabManager.dailyMazesCompleted = 8;
-          expect(tabManager.calculateMazeDifficulty('limitExceeded')).toBe(3);
+          tabManager.dailyMazesCompleted = DIFFICULTY_THRESHOLDS[DIFFICULTY_LEVELS.HARD];
+          expect(tabManager.calculateMazeDifficulty('limitExceeded')).toBe(DIFFICULTY_LEVELS.HARD);
 
           tabManager.dailyMazesCompleted = 11;
-          expect(tabManager.calculateMazeDifficulty('limitExceeded')).toBe(3);
+          expect(tabManager.calculateMazeDifficulty('limitExceeded')).toBe(DIFFICULTY_LEVELS.HARD);
         });
 
         test('level 4 (Expert) after 12 mazes completed', () => {
-          tabManager.dailyMazesCompleted = 12;
-          expect(tabManager.calculateMazeDifficulty('limitExceeded')).toBe(4);
+          tabManager.dailyMazesCompleted = DIFFICULTY_THRESHOLDS[DIFFICULTY_LEVELS.EXPERT];
+          expect(tabManager.calculateMazeDifficulty('limitExceeded')).toBe(DIFFICULTY_LEVELS.EXPERT);
 
           tabManager.dailyMazesCompleted = 16;
-          expect(tabManager.calculateMazeDifficulty('limitExceeded')).toBe(4);
+          expect(tabManager.calculateMazeDifficulty('limitExceeded')).toBe(DIFFICULTY_LEVELS.EXPERT);
         });
 
         test('level 5 (Master) after 17 mazes completed', () => {
-          tabManager.dailyMazesCompleted = 17;
-          expect(tabManager.calculateMazeDifficulty('limitExceeded')).toBe(5);
+          tabManager.dailyMazesCompleted = DIFFICULTY_THRESHOLDS[DIFFICULTY_LEVELS.MASTER];
+          expect(tabManager.calculateMazeDifficulty('limitExceeded')).toBe(DIFFICULTY_LEVELS.MASTER);
 
           tabManager.dailyMazesCompleted = 100;
-          expect(tabManager.calculateMazeDifficulty('limitExceeded')).toBe(5);
+          expect(tabManager.calculateMazeDifficulty('limitExceeded')).toBe(DIFFICULTY_LEVELS.MASTER);
         });
 
         test('level 6 (Insane) after 117 mazes completed', () => {
-          tabManager.dailyMazesCompleted = 117;
-          expect(tabManager.calculateMazeDifficulty('limitExceeded')).toBe(6);
+          tabManager.dailyMazesCompleted = DIFFICULTY_THRESHOLDS[DIFFICULTY_LEVELS.INSANE];
+          expect(tabManager.calculateMazeDifficulty('limitExceeded')).toBe(DIFFICULTY_LEVELS.INSANE);
 
           tabManager.dailyMazesCompleted = 200;
-          expect(tabManager.calculateMazeDifficulty('limitExceeded')).toBe(6);
+          expect(tabManager.calculateMazeDifficulty('limitExceeded')).toBe(DIFFICULTY_LEVELS.INSANE);
         });
       });
 
       test('creates insane difficulty maze when daily mazes exceed threshold', async () => {
         // Set up daily mazes completed to insane level
-        tabManager.dailyMazesCompleted = 120; // Way above insane threshold (117)
+        tabManager.dailyMazesCompleted = 120; // Way above insane threshold
 
         await tabManager.handleTabLimitExceeded({ id: 1, url: 'http://example.com' });
 
         expect(mockChrome.storage.local.set).toHaveBeenCalledWith({
           currentMazeSession: {
             action: 'limitExceeded',
-            difficulty: 6, // 120 mazes -> Insane (6)
+            difficulty: DIFFICULTY_LEVELS.INSANE, // 120 mazes -> Insane
             timestamp: expect.any(Number)
           }
         });
       });
 
       test('difficulty is consistent between multiple tab creations without completion', async () => {
-        tabManager.dailyMazesCompleted = 2;
+        tabManager.dailyMazesCompleted = DIFFICULTY_THRESHOLDS[DIFFICULTY_LEVELS.EASY];
 
         // Create first maze tab
         await tabManager.handleTabLimitExceeded({ id: 1, url: 'http://example.com' });
@@ -1318,8 +1318,8 @@ describe('TabManager', () => {
         );
 
         expect(calls).toHaveLength(2);
-        expect(calls[0][0].currentMazeSession.difficulty).toBe(1); // 2 mazes -> Easy (level 1)
-        expect(calls[1][0].currentMazeSession.difficulty).toBe(1); // Still 2 mazes -> Easy (level 1)
+        expect(calls[0][0].currentMazeSession.difficulty).toBe(DIFFICULTY_LEVELS.EASY); // 2 mazes -> Easy
+        expect(calls[1][0].currentMazeSession.difficulty).toBe(DIFFICULTY_LEVELS.EASY); // Still 2 mazes -> Easy
       });
     });
   });

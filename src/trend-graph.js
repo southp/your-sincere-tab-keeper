@@ -329,7 +329,7 @@ class TrendGraph extends HTMLElement {
 
     // This should never happen with proper initialization, but add assertion for debugging
     if (!chartContainer) {
-      console.error('TrendGraph: Chart container not found - this indicates a component lifecycle bug');
+      console.error('TrendGraph: Chart container not found - this indicates a component lifecycle bug'); // eslint-disable-line no-console
       return;
     }
 
@@ -779,7 +779,7 @@ class TrendGraph extends HTMLElement {
   showNoData() {
     const chartContainer = this.shadowRoot.querySelector('.chart-container');
     if (!chartContainer) {
-      console.warn('TrendGraph: Chart container not found for showNoData');
+      console.warn('TrendGraph: Chart container not found for showNoData'); // eslint-disable-line no-console
       return;
     }
     chartContainer.innerHTML = `<div class="no-data-message">${getI18nMessage('noDataAvailable')}</div>`;
@@ -788,7 +788,7 @@ class TrendGraph extends HTMLElement {
   showError(message) {
     const chartContainer = this.shadowRoot.querySelector('.chart-container');
     if (!chartContainer) {
-      console.warn('TrendGraph: Chart container not found for showError');
+      console.warn('TrendGraph: Chart container not found for showError'); // eslint-disable-line no-console
       return;
     }
     chartContainer.innerHTML = `<div class="no-data-message">Error: ${message}</div>`;

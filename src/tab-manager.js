@@ -5,7 +5,7 @@
  * and state management, separate from Chrome service worker event handling.
  */
 
-import { TAB_LIMITS } from './constants.js';
+import { TAB_LIMITS, DIFFICULTY_LEVELS, DIFFICULTY_THRESHOLDS, DIFFICULTY_CONSTRAINTS } from './constants.js';
 import { Logger } from './debug.js';
 import { isSpecialTab, isMazeTab, isPopupWindow } from './utils.js';
 import { usageDataStore } from './usage-data-store.js';
@@ -149,26 +149,27 @@ export class TabManager {
   calculateMazeDifficulty(action = 'limitExceeded', providedDifficulty = 0) {
     const dailyMazesCompleted = this.dailyMazesCompleted;
 
-    // Calculate difficulty level based on completed mazes with gaps
-    // Gaps: 0→1 (2 mazes), 1→2 (3 mazes), 2→3 (3 mazes), 3→4 (4 mazes), 4→5 (5 mazes), 5→6 (100 mazes)
-    let calculatedDifficulty = 0;
+    // Calculate difficulty level based on completed mazes using centralized thresholds
+    let calculatedDifficulty = DIFFICULTY_LEVELS.BEGINNER;
 
-    if (dailyMazesCompleted >= 2) calculatedDifficulty = 1;   // After 2 mazes -> Easy
-    if (dailyMazesCompleted >= 5) calculatedDifficulty = 2;   // After 5 mazes (2+3) -> Medium
-    if (dailyMazesCompleted >= 8) calculatedDifficulty = 3;   // After 8 mazes (2+3+3) -> Hard
-    if (dailyMazesCompleted >= 12) calculatedDifficulty = 4;  // After 12 mazes (2+3+3+4) -> Expert
-    if (dailyMazesCompleted >= 17) calculatedDifficulty = 5;  // After 17 mazes (2+3+3+4+5) -> Master
-    if (dailyMazesCompleted >= 117) calculatedDifficulty = 6; // After 117 mazes (2+3+3+4+5+100) -> Insane
+    // Find the highest difficulty level that the user has reached
+    const difficultyEntries = Object.entries(DIFFICULTY_THRESHOLDS)
+      .sort(([, a], [, b]) => b - a); // Sort by threshold descending
 
-    // For updateLimit actions, ensure minimum Hard difficulty (index 3)
-    if (action === 'updateLimit') {
-      const minHardDifficulty = 3; // Hard level index
-      calculatedDifficulty = Math.max(calculatedDifficulty, minHardDifficulty, providedDifficulty);
+    for (const [level, threshold] of difficultyEntries) {
+      if (dailyMazesCompleted >= threshold) {
+        calculatedDifficulty = parseInt(level);
+        break;
+      }
     }
 
-    // Cap at maximum difficulty level (6 = Insane level)
-    const maxDifficulty = 6;
-    const finalDifficulty = Math.min(calculatedDifficulty, maxDifficulty);
+    // For updateLimit actions, ensure minimum Hard difficulty
+    if (action === 'updateLimit') {
+      calculatedDifficulty = Math.max(calculatedDifficulty, DIFFICULTY_CONSTRAINTS.UPDATE_LIMIT_MIN, providedDifficulty);
+    }
+
+    // Cap at maximum difficulty level
+    const finalDifficulty = Math.min(calculatedDifficulty, DIFFICULTY_CONSTRAINTS.MAX_DIFFICULTY);
 
     this.mazeLogger.log('Calculated maze difficulty:', {
       action,

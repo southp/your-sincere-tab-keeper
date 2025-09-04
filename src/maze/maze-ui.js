@@ -3,7 +3,7 @@
  * Handles DOM updates, modals, timers, statistics, and user interface interactions
  */
 
-import { TAB_LIMITS } from '../constants.js';
+import { TAB_LIMITS, DIFFICULTY_LEVELS } from '../constants.js';
 import { renderLimitButtons, setupLimitButtonListeners, updateLimitDescription, getI18nMessage } from '../ui-utils.js';
 import { getRandomTip } from '../productivity-tips.js';
 import { Logger } from '../debug.js';
@@ -71,7 +71,7 @@ export function updateGameUI(currentDifficultySettings, mazeSize, sessionAction,
     challengeMessageEl.textContent = getI18nMessage('solveMazeToUpdateLimit');
   } else {
     // Set challenge message based on difficulty level
-    if (currentDifficulty === 6) { // Insane level
+    if (currentDifficulty === DIFFICULTY_LEVELS.INSANE) { // Insane level
       challengeMessageEl.setAttribute('data-i18n', 'solveMazeToOpenInsane');
       challengeMessageEl.textContent = getI18nMessage('solveMazeToOpenInsane');
     } else {
@@ -81,7 +81,7 @@ export function updateGameUI(currentDifficultySettings, mazeSize, sessionAction,
   }
 
   // Apply inferno theme for insane difficulty
-  if (currentDifficulty === 6) { // Insane level
+  if (currentDifficulty === DIFFICULTY_LEVELS.INSANE) { // Insane level
     document.body.classList.add('inferno-theme');
   } else {
     document.body.classList.remove('inferno-theme');
