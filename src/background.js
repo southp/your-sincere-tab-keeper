@@ -300,7 +300,7 @@ async function setupDebugUtilities() {
 
     // Stats inspection
     getStats: () => {
-      return tabManager.getExtensionStats();
+      return tabManager.getStats();
     },
 
     // State management helpers
