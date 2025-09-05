@@ -85,6 +85,9 @@ chrome.tabs.onCreated.addListener(async (tab) => {
       }
       break;
   }
+
+  // Notify popup about tab count change
+  await notifyPopupUpdate();
 });
 
 /**
@@ -152,6 +155,9 @@ chrome.tabs.onRemoved.addListener(async (tabId) => {
   }
 
   tabManager.onTabRemoved(tabId);
+
+  // Notify popup about tab count and maze status changes
+  await notifyPopupUpdate();
 });
 
 /**
@@ -171,22 +177,68 @@ chrome.webNavigation.onTabReplaced.addListener((details) => {
 });
 
 /**
+ * Notify popup about updates when it's open
+ */
+async function notifyPopupUpdate() {
+  try {
+    // Check if popup is open by getting extension views
+    const views = chrome.extension.getViews({ type: 'popup' });
+    if (views.length === 0) return; // Popup is not open
+
+    // Get current data for popup
+    const [tabs, session, stats] = await Promise.all([
+      chrome.tabs.query({}),
+      getMazeSessionData(),
+      tabManager.getStats()
+    ]);
+
+    // Filter regular tabs (not special or maze tabs)
+    const regularTabs = tabs.filter(tab => !isSpecialTab(tab) && !isMazeTab(tab));
+    const currentLimit = stats.tabLimit;
+
+    // Send updates to popup
+    chrome.runtime.sendMessage({
+      type: 'POPUP_UPDATE_TAB_COUNT',
+      data: { tabCount: regularTabs.length, currentLimit }
+    }).catch(() => {
+      // Popup might have closed, ignore errors
+    });
+
+    chrome.runtime.sendMessage({
+      type: 'POPUP_UPDATE_MAZE_STATUS',
+      data: { hasSession: !!session }
+    }).catch(() => {
+      // Popup might have closed, ignore errors
+    });
+
+  } catch (error) {
+    generalLogger.error('Error notifying popup:', error);
+  }
+}
+
+/**
  * Handle messages from content scripts and pages
  */
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   switch (message.type) {
     case 'MAZE_COMPLETED':
-      tabManager.handleMazeCompleted(sender.tab.id, message.data);
+      tabManager.handleMazeCompleted(sender.tab.id, message.data)
+        .then(() => notifyPopupUpdate())
+        .catch(error => generalLogger.error('Error handling maze completion:', error));
       break;
     case 'GET_BLOCKED_URL':
       // This functionality is now handled internally by TabManager
       sendResponse({ url: null });
       break;
     case 'UPDATE_TAB_LIMIT':
-      tabManager.handleTabLimitUpdate(message.limit);
+      tabManager.handleTabLimitUpdate(message.limit)
+        .then(() => notifyPopupUpdate())
+        .catch(error => generalLogger.error('Error updating tab limit:', error));
       break;
     case 'COMPLETE_ONBOARDING':
-      tabManager.handleCompleteOnboarding(message.limit);
+      tabManager.handleCompleteOnboarding(message.limit)
+        .then(() => notifyPopupUpdate())
+        .catch(error => generalLogger.error('Error completing onboarding:', error));
       break;
     case 'GET_STATS':
       handleGetStats(sendResponse);

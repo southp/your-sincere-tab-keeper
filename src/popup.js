@@ -41,6 +41,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   await checkForExistingMaze();
   displayRandomTip();
   setupEventListeners();
+  setupMessageListeners();
 });
 
 
@@ -218,10 +219,56 @@ async function checkForExistingMaze() {
 
 
 /**
- * Refresh popup data periodically
+ * Setup message listeners for real-time updates from background
  */
-setInterval(async () => {
-  await checkCurrentTabs();
-  await checkForExistingMaze();
-}, 2000);
+function setupMessageListeners() {
+  chrome.runtime.onMessage.addListener((message, _sender, _sendResponse) => {
+    switch (message.type) {
+      case 'POPUP_UPDATE_TAB_COUNT':
+        updateTabCountDisplay(message.data.tabCount, message.data.currentLimit);
+        break;
+      case 'POPUP_UPDATE_MAZE_STATUS':
+        updateMazeStatusDisplay(message.data.hasSession);
+        break;
+      case 'POPUP_UPDATE_STATS':
+        updateStatsDisplay(message.data);
+        break;
+    }
+  });
+}
+
+/**
+ * Update tab count display
+ */
+function updateTabCountDisplay(tabCount, currentLimit) {
+  tabCountEl.textContent = tabCount;
+
+  // Highlight if over limit
+  if (tabCount > currentLimit) {
+    tabCountEl.classList.add('over-limit');
+  } else {
+    tabCountEl.classList.remove('over-limit');
+  }
+}
+
+/**
+ * Update maze status banner display
+ */
+function updateMazeStatusDisplay(hasSession) {
+  if (hasSession) {
+    mazeStatusEl.style.display = 'block';
+    mazeStatusEl.style.cursor = 'pointer';
+  } else {
+    mazeStatusEl.style.display = 'none';
+  }
+}
+
+/**
+ * Update stats display
+ */
+function updateStatsDisplay(stats) {
+  if (stats.tabLimit !== undefined) currentLimitEl.textContent = stats.tabLimit;
+  if (stats.mazesCompleted !== undefined) mazesCompletedEl.textContent = stats.mazesCompleted;
+  if (stats.blockedAttempts !== undefined) blockedAttemptsEl.textContent = stats.blockedAttempts;
+}
 
