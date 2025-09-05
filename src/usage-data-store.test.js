@@ -256,8 +256,7 @@ describe('UsageDataStore', () => {
           'dailyMazes',
           'dailyTabLimits',
           'dailyBlockedAttempts',
-          'limitHitTimestamps',
-          'currentMazeSession'
+          'limitHitTimestamps'
         ]);
       });
     });
@@ -492,46 +491,6 @@ describe('UsageDataStore', () => {
     });
   });
 
-  describe('Session Data Operations', () => {
-    describe('getMazeSession', () => {
-      it('should return stored session data', async () => {
-        const sessionData = { difficulty: 5, startTime: Date.now() };
-        mockStorage.get.mockResolvedValue({ currentMazeSession: sessionData });
-
-        const result = await store.getMazeSession();
-
-        expect(result).toEqual(sessionData);
-      });
-
-      it('should return null if no session data', async () => {
-        mockStorage.get.mockResolvedValue({});
-
-        const result = await store.getMazeSession();
-
-        expect(result).toBeNull();
-      });
-    });
-
-    describe('setMazeSession', () => {
-      it('should store session data', async () => {
-        const sessionData = { difficulty: 3, startTime: Date.now() };
-
-        await store.setMazeSession(sessionData);
-
-        expect(mockStorage.set).toHaveBeenCalledWith({
-          currentMazeSession: sessionData
-        });
-      });
-    });
-
-    describe('clearMazeSession', () => {
-      it('should remove session data', async () => {
-        await store.clearMazeSession();
-
-        expect(mockStorage.remove).toHaveBeenCalledWith(['currentMazeSession']);
-      });
-    });
-  });
 
   describe('Analytics Operations', () => {
     describe('logLimitHitTimestamp', () => {

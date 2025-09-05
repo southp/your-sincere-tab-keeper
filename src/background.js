@@ -9,6 +9,7 @@ import { isSpecialTab, isMazeTab } from './utils.js';
 import { isDevelopment } from './env.js';
 import { setLocaleOverride } from './ui-utils.js';
 import { usageDataStore } from './usage-data-store.js';
+import { clearMazeSession, getMazeSessionData } from './maze/maze-session.js';
 
 // Create scoped loggers for service worker functionality
 const initLogger = new Logger('SERVICE-WORKER-INIT');
@@ -134,7 +135,22 @@ chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
 /**
  * Clean up when tabs are closed
  */
-chrome.tabs.onRemoved.addListener((tabId) => {
+chrome.tabs.onRemoved.addListener(async (tabId) => {
+  generalLogger.log('Tab removed:', tabId, 'Current maze tab ID:', tabManager.mazeTabId);
+
+  // Check if this was the maze tab and clear session if so
+  if (tabManager.mazeTabId === tabId) {
+    try {
+      generalLogger.log('Removing maze tab - clearing session');
+      await clearMazeSession();
+      generalLogger.log('Cleared maze session after maze tab was closed:', tabId);
+    } catch (error) {
+      generalLogger.error('Failed to clear maze session on tab close:', error);
+    }
+  } else {
+    generalLogger.log('Not the maze tab, session will remain');
+  }
+
   tabManager.onTabRemoved(tabId);
 });
 
@@ -303,6 +319,16 @@ async function setupDebugUtilities() {
       return tabManager.getStats();
     },
 
+    // Maze session inspection
+    getMazeSession: async () => {
+      try {
+        return await getMazeSessionData();
+      } catch (error) {
+        generalLogger.error('Failed to get maze session in debug:', error);
+        return null;
+      }
+    },
+
     // State management helpers
     clearUnblockedTabs: () => {
       tabManager.unblockedTabs.clear();
@@ -410,6 +436,7 @@ Core Inspection:
   debugTabKeeper.getState()        - Get current state snapshot
   debugTabKeeper.getAllTabs()      - Get all tabs with keeper status
   debugTabKeeper.getStats()        - Get extension statistics
+  debugTabKeeper.getMazeSession()  - Get current maze session data
 
 State Management:
   debugTabKeeper.clearUnblockedTabs()  - Clear unblocked tabs set

@@ -178,10 +178,7 @@ class UsageDataStore {
         'dailyBlockedAttempts',
 
         // Activity tracking
-        'limitHitTimestamps',
-
-        // Current session data
-        'currentMazeSession'
+        'limitHitTimestamps'
       ];
 
       await this.storage.remove(keysToRemove);
@@ -320,48 +317,6 @@ class UsageDataStore {
     }
   }
 
-  // =============================================================================
-  // SESSION DATA OPERATIONS
-  // =============================================================================
-
-  /**
-   * Get current maze session data
-   */
-  async getMazeSession() {
-    try {
-      const result = await this.storage.get(['currentMazeSession']);
-      return result.currentMazeSession || null;
-    } catch (error) {
-      this.logger.error('Failed to get maze session:', error);
-      return null;
-    }
-  }
-
-  /**
-   * Set current maze session data
-   */
-  async setMazeSession(sessionData) {
-    try {
-      await this.storage.set({ currentMazeSession: sessionData });
-      this.logger.log('Set maze session data:', sessionData);
-    } catch (error) {
-      this.logger.error('Failed to set maze session:', error);
-      throw error;
-    }
-  }
-
-  /**
-   * Clear current maze session data
-   */
-  async clearMazeSession() {
-    try {
-      await this.storage.remove(['currentMazeSession']);
-      this.logger.log('Cleared maze session data');
-    } catch (error) {
-      this.logger.error('Failed to clear maze session:', error);
-      throw error;
-    }
-  }
 
   // =============================================================================
   // ANALYTICS OPERATIONS

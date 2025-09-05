@@ -6,6 +6,7 @@
 import { describe, test, expect, beforeEach, jest, afterEach } from '@jest/globals';
 import { TabManager } from './tab-manager.js';
 import { TAB_LIMITS, DIFFICULTY_LEVELS } from './constants.js';
+import { saveMazeSession, getMazeSessionData } from './maze/maze-session.js';
 
 // Mock Chrome APIs
 const mockChrome = {
@@ -38,10 +39,14 @@ const mockUsageDataStore = {
   initializeInstallDate: jest.fn(),
   getTodayMazeCount: jest.fn(),
   recordTodayTabLimit: jest.fn(),
-  getExtendedStatistics: jest.fn(),
-  setMazeSession: jest.fn(),
-  getMazeSession: jest.fn()
+  getExtendedStatistics: jest.fn()
 };
+
+// Mock maze session module
+jest.mock('./maze/maze-session.js', () => ({
+  saveMazeSession: jest.fn(),
+  getMazeSessionData: jest.fn()
+}));
 
 jest.mock('./usage-data-store.js', () => ({
   usageDataStore: jest.fn(() => mockUsageDataStore)
@@ -90,8 +95,10 @@ describe('TabManager - Maze Creation', () => {
     mockUsageDataStore.getTodayMazeCount.mockResolvedValue(0);
     mockUsageDataStore.recordTodayTabLimit.mockResolvedValue();
     mockUsageDataStore.getExtendedStatistics.mockResolvedValue({});
-    mockUsageDataStore.setMazeSession.mockResolvedValue();
-    mockUsageDataStore.getMazeSession.mockResolvedValue(null);
+
+    // Reset maze session mocks
+    saveMazeSession.mockResolvedValue();
+    getMazeSessionData.mockResolvedValue(null);
   });
 
   afterEach(() => {
@@ -153,7 +160,7 @@ describe('TabManager - Maze Creation', () => {
 
       // Verify maze session was stored (difficulty should be max of current, min hard, and provided)
       // Expected: max(2, 3, 1) = 3
-      expect(mockUsageDataStore.setMazeSession).toHaveBeenCalledWith({
+      expect(saveMazeSession).toHaveBeenCalledWith({
         action: 'updateLimit',
         difficulty: DIFFICULTY_LEVELS.HARD,
         timestamp: expect.any(Number)
@@ -175,7 +182,7 @@ describe('TabManager - Maze Creation', () => {
       });
 
       // Should use minimum hard difficulty (3)
-      expect(mockUsageDataStore.setMazeSession).toHaveBeenCalledWith({
+      expect(saveMazeSession).toHaveBeenCalledWith({
         action: 'updateLimit',
         difficulty: DIFFICULTY_LEVELS.HARD,
         timestamp: expect.any(Number)
@@ -197,7 +204,7 @@ describe('TabManager - Maze Creation', () => {
       });
 
       // Should use Expert difficulty (4) since it's higher than minimum Hard (3)
-      expect(mockUsageDataStore.setMazeSession).toHaveBeenCalledWith({
+      expect(saveMazeSession).toHaveBeenCalledWith({
         action: 'updateLimit',
         difficulty: DIFFICULTY_LEVELS.EXPERT, // 15 mazes -> Expert
         timestamp: expect.any(Number)
@@ -215,7 +222,7 @@ describe('TabManager - Maze Creation', () => {
       await tabManager.createMazeTabOrBlob({ action: 'limitExceeded' });
 
       // Should not call setMazeSession for regular limit exceeded
-      expect(mockUsageDataStore.setMazeSession).not.toHaveBeenCalled();
+      expect(saveMazeSession).not.toHaveBeenCalled();
     });
 
     test('handles tab creation errors gracefully', async () => {
@@ -241,7 +248,7 @@ describe('TabManager - Maze Creation', () => {
       const result = await tabManager.createMazeTabOrBlob();
 
       expect(result).toEqual({ created: 'maze', tabId: 123 });
-      expect(mockUsageDataStore.setMazeSession).not.toHaveBeenCalled();
+      expect(saveMazeSession).not.toHaveBeenCalled();
     });
   });
 });

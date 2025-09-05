@@ -9,6 +9,7 @@ import { TAB_LIMITS, DIFFICULTY_LEVELS, DIFFICULTY_THRESHOLDS, DIFFICULTY_CONSTR
 import { Logger } from './debug.js';
 import { isSpecialTab, isMazeTab, isPopupWindow } from './utils.js';
 import { usageDataStore } from './usage-data-store.js';
+import { saveMazeSession, getMazeSessionData } from './maze/maze-session.js';
 
 export class TabManager {
   // Configurable timing constants
@@ -199,8 +200,7 @@ export class TabManager {
 
       // Calculate difficulty and store maze session data
       const difficulty = this.calculateMazeDifficulty('limitExceeded');
-      const store = usageDataStore();
-      await store.setMazeSession({
+      await saveMazeSession({
         action: 'limitExceeded',
         difficulty: difficulty,
         timestamp: Date.now()
@@ -259,8 +259,7 @@ export class TabManager {
       } else {
         // Fallback: check current storage
         try {
-          const store = usageDataStore();
-          const session = await store.getMazeSession();
+          const session = await getMazeSessionData();
           isUpdateLimitMaze = session && session.action === 'updateLimit';
         } catch (error) {
           this.mazeLogger.error('Failed to check maze session for updateLimit action:', error);
@@ -616,8 +615,7 @@ export class TabManager {
       if (action === 'updateLimit') {
         const calculatedDifficulty = this.calculateMazeDifficulty('updateLimit', difficulty || 0);
 
-        const store = usageDataStore();
-        await store.setMazeSession({
+        await saveMazeSession({
           action: 'updateLimit',
           difficulty: calculatedDifficulty,
           timestamp: Date.now()

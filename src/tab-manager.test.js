@@ -9,6 +9,7 @@ import { TAB_LIMITS, DIFFICULTY_LEVELS, DIFFICULTY_THRESHOLDS } from './constant
 
 // Import mocked functions and TabManager after mocking
 import { isSpecialTab, isMazeTab, isPopupWindow } from './utils.js';
+import { saveMazeSession, getMazeSessionData } from './maze/maze-session.js';
 
 // Mock Chrome APIs
 const mockChrome = {
@@ -39,6 +40,12 @@ jest.mock('./utils.js', () => ({
   isSpecialTab: jest.fn().mockReturnValue(false),
   isMazeTab: jest.fn().mockReturnValue(false),
   isPopupWindow: jest.fn().mockResolvedValue(false)
+}));
+
+// Mock maze session module
+jest.mock('./maze/maze-session.js', () => ({
+  saveMazeSession: jest.fn(),
+  getMazeSessionData: jest.fn()
 }));
 
 
@@ -85,6 +92,10 @@ describe('TabManager', () => {
 
     // Set up standard mocks for regular tabs
     setupStandardMocks();
+
+    // Reset maze session mocks
+    saveMazeSession.mockResolvedValue();
+    getMazeSessionData.mockResolvedValue(null);
   });
 
   afterEach(() => {
@@ -390,12 +401,10 @@ describe('TabManager', () => {
       await tabManager.handleTabLimitExceeded(tab);
 
       expect(tabManager.blockedUrls.get(1)).toBe('http://example.com');
-      expect(mockChrome.storage.local.set).toHaveBeenCalledWith({
-        currentMazeSession: {
-          action: 'limitExceeded',
-          difficulty: 0,
-          timestamp: expect.any(Number)
-        }
+      expect(saveMazeSession).toHaveBeenCalledWith({
+        action: 'limitExceeded',
+        difficulty: 0,
+        timestamp: expect.any(Number)
       });
       expect(mockChrome.tabs.update).toHaveBeenCalledWith(1, { url: mockMazeUrl });
       expect(tabManager.mazeTabId).toBe(1);
@@ -1188,12 +1197,10 @@ describe('TabManager', () => {
 
         await tabManager.handleTabLimitExceeded({ id: 1, url: 'http://example.com' });
 
-        expect(mockChrome.storage.local.set).toHaveBeenCalledWith({
-          currentMazeSession: {
-            action: 'limitExceeded',
-            difficulty: DIFFICULTY_LEVELS.MEDIUM, // 6 mazes (>=5) -> Medium level
-            timestamp: expect.any(Number)
-          }
+        expect(saveMazeSession).toHaveBeenCalledWith({
+          action: 'limitExceeded',
+          difficulty: DIFFICULTY_LEVELS.MEDIUM, // 6 mazes (>=5) -> Medium level
+          timestamp: expect.any(Number)
         });
       });
 
@@ -1294,12 +1301,10 @@ describe('TabManager', () => {
 
         await tabManager.handleTabLimitExceeded({ id: 1, url: 'http://example.com' });
 
-        expect(mockChrome.storage.local.set).toHaveBeenCalledWith({
-          currentMazeSession: {
-            action: 'limitExceeded',
-            difficulty: DIFFICULTY_LEVELS.INSANE, // 120 mazes -> Insane
-            timestamp: expect.any(Number)
-          }
+        expect(saveMazeSession).toHaveBeenCalledWith({
+          action: 'limitExceeded',
+          difficulty: DIFFICULTY_LEVELS.INSANE, // 120 mazes -> Insane
+          timestamp: expect.any(Number)
         });
       });
 
@@ -1313,13 +1318,17 @@ describe('TabManager', () => {
         await tabManager.handleTabLimitExceeded({ id: 2, url: 'http://example2.com' });
 
         // Both should have the same difficulty since no maze was completed
-        const calls = mockChrome.storage.local.set.mock.calls.filter(call =>
-          call[0].currentMazeSession && call[0].currentMazeSession.action === 'limitExceeded'
-        );
-
-        expect(calls).toHaveLength(2);
-        expect(calls[0][0].currentMazeSession.difficulty).toBe(DIFFICULTY_LEVELS.EASY); // 2 mazes -> Easy
-        expect(calls[1][0].currentMazeSession.difficulty).toBe(DIFFICULTY_LEVELS.EASY); // Still 2 mazes -> Easy
+        expect(saveMazeSession).toHaveBeenCalledTimes(2);
+        expect(saveMazeSession).toHaveBeenNthCalledWith(1, {
+          action: 'limitExceeded',
+          difficulty: DIFFICULTY_LEVELS.EASY, // 2 mazes -> Easy
+          timestamp: expect.any(Number)
+        });
+        expect(saveMazeSession).toHaveBeenNthCalledWith(2, {
+          action: 'limitExceeded',
+          difficulty: DIFFICULTY_LEVELS.EASY, // Still 2 mazes -> Easy
+          timestamp: expect.any(Number)
+        });
       });
     });
   });

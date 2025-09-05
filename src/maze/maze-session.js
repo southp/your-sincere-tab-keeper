@@ -4,10 +4,59 @@
  */
 
 import { Logger } from '../debug.js';
-import { usageDataStore } from '../usage-data-store.js';
 
 // Create logger for this module
 const logger = new Logger('MAZE-SESSION');
+
+// Direct Chrome storage interface for maze session data
+const MAZE_SESSION_KEY = 'currentMazeSession';
+
+// =============================================================================
+// MAZE SESSION STORAGE OPERATIONS
+// =============================================================================
+
+/**
+ * Get current maze session data directly from Chrome session storage
+ */
+async function getMazeSession() {
+  try {
+    const result = await chrome.storage.session.get([MAZE_SESSION_KEY]);
+    return result[MAZE_SESSION_KEY] || null;
+  } catch (error) {
+    logger.error('Failed to get maze session:', error);
+    return null;
+  }
+}
+
+/**
+ * Set current maze session data directly to Chrome session storage
+ */
+async function setMazeSession(sessionData) {
+  try {
+    await chrome.storage.session.set({ [MAZE_SESSION_KEY]: sessionData });
+    logger.log('Set maze session data:', sessionData);
+  } catch (error) {
+    logger.error('Failed to set maze session:', error);
+    throw error;
+  }
+}
+
+/**
+ * Clear current maze session data directly from Chrome session storage
+ */
+async function clearMazeSessionStorage() {
+  try {
+    await chrome.storage.session.remove([MAZE_SESSION_KEY]);
+    logger.log('Cleared maze session data');
+  } catch (error) {
+    logger.error('Failed to clear maze session:', error);
+    throw error;
+  }
+}
+
+// =============================================================================
+// SESSION DATA MANAGEMENT
+// =============================================================================
 
 // Session data (will be injected by the session system)
 export let sessionData = {
@@ -29,13 +78,12 @@ export async function isCompletedMazeSession() {
 }
 
 /**
- * Load maze session data from Chrome storage
+ * Load maze session data from Chrome session storage
  */
 export async function loadMazeSessionData() {
   try {
     // Try to get existing session data
-    const store = usageDataStore();
-    const storedSessionData = await store.getMazeSession();
+    const storedSessionData = await getMazeSession();
 
     if (storedSessionData) {
       sessionData.action = storedSessionData.action;
@@ -66,13 +114,43 @@ export async function loadMazeSessionData() {
 }
 
 /**
- * Clear maze session after completion
+ * Set maze session data (exported for external use)
+ */
+export async function saveMazeSession(data) {
+  try {
+    await setMazeSession(data);
+    // Also update local session data
+    sessionData.action = data.action;
+    sessionData.difficulty = data.difficulty || 0;
+    logger.log('Saved maze session data:', data);
+  } catch (error) {
+    logger.error('Failed to save maze session:', error);
+    throw error;
+  }
+}
+
+/**
+ * Get maze session data (exported for external use)
+ */
+export async function getMazeSessionData() {
+  try {
+    return await getMazeSession();
+  } catch (error) {
+    logger.error('Failed to get maze session:', error);
+    return null;
+  }
+}
+
+/**
+ * Clear maze session after completion or tab close
  */
 export async function clearMazeSession() {
   try {
-    const store = usageDataStore();
-    await store.clearMazeSession();
-    logger.log('Cleared maze session after completion');
+    await clearMazeSessionStorage();
+    // Reset local session data as well
+    sessionData.action = null;
+    sessionData.difficulty = 0;
+    logger.log('Cleared maze session');
   } catch (error) {
     logger.error('Failed to clear maze session:', error);
   }
@@ -104,9 +182,11 @@ export async function initializeSession() {
   // Check if this is a completed session
   const isCompleted = await isCompletedMazeSession();
 
+
   return {
     action: data.action,
     difficulty: data.difficulty,
     isCompleted
   };
 }
+

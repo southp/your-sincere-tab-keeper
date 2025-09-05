@@ -5,8 +5,8 @@
 
 import { Logger } from './debug.js';
 import { isSpecialTab, isMazeTab } from './utils.js';
-import { usageDataStore } from './usage-data-store.js';
 import { initializeI18n, getI18nMessage } from './ui-utils.js';
+import { getMazeSessionData } from './maze/maze-session.js';
 
 // Create scoped logger for popup functionality
 const popupLogger = new Logger('POPUP');
@@ -202,8 +202,7 @@ function showError(message) {
  */
 async function checkForExistingMaze() {
   try {
-    const store = usageDataStore();
-    const session = await store.getMazeSession();
+    const session = await getMazeSessionData();
 
     if (session) {
       // Show the yellow banner and make it clickable
