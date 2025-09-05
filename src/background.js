@@ -181,10 +181,6 @@ chrome.webNavigation.onTabReplaced.addListener((details) => {
  */
 async function notifyPopupUpdate() {
   try {
-    // Check if popup is open by getting extension views
-    const views = chrome.extension.getViews({ type: 'popup' });
-    if (views.length === 0) return; // Popup is not open
-
     // Get current data for popup
     const [tabs, session, stats] = await Promise.all([
       chrome.tabs.query({}),
@@ -196,19 +192,19 @@ async function notifyPopupUpdate() {
     const regularTabs = tabs.filter(tab => !isSpecialTab(tab) && !isMazeTab(tab));
     const currentLimit = stats.tabLimit;
 
-    // Send updates to popup
+    // Send updates to popup (will be ignored if popup isn't open)
     chrome.runtime.sendMessage({
       type: 'POPUP_UPDATE_TAB_COUNT',
       data: { tabCount: regularTabs.length, currentLimit }
     }).catch(() => {
-      // Popup might have closed, ignore errors
+      // Popup is not open, ignore errors
     });
 
     chrome.runtime.sendMessage({
       type: 'POPUP_UPDATE_MAZE_STATUS',
       data: { hasSession: !!session }
     }).catch(() => {
-      // Popup might have closed, ignore errors
+      // Popup is not open, ignore errors
     });
 
   } catch (error) {
