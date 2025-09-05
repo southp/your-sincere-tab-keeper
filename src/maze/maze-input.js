@@ -178,7 +178,7 @@ export function updateMovement(deltaTime, celebrationState, playerVisualPos, maz
     handleWallPushingRelease(currentTime);
 
     // Also reset wall pushing state when not moving
-    updateWallPushing(currentTime, { x: 0, y: 0 }, false);
+    updateWallPushing(currentTime, { x: 0, y: 0 }, false, playerVisualPos);
 
     // Update idle behavior
     updateIdleBehavior(currentTime, dt, playerVisualPos, eyeDirection);
@@ -230,7 +230,7 @@ export function updateMovement(deltaTime, celebrationState, playerVisualPos, maz
     // Check for wall pushing (easter egg)
     const positionChanged = Math.abs(playerVisualPos.x - prevX) > 0.001 ||
                            Math.abs(playerVisualPos.y - prevY) > 0.001;
-    updateWallPushing(currentTime, intendedVelocity, positionChanged);
+    updateWallPushing(currentTime, intendedVelocity, positionChanged, playerVisualPos);
 
     // Check for goal completion - trigger when avatar center is close to goal center
     const distanceToGoal = Math.sqrt(

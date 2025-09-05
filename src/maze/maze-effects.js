@@ -132,7 +132,7 @@ export function getPlayerHopOffset() {
 /**
  * Update wall pushing state (easter egg)
  */
-export function updateWallPushing(currentTime, intendedVelocity, positionChanged) {
+export function updateWallPushing(currentTime, intendedVelocity, positionChanged, playerVisualPos = { x: 0, y: 0 }) {
   // Check if player is trying to move but position didn't change (blocked by wall)
   const isBlocked = (intendedVelocity.x !== 0 || intendedVelocity.y !== 0) && !positionChanged;
 
@@ -144,7 +144,7 @@ export function updateWallPushing(currentTime, intendedVelocity, positionChanged
         wallPushingState.direction.x === direction.x &&
         wallPushingState.direction.y === direction.y) {
       // Continue pushing in same direction - update sweat
-      updateSweat(currentTime);
+      updateSweat(currentTime, playerVisualPos);
     } else {
       // Start new wall pushing session
       wallPushingState.active = true;
