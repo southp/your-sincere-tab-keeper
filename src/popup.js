@@ -38,7 +38,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   initializeI18n();
   await loadStats();
   await checkCurrentTabs();
-  await checkForActiveMaze();
   await checkForExistingMaze();
   displayRandomTip();
   setupEventListeners();
@@ -92,35 +91,6 @@ async function checkCurrentTabs() {
   }
 }
 
-/**
- * Check if there's an active maze tab
- */
-async function checkForActiveMaze() {
-  try {
-    const tabs = await chrome.tabs.query({});
-    const mazeTabs = tabs.filter(tab => tab.url && tab.url.includes('maze.html'));
-
-    if (mazeTabs.length > 0) {
-      mazeStatusEl.style.display = 'block';
-
-      // Add click handler to focus maze tab
-      mazeStatusEl.addEventListener('click', async () => {
-        try {
-          await chrome.tabs.update(mazeTabs[0].id, { active: true });
-          window.close(); // Close popup after focusing maze
-        } catch (error) {
-          popupLogger.error('Failed to focus maze tab:', error);
-        }
-      });
-
-      mazeStatusEl.style.cursor = 'pointer';
-    } else {
-      mazeStatusEl.style.display = 'none';
-    }
-  } catch (error) {
-    popupLogger.error('Error checking for maze tabs:', error);
-  }
-}
 
 /**
  * Display a random tip in the footer
@@ -136,6 +106,15 @@ function displayRandomTip() {
 function setupEventListeners() {
   updateLimitBtn.addEventListener('click', handleUpdateLimit);
   viewStatsBtn.addEventListener('click', handleViewStats);
+  // Add click handler for maze status banner to focus maze tab
+  mazeStatusEl.addEventListener('click', async () => {
+    try {
+      await chrome.runtime.sendMessage({ type: 'FOCUS_MAZE_TAB' });
+      window.close(); // Close popup after focusing maze
+    } catch (error) {
+      popupLogger.error('Failed to focus maze tab:', error);
+    }
+  });
 }
 
 /**
@@ -219,7 +198,7 @@ function showError(message) {
 }
 
 /**
- * Check for existing maze session and show notification if needed
+ * Check for existing maze session and show yellow banner if needed
  */
 async function checkForExistingMaze() {
   try {
@@ -227,107 +206,23 @@ async function checkForExistingMaze() {
     const session = await store.getMazeSession();
 
     if (session) {
-      showSpeechBubble(getI18nMessage('alreadyHaveAMaze'), getI18nMessage('focusOnCurrentMaze'));
+      // Show the yellow banner and make it clickable
+      mazeStatusEl.style.display = 'block';
+      mazeStatusEl.style.cursor = 'pointer';
+    } else {
+      mazeStatusEl.style.display = 'none';
     }
   } catch (error) {
     popupLogger.error('Error checking for existing maze:', error);
   }
 }
 
-/**
- * Show speech bubble notification in popup
- */
-function showSpeechBubble(title, message) {
-  // Create speech bubble element
-  const speechBubble = document.createElement('div');
-  speechBubble.className = 'speech-bubble';
-  speechBubble.innerHTML = `
-    <div class="speech-bubble-content">
-      <div class="speech-bubble-title">${title}</div>
-      <div class="speech-bubble-message">${message}</div>
-    </div>
-    <div class="speech-bubble-arrow"></div>
-  `;
-
-  // Add CSS for speech bubble
-  const style = document.createElement('style');
-  style.textContent = `
-    .speech-bubble {
-      position: fixed;
-      top: 10px;
-      left: 10px;
-      right: 10px;
-      background: linear-gradient(135deg, #ff6b6b 0%, #ff8e8e 100%);
-      color: white;
-      border-radius: 12px;
-      padding: 16px;
-      box-shadow: 0 4px 20px rgba(255, 107, 107, 0.3);
-      z-index: 1000;
-      animation: speechBubbleSlide 0.3s ease-out;
-    }
-    
-    .speech-bubble-content {
-      text-align: center;
-    }
-    
-    .speech-bubble-title {
-      font-size: 14px;
-      font-weight: 600;
-      margin-bottom: 4px;
-    }
-    
-    .speech-bubble-message {
-      font-size: 12px;
-      opacity: 0.9;
-    }
-    
-    .speech-bubble-arrow {
-      position: absolute;
-      bottom: -8px;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 0;
-      height: 0;
-      border-left: 8px solid transparent;
-      border-right: 8px solid transparent;
-      border-top: 8px solid #ff6b6b;
-    }
-    
-    @keyframes speechBubbleSlide {
-      from {
-        transform: translateY(-20px);
-        opacity: 0;
-      }
-      to {
-        transform: translateY(0);
-        opacity: 1;
-      }
-    }
-  `;
-
-  document.head.appendChild(style);
-  document.body.appendChild(speechBubble);
-
-  // Auto-remove after 3 seconds
-  setTimeout(() => {
-    speechBubble.style.animation = 'speechBubbleSlide 0.3s ease-in reverse';
-    setTimeout(() => {
-      if (speechBubble.parentNode) {
-        speechBubble.parentNode.removeChild(speechBubble);
-      }
-      if (style.parentNode) {
-        style.parentNode.removeChild(style);
-      }
-    }, 300);
-  }, 3000);
-}
 
 /**
  * Refresh popup data periodically
  */
 setInterval(async () => {
   await checkCurrentTabs();
-  await checkForActiveMaze();
   await checkForExistingMaze();
 }, 2000);
 
