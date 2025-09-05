@@ -127,7 +127,7 @@ function renderPlayerEyes(ctx, cellSize, playerSize, playerX, playerY, hopOffset
   const eyeGrowthOffset = (eyeSize - originalEyeSize) / 2;
   const breathingOffset = wallPushingState.breathOffset || 0;
   const leftEyeX = playerX + baseEyeOffset + eyeShiftX - eyeGrowthOffset;
-  const rightEyeX = playerX + playerSize - baseEyeOffset - eyeSize + eyeShiftX - eyeGrowthOffset;
+  const rightEyeX = playerX + playerSize - baseEyeOffset - originalEyeSize + eyeShiftX - eyeGrowthOffset;
   const eyeY = playerY + baseEyeOffset + (hopOffset * cellSize) + eyeShiftY - eyeGrowthOffset + breathingOffset;
 
   // Draw eyes based on current state
