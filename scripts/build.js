@@ -26,9 +26,17 @@ async function build() {
       // Ignore if dist doesn't exist
     }
 
+    // Swap environment files for production before Vite build
+    console.log('🔄 Preparing production environment...');
+    await prepareProductionEnvironment();
+
     // Run Vite build
     console.log('📦 Running Vite build...');
     await runCommand('vite build');
+
+    // Restore development environment files
+    console.log('🔄 Restoring development environment...');
+    await restoreDevelopmentEnvironment();
 
     // Copy manifest from root
     console.log('📋 Copying manifest...');
@@ -250,6 +258,52 @@ async function updateFilePaths() {
 }
 
 /**
+ * Prepare production environment by swapping env.js with production version
+ */
+async function prepareProductionEnvironment() {
+  const productionEnvPath = join(rootDir, 'src', 'env.production.js');
+  const targetEnvPath = join(rootDir, 'src', 'env.js');
+  const backupEnvPath = join(rootDir, 'src', 'env.dev.backup.js');
+
+  try {
+    // Backup the original development env file
+    const devEnvContent = await fs.readFile(targetEnvPath, 'utf8');
+    await fs.writeFile(backupEnvPath, devEnvContent);
+
+    // Read the production env file
+    const productionEnvContent = await fs.readFile(productionEnvPath, 'utf8');
+
+    // Replace the development env file with production version
+    await fs.writeFile(targetEnvPath, productionEnvContent);
+    console.log('   ✓ Swapped env.js with production version');
+
+  } catch (error) {
+    throw new Error(`Failed to prepare production environment: ${error.message}`);
+  }
+}
+
+/**
+ * Restore development environment after build
+ */
+async function restoreDevelopmentEnvironment() {
+  const targetEnvPath = join(rootDir, 'src', 'env.js');
+  const backupEnvPath = join(rootDir, 'src', 'env.dev.backup.js');
+
+  try {
+    // Restore the original development env file
+    const devEnvContent = await fs.readFile(backupEnvPath, 'utf8');
+    await fs.writeFile(targetEnvPath, devEnvContent);
+
+    // Remove the backup file
+    await fs.rm(backupEnvPath);
+    console.log('   ✓ Restored development env.js');
+
+  } catch (error) {
+    throw new Error(`Failed to restore development environment: ${error.message}`);
+  }
+}
+
+/**
  * Remove development files from build
  */
 async function cleanupDevFiles() {
@@ -265,7 +319,8 @@ async function cleanupDevFiles() {
     'scripts',
     'node_modules',
     'src/test-trend-graph.html',  // Test page for development only
-    'src/test-trend-graph.js'    // Test script for development only
+    'src/test-trend-graph.js',   // Test script for development only
+    'src/env.production.js'      // Production env source file
   ];
 
   for (const file of devFiles) {
