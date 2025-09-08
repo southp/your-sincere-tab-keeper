@@ -305,12 +305,6 @@
       }
     }
   },
-  "smartTabManagement": {
-    "message": "Smart Tab Management:"
-  },
-  "smartTabManagementDesc": {
-    "message": "We'll close your oldest tabs first, keeping the ones you've opened most recently."
-  },
   "continueCloseTabs": {
     "message": "Continue & Close Tabs"
   },

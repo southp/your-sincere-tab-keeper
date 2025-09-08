@@ -305,12 +305,6 @@
       }
     }
   },
-  "smartTabManagement": {
-    "message": "智慧分頁管理："
-  },
-  "smartTabManagementDesc": {
-    "message": "我們將優先關閉最舊的分頁，保留你最近開啟的分頁。"
-  },
   "continueCloseTabs": {
     "message": "繼續並關閉分頁"
   },

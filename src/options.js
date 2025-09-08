@@ -382,11 +382,6 @@ function showTabClosureConfirmation(currentCount, newLimit, tabsToClose) {
         <br><br>
         ${getI18nMessage('keepRecentTabsClose', [`<strong>${newLimit} ${getI18nMessage('mostRecentTabs')}</strong>`, `<strong>${tabsToClose} ${getI18nMessage('tabs')}</strong>`])}
       </p>
-      <div style="background: #f8f9fa; border-radius: 12px; padding: 16px; margin-bottom: 24px; border-left: 4px solid #4ecdc4;">
-        <p style="margin: 0; color: #555; font-size: 0.95em;">
-          💡 <strong>${getI18nMessage('smartTabManagement')}</strong> ${getI18nMessage('smartTabManagementDesc')}
-        </p>
-      </div>
       <div style="display: flex; gap: 12px; justify-content: center;">
         <button id="confirmClose" style="
           background: linear-gradient(45deg, #4ecdc4, #44a08d);
