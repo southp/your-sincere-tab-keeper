@@ -50,6 +50,10 @@ async function build() {
     console.log('📋 Copying assets...');
     await copyAssets();
 
+    // Copy locales to build
+    console.log('🌐 Copying locales...');
+    await copyLocales();
+
     // Flatten HTML files to root
     console.log('📄 Flattening HTML files...');
     await flattenHtmlFiles();
@@ -180,6 +184,30 @@ async function copyAssets() {
       console.log('   ⚠ No assets directory found, skipping...');
     } else {
       throw new Error(`Failed to copy assets: ${error.message}`);
+    }
+  }
+}
+
+/**
+ * Copy locales from _locales/ to dist/
+ */
+async function copyLocales() {
+  const localesPath = join(rootDir, '_locales');
+  const distPath = join(rootDir, 'dist');
+
+  try {
+    // Check if locales directory exists
+    await fs.access(localesPath);
+
+    // Copy entire _locales directory to dist
+    await fs.cp(localesPath, join(distPath, '_locales'), { recursive: true });
+
+    console.log('   ✓ Locales copied to dist/_locales/');
+  } catch (error) {
+    if (error.code === 'ENOENT') {
+      console.log('   ⚠ No _locales directory found, skipping...');
+    } else {
+      throw new Error(`Failed to copy locales: ${error.message}`);
     }
   }
 }
