@@ -770,9 +770,31 @@ class TrendGraph extends HTMLElement {
     if (this.granularity === 'daily') {
       return (date.getMonth() + 1) + '/' + date.getDate();
     } else if (this.granularity === 'weekly') {
-      return 'W' + this.getWeekNumber(date);
+      return this.formatWeekRange(date);
     } else {
       return date.toLocaleDateString(undefined, { month: 'short' });
+    }
+  }
+
+  formatWeekRange(date) {
+    // Get the start of the week (Sunday)
+    const startOfWeek = new Date(date);
+    startOfWeek.setDate(date.getDate() - date.getDay());
+    
+    // Get the end of the week (Saturday)  
+    const endOfWeek = new Date(startOfWeek);
+    endOfWeek.setDate(startOfWeek.getDate() + 6);
+    
+    // Simple numeric format: "8/31-9/6" or "9/7-13"
+    const startMonth = startOfWeek.getMonth() + 1;
+    const endMonth = endOfWeek.getMonth() + 1;
+    const startDay = startOfWeek.getDate();
+    const endDay = endOfWeek.getDate();
+    
+    if (startMonth === endMonth) {
+      return `${startMonth}/${startDay}-${endDay}`;
+    } else {
+      return `${startMonth}/${startDay}-${endMonth}/${endDay}`;
     }
   }
 
