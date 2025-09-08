@@ -34,8 +34,8 @@ export default defineConfig({
         },
         manualChunks: {
           // Bundle shared utilities together for better caching
-          'shared-utils': ['./src/constants.js', './src/utils.js', './src/env.js'],
-          'ui-utils': ['./src/ui-utils.js', './src/debug.js'],
+          'shared-utils': ['./src/constants.js', './src/utils.js', './src/env.js', './src/debug.js'],
+          'ui-utils': ['./src/ui-utils.js'],
           'data-store': ['./src/usage-data-store.js']
         }
       },

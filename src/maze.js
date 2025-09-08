@@ -3,8 +3,7 @@
  * A challenging maze game with Chrome Dino aesthetic
  */
 
-import { initializeI18n } from './ui-utils.js';
-import { getDifficultySettings } from './constants.js';
+import { initializeI18n, getDifficultySettings } from './ui-utils.js';
 import { Logger } from './debug.js';
 import { isDevelopment } from './env.js';
 import { WALL } from './maze/maze-model.js';

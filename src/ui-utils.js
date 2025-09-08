@@ -3,7 +3,7 @@
  * Common functions for generating and managing UI elements
  */
 
-import { TAB_LIMITS, getTabLimitDescription } from './constants.js';
+import { TAB_LIMITS } from './constants.js';
 import { Logger } from './debug.js';
 import { isDevelopment } from './env.js';
 
@@ -220,6 +220,40 @@ export function setupLimitButtonListeners(containerSelector, onLimitChange) {
       }
     });
   });
+}
+
+/**
+ * Get localized description for a tab limit
+ * @param {number} limit - The tab limit (2-8)
+ * @returns {string} Localized description
+ */
+export function getTabLimitDescription(limit) {
+  const descriptions = {
+    2: getI18nMessage('tabLimitDesc2'),
+    3: getI18nMessage('tabLimitDesc3'),
+    4: getI18nMessage('tabLimitDesc4'),
+    5: getI18nMessage('tabLimitDesc5'),
+    6: getI18nMessage('tabLimitDesc6'),
+    7: getI18nMessage('tabLimitDesc7'),
+    8: getI18nMessage('tabLimitDesc8')
+  };
+  return descriptions[limit] || descriptions[5];
+}
+
+/**
+ * Get localized difficulty settings for mazes
+ * @returns {Array} Array of difficulty objects with localized names and descriptions
+ */
+export function getDifficultySettings() {
+  return [
+    { name: getI18nMessage('difficultyBeginner'), size: 9, description: getI18nMessage('difficultyBeginnerDesc') },
+    { name: getI18nMessage('difficultyEasy'), size: 11, description: getI18nMessage('difficultyEasyDesc') },
+    { name: getI18nMessage('difficultyMedium'), size: 15, description: getI18nMessage('difficultyMediumDesc') },
+    { name: getI18nMessage('difficultyHard'), size: 21, description: getI18nMessage('difficultyHardDesc') },
+    { name: getI18nMessage('difficultyExpert'), size: 27, description: getI18nMessage('difficultyExpertDesc') },
+    { name: getI18nMessage('difficultyMaster'), size: 39, description: getI18nMessage('difficultyMasterDesc') },
+    { name: getI18nMessage('difficultyInsane'), size: 101, description: getI18nMessage('difficultyInsaneDesc') }
+  ];
 }
 
 /**

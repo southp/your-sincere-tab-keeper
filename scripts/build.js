@@ -270,9 +270,9 @@ async function updateFilePaths() {
       const filePath = join(distPath, file);
       let content = await fs.readFile(filePath, 'utf8');
 
-      // Update chrome.runtime.getURL paths to remove 'src/'
+      // Update chrome.runtime.getURL paths to remove 'src/' while preserving quote type
       const originalContent = content;
-      content = content.replace(/chrome\.runtime\.getURL\(['"`]src\//g, "chrome.runtime.getURL('");
+      content = content.replace(/chrome\.runtime\.getURL\((['"`])src\//g, 'chrome.runtime.getURL($1');
 
       if (content !== originalContent) {
         await fs.writeFile(filePath, content);
