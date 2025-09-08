@@ -479,7 +479,7 @@ body {
 }
 
 .limit-btn.current::after {
-  content: "Current";
+  content: attr(data-current-label);
   position: absolute;
   top: -25px;
   left: 50%;

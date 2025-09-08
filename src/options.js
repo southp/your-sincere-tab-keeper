@@ -68,7 +68,7 @@ function loadVersionNumber() {
 function updateRangeText() {
   const rangeElements = document.querySelectorAll('[data-range-text]');
   rangeElements.forEach(element => {
-    element.textContent = element.textContent.replace('{{RANGE}}', TAB_LIMITS.RANGE_TEXT);
+    element.textContent = getI18nMessage('howItWorks1');
   });
 }
 
@@ -376,15 +376,15 @@ function showTabClosureConfirmation(currentCount, newLimit, tabsToClose) {
 
     modal.innerHTML = `
       <div style="font-size: 3em; margin-bottom: 16px;">⚠️</div>
-      <h2 style="color: #333; margin-bottom: 16px; font-size: 1.5em;">Too Many Tabs Open</h2>
+      <h2 style="color: #333; margin-bottom: 16px; font-size: 1.5em;">${getI18nMessage('tooManyTabsOpen')}</h2>
       <p style="color: #666; line-height: 1.6; margin-bottom: 24px; font-size: 1.1em;">
-        You currently have <strong>${currentCount} tabs</strong> open, but your new limit is <strong>${newLimit} tabs</strong>.
+        ${getI18nMessage('tabCountVsLimit', [`<strong>${currentCount} ${getI18nMessage('tabs')}</strong>`, `<strong>${newLimit} ${getI18nMessage('tabs')}</strong>`])}
         <br><br>
-        We'll keep your <strong>${newLimit} most recent tabs</strong> and close the other <strong>${tabsToClose} tabs</strong> to match your new limit.
+        ${getI18nMessage('keepRecentTabsClose', [`<strong>${newLimit} ${getI18nMessage('mostRecentTabs')}</strong>`, `<strong>${tabsToClose} ${getI18nMessage('tabs')}</strong>`])}
       </p>
       <div style="background: #f8f9fa; border-radius: 12px; padding: 16px; margin-bottom: 24px; border-left: 4px solid #4ecdc4;">
         <p style="margin: 0; color: #555; font-size: 0.95em;">
-          💡 <strong>Smart Tab Management:</strong> We'll close your oldest tabs first, keeping the ones you've opened most recently.
+          💡 <strong>${getI18nMessage('smartTabManagement')}</strong> ${getI18nMessage('smartTabManagementDesc')}
         </p>
       </div>
       <div style="display: flex; gap: 12px; justify-content: center;">
@@ -398,7 +398,7 @@ function showTabClosureConfirmation(currentCount, newLimit, tabsToClose) {
           font-size: 1em;
           cursor: pointer;
           transition: all 0.2s ease;
-        ">Continue & Close Tabs</button>
+        ">${getI18nMessage('continueCloseTabs')}</button>
         <button id="cancelClose" style="
           background: #f8f9fa;
           color: #666;
@@ -409,7 +409,7 @@ function showTabClosureConfirmation(currentCount, newLimit, tabsToClose) {
           font-size: 1em;
           cursor: pointer;
           transition: all 0.2s ease;
-        ">Cancel</button>
+        ">${getI18nMessage('cancel')}</button>
       </div>
     `;
 

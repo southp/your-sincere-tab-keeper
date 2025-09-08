@@ -260,6 +260,69 @@
   "keepCurrentLimit": {
     "message": "保持目前限制"
   },
+  "current": {
+    "message": "目前"
+  },
+  "tabLimitUpdated": {
+    "message": "🎯 更新你的分頁限制"
+  },
+  "tabLimitSetTo": {
+    "message": "你的新分頁限制已設定為 $LIMIT$。",
+    "placeholders": {
+      "limit": {
+        "content": "$1"
+      }
+    }
+  },
+  "excessTabsClosed": {
+    "message": "如果你開啟的分頁數量超過新限制，多餘的分頁已自動關閉以保留最新的分頁。"
+  },
+  "ok": {
+    "message": "確定"
+  },
+  "tooManyTabsOpen": {
+    "message": "開啟的分頁過多"
+  },
+  "tabCountVsLimit": {
+    "message": "你目前開啟了 $CURRENT$，但新的限制是 $LIMIT$。",
+    "placeholders": {
+      "current": {
+        "content": "$1"
+      },
+      "limit": {
+        "content": "$2"
+      }
+    }
+  },
+  "keepRecentTabsClose": {
+    "message": "我們將保留你的 $KEEP$ 並關閉其他 $CLOSE$ 以符合新的限制。",
+    "placeholders": {
+      "keep": {
+        "content": "$1"
+      },
+      "close": {
+        "content": "$2"
+      }
+    }
+  },
+  "smartTabManagement": {
+    "message": "智慧分頁管理："
+  },
+  "smartTabManagementDesc": {
+    "message": "我們將優先關閉最舊的分頁，保留你最近開啟的分頁。"
+  },
+  "continueCloseTabs": {
+    "message": "繼續並關閉分頁"
+  },
+  "cancel": {
+    "message": "取消"
+  },
+  "tabs": {
+    "message": "個分頁"
+  },
+  "mostRecentTabs": {
+    "message": "個最新分頁"
+  },
   "difficultyBeginner": {
     "message": "初學者"
   },

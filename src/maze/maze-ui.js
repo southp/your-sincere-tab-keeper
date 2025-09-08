@@ -235,13 +235,13 @@ async function setupLimitSelector() {
       modal.innerHTML = `
         <div class="modal-content">
           <div class="modal-header">
-            <h2>🎯 Tab Limit Updated!</h2>
-            <p>Your new tab limit is set to ${selectedLimit}.</p>
-            <p style="margin-top: 16px;">If you had more tabs open than your new limit, excess tabs have been automatically closed to keep your newest ones.</p>
+            <h2>${getI18nMessage('tabLimitUpdated')}</h2>
+            <p>${getI18nMessage('tabLimitSetTo', selectedLimit.toString())}</p>
+            <p style="margin-top: 16px;">${getI18nMessage('excessTabsClosed')}</p>
           </div>
           <div class="modal-actions">
             <button id="okBtn" class="primary-btn">
-              OK
+              ${getI18nMessage('ok')}
             </button>
           </div>
         </div>

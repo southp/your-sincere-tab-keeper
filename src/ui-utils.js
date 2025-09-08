@@ -172,11 +172,13 @@ export function initializeI18n() {
  */
 export function generateLimitButtonsHTML(selectedLimit = TAB_LIMITS.DEFAULT, currentLimit = null) {
   const buttonsHTML = [];
+  const currentLabel = getI18nMessage('current');
   for (let limit = TAB_LIMITS.MIN; limit <= TAB_LIMITS.MAX; limit++) {
     const selected = limit === selectedLimit ? 'selected' : '';
     const current = currentLimit && limit === currentLimit ? 'current' : '';
     const classes = ['limit-btn', selected, current].filter(Boolean).join(' ');
-    buttonsHTML.push(`<button class="${classes}" data-limit="${limit}">${limit}</button>`);
+    const currentAttr = current ? ` data-current-label="${currentLabel}"` : '';
+    buttonsHTML.push(`<button class="${classes}" data-limit="${limit}"${currentAttr}>${limit}</button>`);
   }
   return buttonsHTML.join('\n          ');
 }

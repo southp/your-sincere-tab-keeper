@@ -260,6 +260,69 @@
   "keepCurrentLimit": {
     "message": "Keep Current Limit"
   },
+  "current": {
+    "message": "Current"
+  },
+  "tabLimitUpdated": {
+    "message": "🎯 Tab Limit Updated!"
+  },
+  "tabLimitSetTo": {
+    "message": "Your new tab limit is set to $LIMIT$.",
+    "placeholders": {
+      "limit": {
+        "content": "$1"
+      }
+    }
+  },
+  "excessTabsClosed": {
+    "message": "If you had more tabs open than your new limit, excess tabs have been automatically closed to keep your newest ones."
+  },
+  "ok": {
+    "message": "OK"
+  },
+  "tooManyTabsOpen": {
+    "message": "Too Many Tabs Open"
+  },
+  "tabCountVsLimit": {
+    "message": "You currently have $CURRENT$ open, but your new limit is $LIMIT$.",
+    "placeholders": {
+      "current": {
+        "content": "$1"
+      },
+      "limit": {
+        "content": "$2"
+      }
+    }
+  },
+  "keepRecentTabsClose": {
+    "message": "We'll keep your $KEEP$ and close the other $CLOSE$ to match your new limit.",
+    "placeholders": {
+      "keep": {
+        "content": "$1"
+      },
+      "close": {
+        "content": "$2"
+      }
+    }
+  },
+  "smartTabManagement": {
+    "message": "Smart Tab Management:"
+  },
+  "smartTabManagementDesc": {
+    "message": "We'll close your oldest tabs first, keeping the ones you've opened most recently."
+  },
+  "continueCloseTabs": {
+    "message": "Continue & Close Tabs"
+  },
+  "cancel": {
+    "message": "Cancel"
+  },
+  "tabs": {
+    "message": "tabs"
+  },
+  "mostRecentTabs": {
+    "message": "most recent tabs"
+  },
   "difficultyBeginner": {
     "message": "Beginner"
   },
