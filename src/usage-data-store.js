@@ -610,24 +610,45 @@ class UsageDataStore {
       // Validate that the data conforms to Tab Keeper schema
       this.validateTabKeeperData(importData.data);
 
-      this.logger.log('Starting data import from', importData.exportDate);
+      this.logger.log('Starting transaction-safe data import from', importData.exportDate);
 
-      // Clear all existing data first
-      await this.storage.clear();
-      this.logger.log('Cleared existing data');
+      // Step 1: Create backup of existing data
+      const existingData = await this.storage.get(null);
+      this.logger.log('Created backup of existing data');
 
-      // Import all new data
-      await this.storage.set(importData.data);
-      this.logger.log('Imported new data successfully');
+      try {
+        // Step 2: Clear existing data 
+        await this.storage.clear();
+        this.logger.log('Cleared existing data');
 
-      // Add import metadata
-      await this.storage.set({
-        importDate: new Date().toISOString(),
-        originalExportDate: importData.exportDate
-      });
+        // Step 3: Import new data
+        await this.storage.set(importData.data);
+        this.logger.log('Imported new data successfully');
 
-      this.logger.log('Data import completed successfully');
-      return true;
+        // Step 4: Add import metadata
+        await this.storage.set({
+          importDate: new Date().toISOString(),
+          originalExportDate: importData.exportDate
+        });
+
+        this.logger.log('Data import completed successfully');
+        return true;
+
+      } catch (importError) {
+        this.logger.error('Import failed, attempting rollback:', importError);
+
+        try {
+          // Step 5: Rollback - restore original data if import failed
+          await this.storage.clear();
+          await this.storage.set(existingData);
+          this.logger.log('Successfully rolled back to original data');
+          
+          throw new Error(`Import failed and was rolled back: ${importError.message}`);
+        } catch (rollbackError) {
+          this.logger.error('CRITICAL: Rollback failed:', rollbackError);
+          throw new Error(`Import failed and rollback also failed. Data may be lost. Import error: ${importError.message}. Rollback error: ${rollbackError.message}`);
+        }
+      }
 
     } catch (error) {
       this.logger.error('Failed to import data:', error);

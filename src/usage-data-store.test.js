@@ -1167,4 +1167,146 @@ describe('UsageDataStore', () => {
       expect(mockStorage.set).toHaveBeenCalledWith(validData.data);
     });
   });
+
+  describe('importAllData transaction safety', () => {
+    it('should backup data before import and succeed normally', async () => {
+      const existingData = { mazesCompleted: 10, blockedAttempts: 20 };
+      const validImportData = {
+        exportDate: '2024-01-15T10:30:00.000Z',
+        data: { mazesCompleted: 50, tabLimit: 5 }
+      };
+
+      // Mock existing data backup
+      mockStorage.get.mockResolvedValueOnce(existingData);
+
+      const result = await store.importAllData(validImportData);
+
+      expect(result).toBe(true);
+      expect(mockStorage.get).toHaveBeenCalledWith(null); // Backup call
+      expect(mockStorage.clear).toHaveBeenCalledTimes(1);
+      expect(mockStorage.set).toHaveBeenCalledWith(validImportData.data);
+    });
+
+    it('should rollback to original data if import fails', async () => {
+      const existingData = { mazesCompleted: 10, blockedAttempts: 20 };
+      const validImportData = {
+        exportDate: '2024-01-15T10:30:00.000Z',
+        data: { mazesCompleted: 50, tabLimit: 5 }
+      };
+
+      // Mock backup call
+      mockStorage.get.mockResolvedValueOnce(existingData);
+      
+      // Mock import failure
+      mockStorage.set.mockRejectedValueOnce(new Error('Storage write failed'));
+      
+      // Mock successful rollback
+      mockStorage.clear.mockResolvedValue(); // For rollback clear
+      mockStorage.set.mockResolvedValueOnce(existingData); // For rollback restore
+
+      await expect(store.importAllData(validImportData))
+        .rejects.toThrow('Import failed and was rolled back: Storage write failed');
+
+      // Verify rollback sequence
+      expect(mockStorage.get).toHaveBeenCalledWith(null); // Initial backup
+      expect(mockStorage.clear).toHaveBeenCalledTimes(2); // Initial clear + rollback clear
+      expect(mockStorage.set).toHaveBeenCalledWith(existingData); // Rollback restore
+    });
+
+    it('should handle rollback failure gracefully', async () => {
+      const existingData = { mazesCompleted: 10, blockedAttempts: 20 };
+      const validImportData = {
+        exportDate: '2024-01-15T10:30:00.000Z',
+        data: { mazesCompleted: 50, tabLimit: 5 }
+      };
+
+      // Mock backup call
+      mockStorage.get.mockResolvedValueOnce(existingData);
+      
+      // Mock import failure
+      mockStorage.set.mockRejectedValueOnce(new Error('Storage write failed'));
+      
+      // Mock rollback failure
+      mockStorage.set.mockRejectedValueOnce(new Error('Rollback failed'));
+
+      await expect(store.importAllData(validImportData))
+        .rejects.toThrow('Import failed and rollback also failed. Data may be lost. Import error: Storage write failed. Rollback error: Rollback failed');
+
+      expect(mockStorage.get).toHaveBeenCalledWith(null); // Backup attempt
+    });
+
+    it('should handle backup failure before import', async () => {
+      const validImportData = {
+        exportDate: '2024-01-15T10:30:00.000Z',
+        data: { mazesCompleted: 50, tabLimit: 5 }
+      };
+
+      // Mock backup failure
+      mockStorage.get.mockRejectedValueOnce(new Error('Cannot read existing data'));
+
+      await expect(store.importAllData(validImportData))
+        .rejects.toThrow('Cannot read existing data');
+
+      // Should not proceed to clear/import if backup fails
+      expect(mockStorage.clear).not.toHaveBeenCalled();
+      expect(mockStorage.set).not.toHaveBeenCalled();
+    });
+
+    it('should rollback when metadata addition fails', async () => {
+      const existingData = { mazesCompleted: 10, blockedAttempts: 20 };
+      const validImportData = {
+        exportDate: '2024-01-15T10:30:00.000Z',
+        data: { mazesCompleted: 50, tabLimit: 5 }
+      };
+
+      // Mock backup call
+      mockStorage.get.mockResolvedValueOnce(existingData);
+      
+      // Mock successful data import but metadata failure
+      mockStorage.set
+        .mockResolvedValueOnce(undefined) // Import data succeeds
+        .mockRejectedValueOnce(new Error('Metadata write failed')); // Metadata fails
+        
+      // Mock successful rollback
+      mockStorage.set.mockResolvedValueOnce(existingData); // Rollback restore
+
+      await expect(store.importAllData(validImportData))
+        .rejects.toThrow('Import failed and was rolled back: Metadata write failed');
+
+      // Verify complete rollback occurred
+      expect(mockStorage.set).toHaveBeenCalledWith(existingData); // Rollback
+    });
+
+    it('should preserve original data integrity during rollback', async () => {
+      const complexExistingData = {
+        mazesCompleted: 75,
+        blockedAttempts: 150,
+        tabLimit: 3,
+        installDate: 1703980800000,
+        dailyMazes: { '2024-01-10': 5, '2024-01-11': 3 },
+        dailyBlockedAttempts: { '2024-01-10': 12 },
+        limitHitTimestamps: [1703980900000, 1703981000000]
+      };
+
+      const validImportData = {
+        exportDate: '2024-01-15T10:30:00.000Z',
+        data: { mazesCompleted: 25, tabLimit: 8 }
+      };
+
+      // Mock backup of complex data
+      mockStorage.get.mockResolvedValueOnce(complexExistingData);
+      
+      // Mock import failure after clear
+      mockStorage.set.mockRejectedValueOnce(new Error('Import write failed'));
+      
+      // Mock successful rollback
+      mockStorage.set.mockResolvedValueOnce(complexExistingData);
+
+      await expect(store.importAllData(validImportData))
+        .rejects.toThrow('Import failed and was rolled back: Import write failed');
+
+      // Verify exact original data was restored
+      expect(mockStorage.set).toHaveBeenCalledWith(complexExistingData);
+    });
+  });
 });
