@@ -461,6 +461,127 @@ class UsageDataStore {
   }
 
   /**
+   * Validate Tab Keeper data structure and values
+   * @param {Object} data - The data object to validate
+   * @throws {Error} If data structure or values are invalid
+   */
+  validateTabKeeperData(data) {
+    if (!data || typeof data !== 'object' || Array.isArray(data)) {
+      throw new Error('Data must be an object');
+    }
+
+    // Define expected Tab Keeper data schema
+    const schema = {
+      // Core statistics (optional, defaults to 0)
+      mazesCompleted: { type: 'number', min: 0, optional: true },
+      blockedAttempts: { type: 'number', min: 0, optional: true },
+      
+      // Settings (optional with defaults)
+      tabLimit: { type: 'number', min: TAB_LIMITS.MIN, max: TAB_LIMITS.MAX, optional: true },
+      installDate: { type: 'number', min: 0, optional: true },
+      
+      // Daily tracking data (optional, must be objects with YYYY-MM-DD keys)
+      dailyMazes: { type: 'object', optional: true, dateKeyed: true },
+      dailyTabLimits: { type: 'object', optional: true, dateKeyed: true },
+      dailyBlockedAttempts: { type: 'object', optional: true, dateKeyed: true },
+      
+      // Analytics data (optional)
+      limitHitTimestamps: { type: 'array', itemType: 'number', maxLength: 100, optional: true },
+      
+      // Import metadata (optional)
+      importDate: { type: 'string', optional: true },
+      originalExportDate: { type: 'string', optional: true }
+    };
+
+    // Check for unexpected properties (not part of Tab Keeper schema)
+    const knownKeys = Object.keys(schema);
+    const dataKeys = Object.keys(data);
+    const unknownKeys = dataKeys.filter(key => !knownKeys.includes(key));
+    
+    if (unknownKeys.length > 0) {
+      throw new Error(`Unknown properties detected (not Tab Keeper data): ${unknownKeys.join(', ')}`);
+    }
+
+    // Validate each property according to schema
+    for (const [key, rules] of Object.entries(schema)) {
+      const value = data[key];
+      
+      // Skip validation for optional missing properties
+      if (value === undefined && rules.optional) {
+        continue;
+      }
+      
+      // Check required properties
+      if (value === undefined && !rules.optional) {
+        throw new Error(`Missing required property: ${key}`);
+      }
+      
+      // Skip null/undefined values for optional properties
+      if (value === null || value === undefined) {
+        continue;
+      }
+      
+      // Type validation
+      if (rules.type === 'number') {
+        if (typeof value !== 'number' || !Number.isFinite(value)) {
+          throw new Error(`Property '${key}' must be a finite number, got: ${typeof value}`);
+        }
+        if (rules.min !== undefined && value < rules.min) {
+          throw new Error(`Property '${key}' must be >= ${rules.min}, got: ${value}`);
+        }
+        if (rules.max !== undefined && value > rules.max) {
+          throw new Error(`Property '${key}' must be <= ${rules.max}, got: ${value}`);
+        }
+      } else if (rules.type === 'string') {
+        if (typeof value !== 'string') {
+          throw new Error(`Property '${key}' must be a string, got: ${typeof value}`);
+        }
+        if (key.includes('Date')) {
+          // Validate ISO date strings
+          const date = new Date(value);
+          if (isNaN(date.getTime())) {
+            throw new Error(`Property '${key}' must be a valid ISO date string, got: ${value}`);
+          }
+        }
+      } else if (rules.type === 'object') {
+        if (typeof value !== 'object' || Array.isArray(value) || value === null) {
+          throw new Error(`Property '${key}' must be an object, got: ${typeof value}`);
+        }
+        
+        // Validate date-keyed objects
+        if (rules.dateKeyed) {
+          const dateKeyPattern = /^\d{4}-\d{2}-\d{2}$/;
+          for (const [dateKey, dateValue] of Object.entries(value)) {
+            if (!dateKeyPattern.test(dateKey)) {
+              throw new Error(`Property '${key}' must have YYYY-MM-DD date keys, got: ${dateKey}`);
+            }
+            if (typeof dateValue !== 'number' || !Number.isFinite(dateValue) || dateValue < 0) {
+              throw new Error(`Property '${key}' values must be non-negative numbers, got: ${dateValue} for key ${dateKey}`);
+            }
+          }
+        }
+      } else if (rules.type === 'array') {
+        if (!Array.isArray(value)) {
+          throw new Error(`Property '${key}' must be an array, got: ${typeof value}`);
+        }
+        if (rules.maxLength !== undefined && value.length > rules.maxLength) {
+          throw new Error(`Property '${key}' array length must be <= ${rules.maxLength}, got: ${value.length}`);
+        }
+        if (rules.itemType) {
+          for (let i = 0; i < value.length; i++) {
+            const item = value[i];
+            if (rules.itemType === 'number') {
+              if (typeof item !== 'number' || !Number.isFinite(item)) {
+                throw new Error(`Property '${key}' array items must be finite numbers, got: ${typeof item} at index ${i}`);
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
+  /**
    * Import and replace all data from backup
    * @param {Object} importData - The import data object with exportDate and data properties
    * @throws {Error} If import data is invalid or import fails
@@ -485,6 +606,9 @@ class UsageDataStore {
       if (isNaN(exportDate.getTime())) {
         throw new Error('Invalid import data: exportDate is not a valid date');
       }
+
+      // Validate that the data conforms to Tab Keeper schema
+      this.validateTabKeeperData(importData.data);
 
       this.logger.log('Starting data import from', importData.exportDate);
 

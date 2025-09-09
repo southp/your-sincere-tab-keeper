@@ -782,8 +782,8 @@ describe('UsageDataStore', () => {
       const importData = {
         exportDate: '2024-01-15T10:30:00.000Z',
         data: {
-          totalMazesCompleted: 50,
-          totalBlockedAttempts: 100,
+          mazesCompleted: 50,
+          blockedAttempts: 100,
           installDate: 1704067200000,
           tabLimit: 5,
           limitHitTimestamps: [1704067800000, 1704154200000],
@@ -853,7 +853,7 @@ describe('UsageDataStore', () => {
     it('should handle storage.clear failure', async () => {
       const importData = {
         exportDate: '2024-01-15T10:30:00.000Z',
-        data: { totalMazesCompleted: 10 }
+        data: { mazesCompleted: 10 }
       };
 
       mockStorage.clear.mockRejectedValue(new Error('Storage clear failed'));
@@ -864,7 +864,7 @@ describe('UsageDataStore', () => {
     it('should handle storage.set failure', async () => {
       const importData = {
         exportDate: '2024-01-15T10:30:00.000Z',
-        data: { totalMazesCompleted: 10 }
+        data: { mazesCompleted: 10 }
       };
 
       mockStorage.set.mockRejectedValue(new Error('Storage set failed'));
@@ -888,7 +888,7 @@ describe('UsageDataStore', () => {
     it('should preserve import metadata', async () => {
       const importData = {
         exportDate: '2024-01-15T10:30:00.000Z',
-        data: { totalMazesCompleted: 25 }
+        data: { mazesCompleted: 25 }
       };
 
       await store.importAllData(importData);
@@ -906,7 +906,7 @@ describe('UsageDataStore', () => {
     it('should handle different date formats in exportDate', async () => {
       const importData = {
         exportDate: '2024-01-15T10:30:00Z', // Different format (no milliseconds)
-        data: { totalMazesCompleted: 15 }
+        data: { mazesCompleted: 15 }
       };
 
       const result = await store.importAllData(importData);
@@ -925,9 +925,9 @@ describe('UsageDataStore', () => {
       const importData = {
         exportDate: '2024-01-15T10:30:00.000Z',
         data: {
-          totalMazesCompleted: 50, // Different value
-          newProperty: 'should be added'
-          // Note: totalBlockedAttempts and existingProperty not included
+          mazesCompleted: 50, // Different value
+          blockedAttempts: 25 // Valid property
+          // Note: existingProperty not included (will be removed)
         }
       };
 
@@ -938,9 +938,233 @@ describe('UsageDataStore', () => {
       
       // Verify only the imported data was set
       expect(mockStorage.set).toHaveBeenCalledWith({
-        totalMazesCompleted: 50,
-        newProperty: 'should be added'
+        mazesCompleted: 50,
+        blockedAttempts: 25
       });
+    });
+  });
+
+  describe('validateTabKeeperData', () => {
+    it('should accept valid empty data object', () => {
+      expect(() => store.validateTabKeeperData({})).not.toThrow();
+    });
+
+    it('should accept valid complete data object', () => {
+      const validData = {
+        mazesCompleted: 50,
+        blockedAttempts: 100,
+        tabLimit: 5,
+        installDate: 1704067200000,
+        dailyMazes: { '2024-01-15': 10, '2024-01-16': 5 },
+        dailyTabLimits: { '2024-01-15': 5, '2024-01-16': 3 },
+        dailyBlockedAttempts: { '2024-01-15': 20 },
+        limitHitTimestamps: [1704067800000, 1704154200000],
+        importDate: '2024-01-15T10:30:00.000Z',
+        originalExportDate: '2024-01-14T15:20:00.000Z'
+      };
+
+      expect(() => store.validateTabKeeperData(validData)).not.toThrow();
+    });
+
+    it('should reject non-object data', () => {
+      expect(() => store.validateTabKeeperData(null)).toThrow('Data must be an object');
+      expect(() => store.validateTabKeeperData('string')).toThrow('Data must be an object');
+      expect(() => store.validateTabKeeperData(123)).toThrow('Data must be an object');
+      expect(() => store.validateTabKeeperData([])).toThrow('Data must be an object');
+    });
+
+    it('should reject unknown properties', () => {
+      const invalidData = {
+        mazesCompleted: 10,
+        unknownProperty: 'test',
+        anotherUnknown: 123
+      };
+
+      expect(() => store.validateTabKeeperData(invalidData))
+        .toThrow('Unknown properties detected (not Tab Keeper data): unknownProperty, anotherUnknown');
+    });
+
+    describe('number validation', () => {
+      it('should validate mazesCompleted', () => {
+        expect(() => store.validateTabKeeperData({ mazesCompleted: 'not a number' }))
+          .toThrow("Property 'mazesCompleted' must be a finite number");
+        
+        expect(() => store.validateTabKeeperData({ mazesCompleted: -5 }))
+          .toThrow("Property 'mazesCompleted' must be >= 0");
+        
+        expect(() => store.validateTabKeeperData({ mazesCompleted: Infinity }))
+          .toThrow("Property 'mazesCompleted' must be a finite number");
+        
+        expect(() => store.validateTabKeeperData({ mazesCompleted: NaN }))
+          .toThrow("Property 'mazesCompleted' must be a finite number");
+        
+        expect(() => store.validateTabKeeperData({ mazesCompleted: 50 })).not.toThrow();
+      });
+
+      it('should validate blockedAttempts', () => {
+        expect(() => store.validateTabKeeperData({ blockedAttempts: -1 }))
+          .toThrow("Property 'blockedAttempts' must be >= 0");
+        
+        expect(() => store.validateTabKeeperData({ blockedAttempts: 100 })).not.toThrow();
+      });
+
+      it('should validate tabLimit within bounds', () => {
+        expect(() => store.validateTabKeeperData({ tabLimit: 0 }))
+          .toThrow("Property 'tabLimit' must be >= 2");
+        
+        expect(() => store.validateTabKeeperData({ tabLimit: 10 }))
+          .toThrow("Property 'tabLimit' must be <= 8");
+        
+        expect(() => store.validateTabKeeperData({ tabLimit: 5 })).not.toThrow();
+      });
+
+      it('should validate installDate', () => {
+        expect(() => store.validateTabKeeperData({ installDate: -1 }))
+          .toThrow("Property 'installDate' must be >= 0");
+        
+        expect(() => store.validateTabKeeperData({ installDate: Date.now() })).not.toThrow();
+      });
+    });
+
+    describe('string validation', () => {
+      it('should validate date strings', () => {
+        expect(() => store.validateTabKeeperData({ importDate: 123 }))
+          .toThrow("Property 'importDate' must be a string");
+        
+        expect(() => store.validateTabKeeperData({ importDate: 'not-a-date' }))
+          .toThrow("Property 'importDate' must be a valid ISO date string");
+        
+        expect(() => store.validateTabKeeperData({ originalExportDate: 'invalid-date-format' }))
+          .toThrow("Property 'originalExportDate' must be a valid ISO date string");
+        
+        expect(() => store.validateTabKeeperData({ importDate: '2024-01-15T10:30:00.000Z' })).not.toThrow();
+        expect(() => store.validateTabKeeperData({ originalExportDate: '2024-01-15T10:30:00Z' })).not.toThrow();
+      });
+    });
+
+    describe('object validation', () => {
+      it('should validate dailyMazes object', () => {
+        expect(() => store.validateTabKeeperData({ dailyMazes: 'not an object' }))
+          .toThrow("Property 'dailyMazes' must be an object");
+        
+        expect(() => store.validateTabKeeperData({ dailyMazes: [] }))
+          .toThrow("Property 'dailyMazes' must be an object");
+        
+        // Note: null is skipped for optional properties, so this won't throw
+        expect(() => store.validateTabKeeperData({ dailyMazes: {} })).not.toThrow();
+      });
+
+      it('should validate date-keyed objects have proper keys', () => {
+        expect(() => store.validateTabKeeperData({ dailyMazes: { 'invalid-key': 5 } }))
+          .toThrow("Property 'dailyMazes' must have YYYY-MM-DD date keys, got: invalid-key");
+        
+        expect(() => store.validateTabKeeperData({ dailyTabLimits: { '2024-1-1': 3 } }))
+          .toThrow("Property 'dailyTabLimits' must have YYYY-MM-DD date keys, got: 2024-1-1");
+        
+        expect(() => store.validateTabKeeperData({ dailyBlockedAttempts: { '24-01-01': 2 } }))
+          .toThrow("Property 'dailyBlockedAttempts' must have YYYY-MM-DD date keys, got: 24-01-01");
+      });
+
+      it('should validate date-keyed objects have proper values', () => {
+        expect(() => store.validateTabKeeperData({ dailyMazes: { '2024-01-15': 'not a number' } }))
+          .toThrow("Property 'dailyMazes' values must be non-negative numbers, got: not a number for key 2024-01-15");
+        
+        expect(() => store.validateTabKeeperData({ dailyTabLimits: { '2024-01-15': -1 } }))
+          .toThrow("Property 'dailyTabLimits' values must be non-negative numbers, got: -1 for key 2024-01-15");
+        
+        expect(() => store.validateTabKeeperData({ dailyBlockedAttempts: { '2024-01-15': Infinity } }))
+          .toThrow("Property 'dailyBlockedAttempts' values must be non-negative numbers, got: Infinity for key 2024-01-15");
+        
+        expect(() => store.validateTabKeeperData({ 
+          dailyMazes: { '2024-01-15': 10, '2024-01-16': 5 } 
+        })).not.toThrow();
+      });
+    });
+
+    describe('array validation', () => {
+      it('should validate limitHitTimestamps array', () => {
+        expect(() => store.validateTabKeeperData({ limitHitTimestamps: 'not an array' }))
+          .toThrow("Property 'limitHitTimestamps' must be an array");
+        
+        expect(() => store.validateTabKeeperData({ limitHitTimestamps: {} }))
+          .toThrow("Property 'limitHitTimestamps' must be an array");
+      });
+
+      it('should enforce array length limits', () => {
+        const tooManyTimestamps = Array.from({ length: 101 }, () => Date.now());
+        
+        expect(() => store.validateTabKeeperData({ limitHitTimestamps: tooManyTimestamps }))
+          .toThrow("Property 'limitHitTimestamps' array length must be <= 100, got: 101");
+        
+        const validTimestamps = Array.from({ length: 50 }, () => Date.now());
+        expect(() => store.validateTabKeeperData({ limitHitTimestamps: validTimestamps })).not.toThrow();
+      });
+
+      it('should validate array item types', () => {
+        expect(() => store.validateTabKeeperData({ limitHitTimestamps: ['not a number', 123] }))
+          .toThrow("Property 'limitHitTimestamps' array items must be finite numbers, got: string at index 0");
+        
+        expect(() => store.validateTabKeeperData({ limitHitTimestamps: [123, Infinity] }))
+          .toThrow("Property 'limitHitTimestamps' array items must be finite numbers, got: number at index 1");
+        
+        expect(() => store.validateTabKeeperData({ limitHitTimestamps: [1704067800000, 1704154200000] }))
+          .not.toThrow();
+      });
+    });
+
+    describe('null and undefined handling', () => {
+      it('should skip null/undefined for optional properties', () => {
+        expect(() => store.validateTabKeeperData({ mazesCompleted: null })).not.toThrow();
+        expect(() => store.validateTabKeeperData({ dailyMazes: undefined })).not.toThrow();
+        expect(() => store.validateTabKeeperData({ dailyMazes: null })).not.toThrow();
+      });
+    });
+  });
+
+  describe('importAllData with validation', () => {
+    it('should reject random JSON that is not Tab Keeper data', async () => {
+      const randomJson = {
+        exportDate: '2024-01-15T10:30:00.000Z',
+        data: {
+          randomProperty: 'not tab keeper data',
+          anotherProperty: { nested: 'object' },
+          numbers: [1, 2, 3]
+        }
+      };
+
+      await expect(store.importAllData(randomJson))
+        .rejects.toThrow('Unknown properties detected (not Tab Keeper data): randomProperty, anotherProperty, numbers');
+    });
+
+    it('should reject data with invalid values', async () => {
+      const invalidData = {
+        exportDate: '2024-01-15T10:30:00.000Z',
+        data: {
+          mazesCompleted: -5, // Invalid: negative
+          tabLimit: 20        // Invalid: above max
+        }
+      };
+
+      await expect(store.importAllData(invalidData))
+        .rejects.toThrow("Property 'mazesCompleted' must be >= 0");
+    });
+
+    it('should accept valid Tab Keeper data and proceed with import', async () => {
+      const validData = {
+        exportDate: '2024-01-15T10:30:00.000Z',
+        data: {
+          mazesCompleted: 25,
+          blockedAttempts: 50,
+          tabLimit: 5,
+          dailyMazes: { '2024-01-15': 3 }
+        }
+      };
+
+      const result = await store.importAllData(validData);
+      
+      expect(result).toBe(true);
+      expect(mockStorage.clear).toHaveBeenCalledTimes(1);
+      expect(mockStorage.set).toHaveBeenCalledWith(validData.data);
     });
   });
 });
