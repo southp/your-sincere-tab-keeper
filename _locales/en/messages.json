@@ -153,7 +153,7 @@
     "message": "When you're most likely to hit your limit"
   },
   "peakActivityInsufficientData": {
-    "message": "Not enough data yet"
+    "message": "––"
   },
   "yourInsightsHeading": {
     "message": "💡 Your Insights"
