@@ -203,6 +203,9 @@
   "exportData": {
     "message": "Export Data"
   },
+  "importData": {
+    "message": "Import Data"
+  },
   "reportIssues": {
     "message": "Report Issues"
   },
@@ -466,6 +469,27 @@
   },
   "dataExportFailed": {
     "message": "Failed to export statistics."
+  },
+  "dataImportSuccess": {
+    "message": "Data imported successfully! Page will reload to show updated statistics."
+  },
+  "dataImportFailed": {
+    "message": "Failed to import data. Please check the file format and try again."
+  },
+  "dataImportInvalidJSON": {
+    "message": "Invalid JSON file. Please select a valid Tab Keeper export file."
+  },
+  "importDataWarningTitle": {
+    "message": "Replace All Data?"
+  },
+  "importDataWarningMessage": {
+    "message": "This will completely replace all your current statistics, settings, and tracking data with the imported data. This action cannot be undone."
+  },
+  "confirmImport": {
+    "message": "Yes, Replace Data"
+  },
+  "cancelAction": {
+    "message": "Cancel"
   },
   "tabLimitSetSuccess": {
     "message": "Tab limit set successfully! Your journey begins now."

@@ -10,7 +10,8 @@ describe('UsageDataStore', () => {
     mockStorage = {
       get: jest.fn(),
       set: jest.fn(),
-      remove: jest.fn()
+      remove: jest.fn(),
+      clear: jest.fn()
     };
 
     store = new UsageDataStore(mockStorage);
@@ -765,6 +766,180 @@ describe('UsageDataStore', () => {
         dailyMazesCompleted: 5,
         peakActivityHour: null, // No timestamps, so null
         ...dailyData
+      });
+    });
+  });
+
+  describe('importAllData', () => {
+    it('should successfully import valid data and replace existing data', async () => {
+      // Setup existing data
+      mockStorage.get.mockResolvedValueOnce({ blockedAttempts: 5 });
+      await store.incrementBlockedAttempts();
+      mockStorage.get.mockResolvedValueOnce({ mazesCompleted: 3 });
+      await store.incrementMazesCompleted();
+      mockStorage.set.mockClear(); // Clear previous calls
+
+      const importData = {
+        exportDate: '2024-01-15T10:30:00.000Z',
+        data: {
+          totalMazesCompleted: 50,
+          totalBlockedAttempts: 100,
+          installDate: 1704067200000,
+          tabLimit: 5,
+          limitHitTimestamps: [1704067800000, 1704154200000],
+          dailyMazes: { '2024-01-15': 10, '2024-01-16': 8 },
+          dailyBlockedAttempts: { '2024-01-15': 20 }
+        }
+      };
+
+      const result = await store.importAllData(importData);
+
+      expect(result).toBe(true);
+      expect(mockStorage.clear).toHaveBeenCalledTimes(1);
+      expect(mockStorage.set).toHaveBeenCalledWith(importData.data);
+      expect(mockStorage.set).toHaveBeenCalledWith({
+        importDate: expect.any(String),
+        originalExportDate: '2024-01-15T10:30:00.000Z'
+      });
+    });
+
+    it('should reject null or undefined import data', async () => {
+      await expect(store.importAllData(null)).rejects.toThrow('Invalid import data: must be an object');
+      await expect(store.importAllData(undefined)).rejects.toThrow('Invalid import data: must be an object');
+    });
+
+    it('should reject non-object import data', async () => {
+      await expect(store.importAllData('string')).rejects.toThrow('Invalid import data: must be an object');
+      await expect(store.importAllData(123)).rejects.toThrow('Invalid import data: must be an object');
+      await expect(store.importAllData([])).rejects.toThrow('Invalid import data: must be an object');
+    });
+
+    it('should reject import data missing data property', async () => {
+      const invalidData = {
+        exportDate: '2024-01-15T10:30:00.000Z'
+        // missing data property
+      };
+
+      await expect(store.importAllData(invalidData)).rejects.toThrow('Invalid import data: missing or invalid data property');
+    });
+
+    it('should reject import data with invalid data property', async () => {
+      const invalidData = {
+        exportDate: '2024-01-15T10:30:00.000Z',
+        data: 'not an object'
+      };
+
+      await expect(store.importAllData(invalidData)).rejects.toThrow('Invalid import data: missing or invalid data property');
+    });
+
+    it('should reject import data missing exportDate', async () => {
+      const invalidData = {
+        data: { totalMazesCompleted: 10 }
+        // missing exportDate
+      };
+
+      await expect(store.importAllData(invalidData)).rejects.toThrow('Invalid import data: missing exportDate');
+    });
+
+    it('should reject import data with invalid exportDate', async () => {
+      const invalidData = {
+        exportDate: 'not-a-date',
+        data: { totalMazesCompleted: 10 }
+      };
+
+      await expect(store.importAllData(invalidData)).rejects.toThrow('Invalid import data: exportDate is not a valid date');
+    });
+
+    it('should handle storage.clear failure', async () => {
+      const importData = {
+        exportDate: '2024-01-15T10:30:00.000Z',
+        data: { totalMazesCompleted: 10 }
+      };
+
+      mockStorage.clear.mockRejectedValue(new Error('Storage clear failed'));
+
+      await expect(store.importAllData(importData)).rejects.toThrow('Storage clear failed');
+    });
+
+    it('should handle storage.set failure', async () => {
+      const importData = {
+        exportDate: '2024-01-15T10:30:00.000Z',
+        data: { totalMazesCompleted: 10 }
+      };
+
+      mockStorage.set.mockRejectedValue(new Error('Storage set failed'));
+
+      await expect(store.importAllData(importData)).rejects.toThrow('Storage set failed');
+    });
+
+    it('should import empty data object', async () => {
+      const importData = {
+        exportDate: '2024-01-15T10:30:00.000Z',
+        data: {}
+      };
+
+      const result = await store.importAllData(importData);
+
+      expect(result).toBe(true);
+      expect(mockStorage.clear).toHaveBeenCalledTimes(1);
+      expect(mockStorage.set).toHaveBeenCalledWith({});
+    });
+
+    it('should preserve import metadata', async () => {
+      const importData = {
+        exportDate: '2024-01-15T10:30:00.000Z',
+        data: { totalMazesCompleted: 25 }
+      };
+
+      await store.importAllData(importData);
+
+      // Check that import metadata was added
+      const metadataCall = mockStorage.set.mock.calls.find(call =>
+        call[0].importDate && call[0].originalExportDate
+      );
+      
+      expect(metadataCall).toBeTruthy();
+      expect(metadataCall[0].originalExportDate).toBe('2024-01-15T10:30:00.000Z');
+      expect(metadataCall[0].importDate).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/);
+    });
+
+    it('should handle different date formats in exportDate', async () => {
+      const importData = {
+        exportDate: '2024-01-15T10:30:00Z', // Different format (no milliseconds)
+        data: { totalMazesCompleted: 15 }
+      };
+
+      const result = await store.importAllData(importData);
+      expect(result).toBe(true);
+    });
+
+    it('should completely replace existing data', async () => {
+      // Setup existing data with multiple properties
+      const existingData = {
+        totalMazesCompleted: 100,
+        totalBlockedAttempts: 200,
+        existingProperty: 'should be removed'
+      };
+      mockStorage.get.mockResolvedValue(existingData);
+
+      const importData = {
+        exportDate: '2024-01-15T10:30:00.000Z',
+        data: {
+          totalMazesCompleted: 50, // Different value
+          newProperty: 'should be added'
+          // Note: totalBlockedAttempts and existingProperty not included
+        }
+      };
+
+      await store.importAllData(importData);
+
+      // Verify clear was called (removes all existing data)
+      expect(mockStorage.clear).toHaveBeenCalledTimes(1);
+      
+      // Verify only the imported data was set
+      expect(mockStorage.set).toHaveBeenCalledWith({
+        totalMazesCompleted: 50,
+        newProperty: 'should be added'
       });
     });
   });

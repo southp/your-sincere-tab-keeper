@@ -203,6 +203,9 @@
   "exportData": {
     "message": "匯出資料"
   },
+  "importData": {
+    "message": "匯入資料"
+  },
   "reportIssues": {
     "message": "回報問題"
   },
@@ -466,6 +469,27 @@
   },
   "dataExportFailed": {
     "message": "匯出統計資料失敗。"
+  },
+  "dataImportSuccess": {
+    "message": "資料匯入成功！頁面將重新載入以顯示更新的統計。"
+  },
+  "dataImportFailed": {
+    "message": "匯入資料失敗。請檢查檔案格式後再試。"
+  },
+  "dataImportInvalidJSON": {
+    "message": "無效的 JSON 檔案。請選擇有效的分頁管理員匯出檔案。"
+  },
+  "importDataWarningTitle": {
+    "message": "取代所有資料？"
+  },
+  "importDataWarningMessage": {
+    "message": "這將完全取代您目前所有的統計、設定和追蹤資料。此動作無法復原。"
+  },
+  "confirmImport": {
+    "message": "是的，取代資料"
+  },
+  "cancelAction": {
+    "message": "取消"
   },
   "tabLimitSetSuccess": {
     "message": "分頁限制設定成功！你的旅程現在開始。"

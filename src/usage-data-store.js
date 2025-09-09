@@ -459,6 +459,57 @@ class UsageDataStore {
       throw error;
     }
   }
+
+  /**
+   * Import and replace all data from backup
+   * @param {Object} importData - The import data object with exportDate and data properties
+   * @throws {Error} If import data is invalid or import fails
+   */
+  async importAllData(importData) {
+    try {
+      // Validate import data structure
+      if (!importData || typeof importData !== 'object' || Array.isArray(importData)) {
+        throw new Error('Invalid import data: must be an object');
+      }
+
+      if (!importData.data || typeof importData.data !== 'object' || Array.isArray(importData.data)) {
+        throw new Error('Invalid import data: missing or invalid data property');
+      }
+
+      if (!importData.exportDate) {
+        throw new Error('Invalid import data: missing exportDate');
+      }
+
+      // Validate that exportDate is a valid ISO string
+      const exportDate = new Date(importData.exportDate);
+      if (isNaN(exportDate.getTime())) {
+        throw new Error('Invalid import data: exportDate is not a valid date');
+      }
+
+      this.logger.log('Starting data import from', importData.exportDate);
+
+      // Clear all existing data first
+      await this.storage.clear();
+      this.logger.log('Cleared existing data');
+
+      // Import all new data
+      await this.storage.set(importData.data);
+      this.logger.log('Imported new data successfully');
+
+      // Add import metadata
+      await this.storage.set({
+        importDate: new Date().toISOString(),
+        originalExportDate: importData.exportDate
+      });
+
+      this.logger.log('Data import completed successfully');
+      return true;
+
+    } catch (error) {
+      this.logger.error('Failed to import data:', error);
+      throw error;
+    }
+  }
 }
 
 // Create and export singleton instance

@@ -31,6 +31,7 @@ const peakActivityTimeEl = document.getElementById('peakActivityTime');
 // Footer elements
 const resetStatsBtn = document.getElementById('resetStatsBtn');
 const exportStatsBtn = document.getElementById('exportStatsBtn');
+const importStatsBtn = document.getElementById('importStatsBtn');
 
 // Selected limit for onboarding
 let selectedLimit = TAB_LIMITS.DEFAULT;
@@ -190,6 +191,7 @@ function setupEventListeners() {
   changeLimitBtn?.addEventListener('click', handleChangeLimit);
   resetStatsBtn?.addEventListener('click', handleResetStats);
   exportStatsBtn?.addEventListener('click', handleExportStats);
+  importStatsBtn?.addEventListener('click', handleImportStats);
 }
 
 /**
@@ -340,6 +342,165 @@ async function handleExportStats() {
   } finally {
     exportStatsBtn.classList.remove('loading');
   }
+}
+
+/**
+ * Handle statistics import
+ */
+async function handleImportStats() {
+  try {
+    // Create file input element
+    const fileInput = document.createElement('input');
+    fileInput.type = 'file';
+    fileInput.accept = '.json';
+    
+    fileInput.onchange = async (event) => {
+      const file = event.target.files[0];
+      if (!file) return;
+      
+      try {
+        importStatsBtn.classList.add('loading');
+        
+        // Read file content
+        const fileContent = await file.text();
+        let importData;
+        
+        try {
+          importData = JSON.parse(fileContent);
+        } catch (parseError) {
+          showNotification(getI18nMessage('dataImportInvalidJSON'), 'error');
+          return;
+        }
+        
+        // Show confirmation dialog
+        const confirmed = await showImportConfirmation();
+        if (!confirmed) return;
+        
+        // Perform import
+        const store = usageDataStore();
+        await store.importAllData(importData);
+        
+        showNotification(getI18nMessage('dataImportSuccess'), 'success');
+        
+        // Reload the page to show updated data
+        setTimeout(() => {
+          window.location.reload();
+        }, 1500);
+        
+      } catch (error) {
+        optionsLogger.error('Error importing statistics:', error);
+        showNotification(getI18nMessage('dataImportFailed'), 'error');
+      } finally {
+        importStatsBtn.classList.remove('loading');
+      }
+    };
+    
+    // Trigger file selection
+    fileInput.click();
+    
+  } catch (error) {
+    optionsLogger.error('Error creating file input:', error);
+    showNotification(getI18nMessage('dataImportFailed'), 'error');
+  }
+}
+
+/**
+ * Show import confirmation dialog
+ */
+function showImportConfirmation() {
+  return new Promise((resolve) => {
+    // Create modal overlay
+    const overlay = document.createElement('div');
+    overlay.style.cssText = `
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.6);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 10000;
+    `;
+
+    // Create modal content
+    const modal = document.createElement('div');
+    modal.style.cssText = `
+      background: white;
+      padding: 30px;
+      border-radius: 12px;
+      max-width: 500px;
+      width: 90%;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+      text-align: center;
+    `;
+
+    // Create content
+    modal.innerHTML = `
+      <div style="font-size: 48px; margin-bottom: 20px;">⚠️</div>
+      <h2 style="color: #e74c3c; margin-bottom: 15px;">${getI18nMessage('importDataWarningTitle')}</h2>
+      <p style="margin-bottom: 20px; line-height: 1.5; color: #666;">${getI18nMessage('importDataWarningMessage')}</p>
+      <div style="display: flex; gap: 15px; justify-content: center; margin-top: 25px;">
+        <button id="cancelImport" style="
+          padding: 12px 24px;
+          background: #95a5a6;
+          color: white;
+          border: none;
+          border-radius: 6px;
+          cursor: pointer;
+          font-size: 14px;
+          font-weight: 500;
+        ">${getI18nMessage('cancelAction')}</button>
+        <button id="confirmImport" style="
+          padding: 12px 24px;
+          background: #e74c3c;
+          color: white;
+          border: none;
+          border-radius: 6px;
+          cursor: pointer;
+          font-size: 14px;
+          font-weight: 500;
+        ">${getI18nMessage('confirmImport')}</button>
+      </div>
+    `;
+
+    overlay.appendChild(modal);
+    document.body.appendChild(overlay);
+
+    // Handle button clicks
+    const cancelBtn = modal.querySelector('#cancelImport');
+    const confirmBtn = modal.querySelector('#confirmImport');
+
+    cancelBtn.addEventListener('click', () => {
+      document.body.removeChild(overlay);
+      resolve(false);
+    });
+
+    confirmBtn.addEventListener('click', () => {
+      document.body.removeChild(overlay);
+      resolve(true);
+    });
+
+    // Handle escape key and backdrop click
+    const handleEscape = (e) => {
+      if (e.key === 'Escape') {
+        document.body.removeChild(overlay);
+        document.removeEventListener('keydown', handleEscape);
+        resolve(false);
+      }
+    };
+
+    overlay.addEventListener('click', (e) => {
+      if (e.target === overlay) {
+        document.body.removeChild(overlay);
+        document.removeEventListener('keydown', handleEscape);
+        resolve(false);
+      }
+    });
+
+    document.addEventListener('keydown', handleEscape);
+  });
 }
 
 /**
