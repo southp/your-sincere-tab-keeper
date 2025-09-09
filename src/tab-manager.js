@@ -509,10 +509,10 @@ export class TabManager {
         const store = usageDataStore();
         await store.setTabLimit(newLimit);
         await store.recordTodayTabLimit(this.tabLimit);
-        
+
         // Close excess tabs if current tab count exceeds the new limit
         await this.smartTabClosure(newLimit);
-        
+
         this.generalLogger.log('Onboarding completed with tab limit:', newLimit);
       }
     } catch (error) {
