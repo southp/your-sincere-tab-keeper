@@ -10,6 +10,40 @@ import { TAB_LIMITS } from './constants.js';
 import { Logger } from './debug.js';
 
 class UsageDataStore {
+  
+  /**
+   * Tab Keeper data schema definition
+   * Used for both export filtering and import validation
+   */
+  static TAB_KEEPER_SCHEMA = {
+    // Core statistics (optional, defaults to 0)
+    mazesCompleted: { type: 'number', min: 0, optional: true },
+    blockedAttempts: { type: 'number', min: 0, optional: true },
+
+    // Settings (optional with defaults)
+    tabLimit: { type: 'number', min: TAB_LIMITS.MIN, max: TAB_LIMITS.MAX, optional: true },
+    installDate: { type: 'number', min: 0, optional: true },
+
+    // Daily tracking data (optional, must be objects with YYYY-MM-DD keys)
+    dailyMazes: { type: 'object', optional: true, dateKeyed: true },
+    dailyTabLimits: { type: 'object', optional: true, dateKeyed: true },
+    dailyBlockedAttempts: { type: 'object', optional: true, dateKeyed: true },
+
+    // Analytics data (optional)
+    limitHitTimestamps: { type: 'array', itemType: 'number', maxLength: 100, optional: true },
+
+    // Import metadata (optional)
+    importDate: { type: 'string', optional: true },
+    originalExportDate: { type: 'string', optional: true }
+  };
+
+  /**
+   * Get list of Tab Keeper schema property keys
+   */
+  static getSchemaKeys() {
+    return Object.keys(UsageDataStore.TAB_KEEPER_SCHEMA);
+  }
+
   constructor(storageProvider = null) {
     // Allow injection of storage provider for testing
     this.storage = storageProvider || chrome?.storage?.local;
@@ -449,10 +483,22 @@ class UsageDataStore {
    */
   async exportAllData() {
     try {
-      const result = await this.storage.get(null); // Get all data
+      // Only export Tab Keeper schema properties (exclude debug properties)
+      const tabKeeperKeys = UsageDataStore.getSchemaKeys();
+      
+      const result = await this.storage.get(tabKeeperKeys);
+      
+      // Filter out undefined values to keep export clean
+      const cleanData = {};
+      for (const [key, value] of Object.entries(result)) {
+        if (value !== undefined) {
+          cleanData[key] = value;
+        }
+      }
+      
       return {
         exportDate: new Date().toISOString(),
-        data: result
+        data: cleanData
       };
     } catch (error) {
       this.logger.error('Failed to export data:', error);
@@ -470,28 +516,8 @@ class UsageDataStore {
       throw new Error('Data must be an object');
     }
 
-    // Define expected Tab Keeper data schema
-    const schema = {
-      // Core statistics (optional, defaults to 0)
-      mazesCompleted: { type: 'number', min: 0, optional: true },
-      blockedAttempts: { type: 'number', min: 0, optional: true },
-
-      // Settings (optional with defaults)
-      tabLimit: { type: 'number', min: TAB_LIMITS.MIN, max: TAB_LIMITS.MAX, optional: true },
-      installDate: { type: 'number', min: 0, optional: true },
-
-      // Daily tracking data (optional, must be objects with YYYY-MM-DD keys)
-      dailyMazes: { type: 'object', optional: true, dateKeyed: true },
-      dailyTabLimits: { type: 'object', optional: true, dateKeyed: true },
-      dailyBlockedAttempts: { type: 'object', optional: true, dateKeyed: true },
-
-      // Analytics data (optional)
-      limitHitTimestamps: { type: 'array', itemType: 'number', maxLength: 100, optional: true },
-
-      // Import metadata (optional)
-      importDate: { type: 'string', optional: true },
-      originalExportDate: { type: 'string', optional: true }
-    };
+    // Use shared Tab Keeper data schema
+    const schema = UsageDataStore.TAB_KEEPER_SCHEMA;
 
     // Check for unexpected properties (not part of Tab Keeper schema)
     const knownKeys = Object.keys(schema);

@@ -721,10 +721,53 @@ describe('UsageDataStore', () => {
         const result = await store.exportAllData();
         const afterCall = new Date().toISOString();
 
-        expect(mockStorage.get).toHaveBeenCalledWith(null);
+        expect(mockStorage.get).toHaveBeenCalledWith(UsageDataStore.getSchemaKeys());
         expect(result.data).toEqual(mockData);
         expect(result.exportDate).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/);
         expect(result.exportDate >= beforeCall && result.exportDate <= afterCall).toBe(true);
+      });
+
+      it('should only request schema-compliant properties from storage', async () => {
+        const mockData = {
+          mazesCompleted: 100,
+          blockedAttempts: 50
+        };
+        mockStorage.get.mockResolvedValue(mockData);
+
+        const result = await store.exportAllData();
+
+        // Verify only Tab Keeper schema properties are requested
+        expect(mockStorage.get).toHaveBeenCalledWith(UsageDataStore.getSchemaKeys());
+        
+        // Verify export contains only the returned schema properties
+        expect(result.data).toEqual({
+          mazesCompleted: 100,
+          blockedAttempts: 50
+        });
+        expect(result.exportDate).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/);
+      });
+
+      it('should have consistent schema between export and validation', () => {
+        // Verify that the schema used for export keys matches the validation schema
+        const schemaKeys = UsageDataStore.getSchemaKeys();
+        const validationSchema = UsageDataStore.TAB_KEEPER_SCHEMA;
+        
+        // All export keys should exist in validation schema
+        schemaKeys.forEach(key => {
+          expect(validationSchema[key]).toBeDefined();
+        });
+        
+        // All validation schema keys should be in export keys
+        Object.keys(validationSchema).forEach(key => {
+          expect(schemaKeys).toContain(key);
+        });
+        
+        // Schema should contain expected Tab Keeper properties
+        expect(schemaKeys).toEqual(expect.arrayContaining([
+          'mazesCompleted', 'blockedAttempts', 'tabLimit', 'installDate',
+          'dailyMazes', 'dailyTabLimits', 'dailyBlockedAttempts', 
+          'limitHitTimestamps', 'importDate', 'originalExportDate'
+        ]));
       });
     });
   });
