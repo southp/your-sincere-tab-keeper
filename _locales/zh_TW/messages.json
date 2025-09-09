@@ -284,7 +284,7 @@
     "message": "開啟的分頁過多"
   },
   "tabCountVsLimit": {
-    "message": "你目前開啟了 $CURRENT$，但新的限制是 $LIMIT$。",
+    "message": "你目前開啟了 $CURRENT$ 用於一般網站，但新的限制是 $LIMIT$。",
     "placeholders": {
       "current": {
         "content": "$1"

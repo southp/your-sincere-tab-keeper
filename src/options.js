@@ -7,6 +7,7 @@ import { TAB_LIMITS } from './constants.js';
 import { renderLimitButtons, setupLimitButtonListeners, updateLimitDescription, initializeI18n, getI18nMessage, formatHourRange } from './ui-utils.js';
 import { Logger } from './debug.js';
 import { usageDataStore } from './usage-data-store.js';
+import { isSpecialTab, isMazeTab } from './utils.js';
 import './trend-graph.js';
 
 const optionsLogger = new Logger('OPTIONS');
@@ -199,15 +200,16 @@ async function handleCompleteOnboarding() {
     completeOnboardingBtn.classList.add('loading');
     completeOnboardingBtn.disabled = true;
 
-    // First, check how many tabs are currently open
+    // First, check how many regular tabs are currently open (excluding special tabs)
     const tabs = await chrome.tabs.query({});
-    const currentTabCount = tabs.length;
+    const regularTabs = tabs.filter(tab => !isSpecialTab(tab) && !isMazeTab(tab));
+    const regularTabCount = regularTabs.length;
 
-    if (currentTabCount > selectedLimit) {
-      const tabsToClose = currentTabCount - selectedLimit;
+    if (regularTabCount > selectedLimit) {
+      const tabsToClose = regularTabCount - selectedLimit;
 
       // Show confirmation dialog about tab closure
-      const confirmed = await showTabClosureConfirmation(currentTabCount, selectedLimit, tabsToClose);
+      const confirmed = await showTabClosureConfirmation(regularTabCount, selectedLimit, tabsToClose);
 
       if (!confirmed) {
         completeOnboardingBtn.classList.remove('loading');

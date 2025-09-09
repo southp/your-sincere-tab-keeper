@@ -284,7 +284,7 @@
     "message": "Too Many Tabs Open"
   },
   "tabCountVsLimit": {
-    "message": "You currently have $CURRENT$ open, but your new limit is $LIMIT$.",
+    "message": "You currently have $CURRENT$ open for regular websites, but your new limit is $LIMIT$.",
     "placeholders": {
       "current": {
         "content": "$1"
