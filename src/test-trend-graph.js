@@ -3,140 +3,19 @@
  * Separated from HTML to comply with CSP
  */
 
-// Mock data generators
+import {
+  generateRichData,
+  generateSparseData,
+  generateExtremeData,
+  generateEmptyData
+} from './test-data-generator.js';
+
+// Compatibility wrapper for existing code
 const MockDataGenerator = {
-  /**
-     * Generate rich dataset with realistic patterns
-     */
-  generateRichData() {
-    const data = {
-      dailyMazes: {},
-      dailyTabLimits: {},
-      dailyBlockedAttempts: {}
-    };
-
-    const today = new Date();
-    const startDate = new Date(today);
-    startDate.setDate(today.getDate() - 90);
-
-    for (let d = new Date(startDate); d <= today; d.setDate(d.getDate() + 1)) {
-      const dateKey = this.formatDate(d);
-      const dayOfWeek = d.getDay();
-      const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
-
-      // Realistic patterns: less activity on weekends, varying engagement
-      const baseActivity = isWeekend ? 0.3 : 1.0;
-      const randomFactor = 0.5 + Math.random() * 0.8;
-      const activityLevel = baseActivity * randomFactor;
-
-      // Generate maze completions (0-8 per day, with realistic distribution)
-      const mazeCount = Math.floor(Math.random() * 8 * activityLevel);
-      if (mazeCount > 0) {
-        data.dailyMazes[dateKey] = mazeCount;
-      }
-
-      // Generate tab limits (2-8, with preference for middle values)
-      const tabLimit = Math.floor(2 + Math.random() * 6.5);
-      data.dailyTabLimits[dateKey] = tabLimit;
-
-      // Generate blocked attempts (0-15, correlated with activity)
-      const blockedCount = Math.floor(Math.random() * 15 * activityLevel);
-      if (blockedCount > 0) {
-        data.dailyBlockedAttempts[dateKey] = blockedCount;
-      }
-    }
-
-    return data;
-  },
-
-  /**
-     * Generate sparse dataset with gaps
-     */
-  generateSparseData() {
-    const data = {
-      dailyMazes: {},
-      dailyTabLimits: {},
-      dailyBlockedAttempts: {}
-    };
-
-    const today = new Date();
-    const dates = [];
-
-    // Generate only 15 random dates in the last 60 days
-    for (let i = 0; i < 15; i++) {
-      const randomDays = Math.floor(Math.random() * 60);
-      const date = new Date(today);
-      date.setDate(today.getDate() - randomDays);
-      dates.push(date);
-    }
-
-    dates.forEach(date => {
-      const dateKey = this.formatDate(date);
-
-      // Sparse but meaningful data
-      if (Math.random() > 0.3) {
-        data.dailyMazes[dateKey] = Math.floor(Math.random() * 5) + 1;
-      }
-
-      data.dailyTabLimits[dateKey] = Math.floor(Math.random() * 4) + 3;
-
-      if (Math.random() > 0.4) {
-        data.dailyBlockedAttempts[dateKey] = Math.floor(Math.random() * 8) + 1;
-      }
-    });
-
-    return data;
-  },
-
-  /**
-     * Generate extreme values to test edge cases
-     */
-  generateExtremeData() {
-    const data = {
-      dailyMazes: {},
-      dailyTabLimits: {},
-      dailyBlockedAttempts: {}
-    };
-
-    const today = new Date();
-    const scenarios = [
-      { mazes: 0, tabLimit: 2, blocked: 0 },      // Minimal activity
-      { mazes: 50, tabLimit: 8, blocked: 100 },  // Maximum activity
-      { mazes: 25, tabLimit: 2, blocked: 200 },  // High blocking with low limit
-      { mazes: 1, tabLimit: 8, blocked: 0 },     // High limit, low activity
-      { mazes: 30, tabLimit: 5, blocked: 5 }    // High maze completion
-    ];
-
-    scenarios.forEach((scenario, index) => {
-      const date = new Date(today);
-      date.setDate(today.getDate() - (index * 10));
-      const dateKey = this.formatDate(date);
-
-      data.dailyMazes[dateKey] = scenario.mazes;
-      data.dailyTabLimits[dateKey] = scenario.tabLimit;
-      data.dailyBlockedAttempts[dateKey] = scenario.blocked;
-    });
-
-    return data;
-  },
-
-  /**
-     * Generate empty dataset
-     */
-  generateEmptyData() {
-    return {
-      dailyMazes: {},
-      dailyTabLimits: {},
-      dailyBlockedAttempts: {}
-    };
-  },
-
-  formatDate(date) {
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-    return `${year}-${month}-${day}`;
-  }
+  generateRichData,
+  generateSparseData,
+  generateExtremeData,
+  generateEmptyData
 };
 
 // Test interface functions

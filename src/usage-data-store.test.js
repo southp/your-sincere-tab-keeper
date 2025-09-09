@@ -897,7 +897,7 @@ describe('UsageDataStore', () => {
       const metadataCall = mockStorage.set.mock.calls.find(call =>
         call[0].importDate && call[0].originalExportDate
       );
-      
+
       expect(metadataCall).toBeTruthy();
       expect(metadataCall[0].originalExportDate).toBe('2024-01-15T10:30:00.000Z');
       expect(metadataCall[0].importDate).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/);
@@ -935,7 +935,7 @@ describe('UsageDataStore', () => {
 
       // Verify clear was called (removes all existing data)
       expect(mockStorage.clear).toHaveBeenCalledTimes(1);
-      
+
       // Verify only the imported data was set
       expect(mockStorage.set).toHaveBeenCalledWith({
         mazesCompleted: 50,
@@ -988,40 +988,40 @@ describe('UsageDataStore', () => {
       it('should validate mazesCompleted', () => {
         expect(() => store.validateTabKeeperData({ mazesCompleted: 'not a number' }))
           .toThrow("Property 'mazesCompleted' must be a finite number");
-        
+
         expect(() => store.validateTabKeeperData({ mazesCompleted: -5 }))
           .toThrow("Property 'mazesCompleted' must be >= 0");
-        
+
         expect(() => store.validateTabKeeperData({ mazesCompleted: Infinity }))
           .toThrow("Property 'mazesCompleted' must be a finite number");
-        
+
         expect(() => store.validateTabKeeperData({ mazesCompleted: NaN }))
           .toThrow("Property 'mazesCompleted' must be a finite number");
-        
+
         expect(() => store.validateTabKeeperData({ mazesCompleted: 50 })).not.toThrow();
       });
 
       it('should validate blockedAttempts', () => {
         expect(() => store.validateTabKeeperData({ blockedAttempts: -1 }))
           .toThrow("Property 'blockedAttempts' must be >= 0");
-        
+
         expect(() => store.validateTabKeeperData({ blockedAttempts: 100 })).not.toThrow();
       });
 
       it('should validate tabLimit within bounds', () => {
         expect(() => store.validateTabKeeperData({ tabLimit: 0 }))
           .toThrow("Property 'tabLimit' must be >= 2");
-        
+
         expect(() => store.validateTabKeeperData({ tabLimit: 10 }))
           .toThrow("Property 'tabLimit' must be <= 8");
-        
+
         expect(() => store.validateTabKeeperData({ tabLimit: 5 })).not.toThrow();
       });
 
       it('should validate installDate', () => {
         expect(() => store.validateTabKeeperData({ installDate: -1 }))
           .toThrow("Property 'installDate' must be >= 0");
-        
+
         expect(() => store.validateTabKeeperData({ installDate: Date.now() })).not.toThrow();
       });
     });
@@ -1030,13 +1030,13 @@ describe('UsageDataStore', () => {
       it('should validate date strings', () => {
         expect(() => store.validateTabKeeperData({ importDate: 123 }))
           .toThrow("Property 'importDate' must be a string");
-        
+
         expect(() => store.validateTabKeeperData({ importDate: 'not-a-date' }))
           .toThrow("Property 'importDate' must be a valid ISO date string");
-        
+
         expect(() => store.validateTabKeeperData({ originalExportDate: 'invalid-date-format' }))
           .toThrow("Property 'originalExportDate' must be a valid ISO date string");
-        
+
         expect(() => store.validateTabKeeperData({ importDate: '2024-01-15T10:30:00.000Z' })).not.toThrow();
         expect(() => store.validateTabKeeperData({ originalExportDate: '2024-01-15T10:30:00Z' })).not.toThrow();
       });
@@ -1046,10 +1046,10 @@ describe('UsageDataStore', () => {
       it('should validate dailyMazes object', () => {
         expect(() => store.validateTabKeeperData({ dailyMazes: 'not an object' }))
           .toThrow("Property 'dailyMazes' must be an object");
-        
+
         expect(() => store.validateTabKeeperData({ dailyMazes: [] }))
           .toThrow("Property 'dailyMazes' must be an object");
-        
+
         // Note: null is skipped for optional properties, so this won't throw
         expect(() => store.validateTabKeeperData({ dailyMazes: {} })).not.toThrow();
       });
@@ -1057,10 +1057,10 @@ describe('UsageDataStore', () => {
       it('should validate date-keyed objects have proper keys', () => {
         expect(() => store.validateTabKeeperData({ dailyMazes: { 'invalid-key': 5 } }))
           .toThrow("Property 'dailyMazes' must have YYYY-MM-DD date keys, got: invalid-key");
-        
+
         expect(() => store.validateTabKeeperData({ dailyTabLimits: { '2024-1-1': 3 } }))
           .toThrow("Property 'dailyTabLimits' must have YYYY-MM-DD date keys, got: 2024-1-1");
-        
+
         expect(() => store.validateTabKeeperData({ dailyBlockedAttempts: { '24-01-01': 2 } }))
           .toThrow("Property 'dailyBlockedAttempts' must have YYYY-MM-DD date keys, got: 24-01-01");
       });
@@ -1068,15 +1068,15 @@ describe('UsageDataStore', () => {
       it('should validate date-keyed objects have proper values', () => {
         expect(() => store.validateTabKeeperData({ dailyMazes: { '2024-01-15': 'not a number' } }))
           .toThrow("Property 'dailyMazes' values must be non-negative numbers, got: not a number for key 2024-01-15");
-        
+
         expect(() => store.validateTabKeeperData({ dailyTabLimits: { '2024-01-15': -1 } }))
           .toThrow("Property 'dailyTabLimits' values must be non-negative numbers, got: -1 for key 2024-01-15");
-        
+
         expect(() => store.validateTabKeeperData({ dailyBlockedAttempts: { '2024-01-15': Infinity } }))
           .toThrow("Property 'dailyBlockedAttempts' values must be non-negative numbers, got: Infinity for key 2024-01-15");
-        
-        expect(() => store.validateTabKeeperData({ 
-          dailyMazes: { '2024-01-15': 10, '2024-01-16': 5 } 
+
+        expect(() => store.validateTabKeeperData({
+          dailyMazes: { '2024-01-15': 10, '2024-01-16': 5 }
         })).not.toThrow();
       });
     });
@@ -1085,17 +1085,17 @@ describe('UsageDataStore', () => {
       it('should validate limitHitTimestamps array', () => {
         expect(() => store.validateTabKeeperData({ limitHitTimestamps: 'not an array' }))
           .toThrow("Property 'limitHitTimestamps' must be an array");
-        
+
         expect(() => store.validateTabKeeperData({ limitHitTimestamps: {} }))
           .toThrow("Property 'limitHitTimestamps' must be an array");
       });
 
       it('should enforce array length limits', () => {
         const tooManyTimestamps = Array.from({ length: 101 }, () => Date.now());
-        
+
         expect(() => store.validateTabKeeperData({ limitHitTimestamps: tooManyTimestamps }))
           .toThrow("Property 'limitHitTimestamps' array length must be <= 100, got: 101");
-        
+
         const validTimestamps = Array.from({ length: 50 }, () => Date.now());
         expect(() => store.validateTabKeeperData({ limitHitTimestamps: validTimestamps })).not.toThrow();
       });
@@ -1103,10 +1103,10 @@ describe('UsageDataStore', () => {
       it('should validate array item types', () => {
         expect(() => store.validateTabKeeperData({ limitHitTimestamps: ['not a number', 123] }))
           .toThrow("Property 'limitHitTimestamps' array items must be finite numbers, got: string at index 0");
-        
+
         expect(() => store.validateTabKeeperData({ limitHitTimestamps: [123, Infinity] }))
           .toThrow("Property 'limitHitTimestamps' array items must be finite numbers, got: number at index 1");
-        
+
         expect(() => store.validateTabKeeperData({ limitHitTimestamps: [1704067800000, 1704154200000] }))
           .not.toThrow();
       });
@@ -1161,7 +1161,7 @@ describe('UsageDataStore', () => {
       };
 
       const result = await store.importAllData(validData);
-      
+
       expect(result).toBe(true);
       expect(mockStorage.clear).toHaveBeenCalledTimes(1);
       expect(mockStorage.set).toHaveBeenCalledWith(validData.data);
@@ -1196,10 +1196,10 @@ describe('UsageDataStore', () => {
 
       // Mock backup call
       mockStorage.get.mockResolvedValueOnce(existingData);
-      
+
       // Mock import failure
       mockStorage.set.mockRejectedValueOnce(new Error('Storage write failed'));
-      
+
       // Mock successful rollback
       mockStorage.clear.mockResolvedValue(); // For rollback clear
       mockStorage.set.mockResolvedValueOnce(existingData); // For rollback restore
@@ -1222,10 +1222,10 @@ describe('UsageDataStore', () => {
 
       // Mock backup call
       mockStorage.get.mockResolvedValueOnce(existingData);
-      
+
       // Mock import failure
       mockStorage.set.mockRejectedValueOnce(new Error('Storage write failed'));
-      
+
       // Mock rollback failure
       mockStorage.set.mockRejectedValueOnce(new Error('Rollback failed'));
 
@@ -1261,12 +1261,12 @@ describe('UsageDataStore', () => {
 
       // Mock backup call
       mockStorage.get.mockResolvedValueOnce(existingData);
-      
+
       // Mock successful data import but metadata failure
       mockStorage.set
         .mockResolvedValueOnce(undefined) // Import data succeeds
         .mockRejectedValueOnce(new Error('Metadata write failed')); // Metadata fails
-        
+
       // Mock successful rollback
       mockStorage.set.mockResolvedValueOnce(existingData); // Rollback restore
 
@@ -1295,10 +1295,10 @@ describe('UsageDataStore', () => {
 
       // Mock backup of complex data
       mockStorage.get.mockResolvedValueOnce(complexExistingData);
-      
+
       // Mock import failure after clear
       mockStorage.set.mockRejectedValueOnce(new Error('Import write failed'));
-      
+
       // Mock successful rollback
       mockStorage.set.mockResolvedValueOnce(complexExistingData);
 

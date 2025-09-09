@@ -10,6 +10,7 @@ import { isDevelopment } from './env.js';
 import { setLocaleOverride } from './ui-utils.js';
 import { usageDataStore } from './usage-data-store.js';
 import { clearMazeSession, getMazeSessionData } from './maze/maze-session.js';
+import { generateRichData, generateSparseData, generateExtremeData } from './test-data-generator.js';
 
 // Create scoped loggers for service worker functionality
 const initLogger = new Logger('SERVICE-WORKER-INIT');
@@ -324,6 +325,7 @@ async function handleCloseBlobTab(tabId) {
   }
 }
 
+
 /**
  * Setup debugging utilities for development environment
  */
@@ -472,6 +474,77 @@ async function setupDebugUtilities() {
       }
     },
 
+    // Data generation helpers
+    generateRichTestData: async () => {
+      try {
+        const data = generateRichData();
+        const store = usageDataStore();
+
+        // Format data for import (needs exportDate wrapper)
+        const importData = {
+          data: data,
+          exportDate: new Date().toISOString(),
+          version: '1.0.0'
+        };
+
+        // Import the generated data
+        await store.importAllData(importData);
+
+        generalLogger.log('📊 Generated and imported rich test dataset (90 days)');
+        generalLogger.log(`✨ Dataset includes ${Object.keys(data.dailyMazes || {}).length} maze days, ${Object.keys(data.dailyTabLimits || {}).length} tab limit days`);
+        return data;
+      } catch (error) {
+        generalLogger.error('Failed to generate rich test data:', error);
+        throw error;
+      }
+    },
+
+    generateSparseTestData: async () => {
+      try {
+        const data = generateSparseData();
+        const store = usageDataStore();
+
+        // Format data for import (needs exportDate wrapper)
+        const importData = {
+          data: data,
+          exportDate: new Date().toISOString(),
+          version: '1.0.0'
+        };
+
+        // Import the generated data
+        await store.importAllData(importData);
+
+        generalLogger.log('📊 Generated and imported sparse test dataset');
+        return data;
+      } catch (error) {
+        generalLogger.error('Failed to generate sparse test data:', error);
+        throw error;
+      }
+    },
+
+    generateExtremeTestData: async () => {
+      try {
+        const data = generateExtremeData();
+        const store = usageDataStore();
+
+        // Format data for import (needs exportDate wrapper)
+        const importData = {
+          data: data,
+          exportDate: new Date().toISOString(),
+          version: '1.0.0'
+        };
+
+        // Import the generated data
+        await store.importAllData(importData);
+
+        generalLogger.log('📊 Generated and imported extreme test dataset');
+        return data;
+      } catch (error) {
+        generalLogger.error('Failed to generate extreme test data:', error);
+        throw error;
+      }
+    },
+
     // Help function
     help: () => {
       // eslint-disable-next-line no-console
@@ -499,6 +572,11 @@ Testing Helpers:
 Component Testing:
   debugTabKeeper.openTrendGraphTestPage() - Open trend graph test page
 
+Data Generation:
+  debugTabKeeper.generateRichTestData()    - Generate realistic 90-day dataset
+  debugTabKeeper.generateSparseTestData()  - Generate sparse dataset with gaps
+  debugTabKeeper.generateExtremeTestData() - Generate extreme values dataset
+
 Localization Testing:
   debugTabKeeper.setLocale('zh_TW')    - Test Traditional Chinese
   debugTabKeeper.setLocale('en')       - Test English
@@ -512,7 +590,8 @@ Utilities:
 Example Usage:
   debugTabKeeper.getState()
   debugTabKeeper.getAllTabs().then(console.table)
-  debugTabKeeper.setLocale('zh_TW')  // Test Chinese localization
+  debugTabKeeper.generateRichTestData()  // Generate 90 days of realistic data
+  debugTabKeeper.setLocale('zh_TW')      // Test Chinese localization
   debugTabKeeper.simulateTabLimit(3)
   debugTabKeeper.setDailyMazeCount(120)  // Test insane difficulty (inferno theme!)
       `);

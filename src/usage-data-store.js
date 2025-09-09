@@ -475,19 +475,19 @@ class UsageDataStore {
       // Core statistics (optional, defaults to 0)
       mazesCompleted: { type: 'number', min: 0, optional: true },
       blockedAttempts: { type: 'number', min: 0, optional: true },
-      
+
       // Settings (optional with defaults)
       tabLimit: { type: 'number', min: TAB_LIMITS.MIN, max: TAB_LIMITS.MAX, optional: true },
       installDate: { type: 'number', min: 0, optional: true },
-      
+
       // Daily tracking data (optional, must be objects with YYYY-MM-DD keys)
       dailyMazes: { type: 'object', optional: true, dateKeyed: true },
       dailyTabLimits: { type: 'object', optional: true, dateKeyed: true },
       dailyBlockedAttempts: { type: 'object', optional: true, dateKeyed: true },
-      
+
       // Analytics data (optional)
       limitHitTimestamps: { type: 'array', itemType: 'number', maxLength: 100, optional: true },
-      
+
       // Import metadata (optional)
       importDate: { type: 'string', optional: true },
       originalExportDate: { type: 'string', optional: true }
@@ -497,7 +497,7 @@ class UsageDataStore {
     const knownKeys = Object.keys(schema);
     const dataKeys = Object.keys(data);
     const unknownKeys = dataKeys.filter(key => !knownKeys.includes(key));
-    
+
     if (unknownKeys.length > 0) {
       throw new Error(`Unknown properties detected (not Tab Keeper data): ${unknownKeys.join(', ')}`);
     }
@@ -505,22 +505,22 @@ class UsageDataStore {
     // Validate each property according to schema
     for (const [key, rules] of Object.entries(schema)) {
       const value = data[key];
-      
+
       // Skip validation for optional missing properties
       if (value === undefined && rules.optional) {
         continue;
       }
-      
+
       // Check required properties
       if (value === undefined && !rules.optional) {
         throw new Error(`Missing required property: ${key}`);
       }
-      
+
       // Skip null/undefined values for optional properties
       if (value === null || value === undefined) {
         continue;
       }
-      
+
       // Type validation
       if (rules.type === 'number') {
         if (typeof value !== 'number' || !Number.isFinite(value)) {
@@ -547,7 +547,7 @@ class UsageDataStore {
         if (typeof value !== 'object' || Array.isArray(value) || value === null) {
           throw new Error(`Property '${key}' must be an object, got: ${typeof value}`);
         }
-        
+
         // Validate date-keyed objects
         if (rules.dateKeyed) {
           const dateKeyPattern = /^\d{4}-\d{2}-\d{2}$/;
@@ -617,7 +617,7 @@ class UsageDataStore {
       this.logger.log('Created backup of existing data');
 
       try {
-        // Step 2: Clear existing data 
+        // Step 2: Clear existing data
         await this.storage.clear();
         this.logger.log('Cleared existing data');
 
@@ -642,7 +642,7 @@ class UsageDataStore {
           await this.storage.clear();
           await this.storage.set(existingData);
           this.logger.log('Successfully rolled back to original data');
-          
+
           throw new Error(`Import failed and was rolled back: ${importError.message}`);
         } catch (rollbackError) {
           this.logger.error('CRITICAL: Rollback failed:', rollbackError);

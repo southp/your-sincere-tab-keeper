@@ -347,31 +347,31 @@ async function handleExportStats() {
 /**
  * Handle statistics import
  */
-async function handleImportStats() {
+function handleImportStats() {
   try {
     // Create file input element
     const fileInput = document.createElement('input');
     fileInput.type = 'file';
     fileInput.accept = '.json';
-    
+
     fileInput.onchange = async (event) => {
       const file = event.target.files[0];
       if (!file) return;
-      
+
       try {
         importStatsBtn.classList.add('loading');
-        
+
         // Read file content
         const fileContent = await file.text();
         let importData;
-        
+
         try {
           importData = JSON.parse(fileContent);
-        } catch (parseError) {
+        } catch {
           showNotification(getI18nMessage('dataImportInvalidJSON'), 'error');
           return;
         }
-        
+
         // Validate data before showing confirmation
         const store = usageDataStore();
         try {
@@ -380,44 +380,44 @@ async function handleImportStats() {
             showNotification(getI18nMessage('dataImportInvalidFormat'), 'error');
             return;
           }
-          
+
           if (!importData.data || typeof importData.data !== 'object' || Array.isArray(importData.data)) {
             showNotification(getI18nMessage('dataImportMissingData'), 'error');
             return;
           }
-          
+
           if (!importData.exportDate) {
             showNotification(getI18nMessage('dataImportMissingExportDate'), 'error');
             return;
           }
-          
+
           // Validate Tab Keeper data schema
           store.validateTabKeeperData(importData.data);
-          
+
         } catch (validationError) {
           // Show specific validation error with helpful message
           const errorMessage = getI18nMessage('dataImportValidationFailed') + ': ' + validationError.message;
           showNotification(errorMessage, 'error');
           return;
         }
-        
+
         // Show confirmation dialog only after validation passes
         const confirmed = await showImportConfirmation();
         if (!confirmed) return;
-        
+
         // Perform import (validation already passed)
         await store.importAllData(importData);
-        
+
         showNotification(getI18nMessage('dataImportSuccess'), 'success');
-        
+
         // Reload the page to show updated data
         setTimeout(() => {
           window.location.reload();
         }, 1500);
-        
+
       } catch (error) {
         optionsLogger.error('Error importing statistics:', error);
-        
+
         // Show specific error message if it's a rollback scenario
         if (error.message && error.message.includes('rolled back')) {
           showNotification(getI18nMessage('dataImportRollback') + ': ' + error.message, 'error');
@@ -428,10 +428,10 @@ async function handleImportStats() {
         importStatsBtn.classList.remove('loading');
       }
     };
-    
+
     // Trigger file selection
     fileInput.click();
-    
+
   } catch (error) {
     optionsLogger.error('Error creating file input:', error);
     showNotification(getI18nMessage('dataImportFailed'), 'error');
