@@ -372,12 +372,40 @@ async function handleImportStats() {
           return;
         }
         
-        // Show confirmation dialog
+        // Validate data before showing confirmation
+        const store = usageDataStore();
+        try {
+          // Pre-validate the import data structure and Tab Keeper format
+          if (!importData || typeof importData !== 'object' || Array.isArray(importData)) {
+            showNotification(getI18nMessage('dataImportInvalidFormat'), 'error');
+            return;
+          }
+          
+          if (!importData.data || typeof importData.data !== 'object' || Array.isArray(importData.data)) {
+            showNotification(getI18nMessage('dataImportMissingData'), 'error');
+            return;
+          }
+          
+          if (!importData.exportDate) {
+            showNotification(getI18nMessage('dataImportMissingExportDate'), 'error');
+            return;
+          }
+          
+          // Validate Tab Keeper data schema
+          store.validateTabKeeperData(importData.data);
+          
+        } catch (validationError) {
+          // Show specific validation error with helpful message
+          const errorMessage = getI18nMessage('dataImportValidationFailed') + ': ' + validationError.message;
+          showNotification(errorMessage, 'error');
+          return;
+        }
+        
+        // Show confirmation dialog only after validation passes
         const confirmed = await showImportConfirmation();
         if (!confirmed) return;
         
-        // Perform import
-        const store = usageDataStore();
+        // Perform import (validation already passed)
         await store.importAllData(importData);
         
         showNotification(getI18nMessage('dataImportSuccess'), 'success');
@@ -389,7 +417,13 @@ async function handleImportStats() {
         
       } catch (error) {
         optionsLogger.error('Error importing statistics:', error);
-        showNotification(getI18nMessage('dataImportFailed'), 'error');
+        
+        // Show specific error message if it's a rollback scenario
+        if (error.message && error.message.includes('rolled back')) {
+          showNotification(getI18nMessage('dataImportRollback') + ': ' + error.message, 'error');
+        } else {
+          showNotification(getI18nMessage('dataImportFailed'), 'error');
+        }
       } finally {
         importStatsBtn.classList.remove('loading');
       }

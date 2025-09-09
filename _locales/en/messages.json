@@ -479,6 +479,21 @@
   "dataImportInvalidJSON": {
     "message": "Invalid JSON file. Please select a valid Tab Keeper export file."
   },
+  "dataImportInvalidFormat": {
+    "message": "Invalid file format. This doesn't appear to be a Tab Keeper export file."
+  },
+  "dataImportMissingData": {
+    "message": "Invalid export file. Missing required data section."
+  },
+  "dataImportMissingExportDate": {
+    "message": "Invalid export file. Missing export date information."
+  },
+  "dataImportValidationFailed": {
+    "message": "File validation failed"
+  },
+  "dataImportRollback": {
+    "message": "Import failed but your data is safe"
+  },
   "importDataWarningTitle": {
     "message": "Replace All Data?"
   },
