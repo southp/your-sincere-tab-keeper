@@ -1,10 +1,6 @@
 # Your Sincere Tab Keeper
 
-A Chrome extension that limits open tabs to a user-defined cap. When the user exceeds this limit, the new tab is replaced with a maze. The user must solve the maze to load the intended URL.
-
-## Goal
-
-Help users reflect on why they hoard tabs and encourage mindful tab usage through playful friction, forming better habits in a fun but firm way.
+A Chrome extension that limits open tabs to a user-defined cap. When the user exceeds this limit, the new tab is replaced with a maze. The user must solve the maze to load the intended URL. The goal is to help users reflect on why they hoard tabs and encourage mindful tab usage through playful friction, forming better habits in a fun but firm way.
 
 ## Development Quick Start
 
@@ -25,4 +21,4 @@ Please refer to [the development doc](docs/development.md) for further details.
 
 ## License
 
-MIT License - see [LICENSE file](LICENSE.md) for details.
+MIT License - see [LICENSE](LICENSE) for details.
