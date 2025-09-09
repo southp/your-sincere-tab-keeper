@@ -1,7 +1,5 @@
 # Testing Guide - Your Sincere Tab Keeper
 
-This comprehensive guide will walk you through testing the Chrome extension to ensure all features work correctly before deployment.
-
 ## 🚀 **Quick Start (5 minutes)**
 
 ### **Step 1: Load Extension**
@@ -66,16 +64,15 @@ Test each of these methods to ensure universal coverage:
 ### **Advanced Feature Tests**
 
 #### **Test 5: Progressive Difficulty** 📈
-- [ ] **First Maze**: Should be beginner difficulty (15x15)
+- [ ] **First Maze**: Should be beginner difficulty
 - [ ] **Subsequent Mazes**: Each maze in same session should be larger
-- [ ] **Session Tracking**: Difficulty should increase up to 8 levels
-- [ ] **Browser Restart**: Difficulty should reset to beginner after restart
+- [ ] **Session Tracking**: Difficulty should increase up to 6 levels
+- [ ] **Difficulty Reset**: Difficulty should reset to beginner on a new day
 - [ ] **Visual Indication**: Difficulty level should be displayed in maze UI
 
 #### **Test 6: Duplicate Maze Handling** 🚫
 - [ ] **Active Maze Detection**: Try opening new tab while maze is open
-- [ ] **Tab Focus**: Should focus existing maze tab instead of creating new one
-- [ ] **Notification**: Should show notification about existing maze
+- [ ] **Blob Page**: Should open up the blob page indicating there is an existing maze.
 - [ ] **No New Maze**: Should not create multiple maze tabs simultaneously
 
 #### **Test 7: Tab Limit Updates** ⚙️
@@ -83,7 +80,6 @@ Test each of these methods to ensure universal coverage:
 - [ ] **Special Maze**: Should open maze with "updateLimit" action
 - [ ] **Limit Selection**: After solving, should show limit selection modal
 - [ ] **Confirmation**: Should update limit and show confirmation
-- [ ] **Browser Restart**: Should close other tabs and show restart instructions
 
 #### **Test 8: Statistics Tracking** 📊
 - [ ] **Real-time Updates**: Statistics should update immediately after actions
@@ -97,10 +93,9 @@ Test each of these methods to ensure universal coverage:
 
 #### **Test 9: Onboarding Flow** 🎓
 - [ ] **First Install**: Onboarding should auto-open on first install
-- [ ] **Limit Selection**: Should be able to select limit from 1-10
+- [ ] **Limit Selection**: Should be able to select limit
 - [ ] **Descriptions**: Each limit should show helpful description
 - [ ] **Completion**: Should save settings and show main interface
-- [ ] **Skip Prevention**: Should not be able to skip limit selection
 
 #### **Test 10: Options Page** ⚙️
 - [ ] **Settings Display**: Current tab limit should be clearly shown
@@ -127,21 +122,6 @@ Test each of these methods to ensure universal coverage:
 - [ ] **Session Restore**: Test with session restore enabled
 - [ ] **Pinned Tabs**: Verify pinned tabs don't interfere with counting
 - [ ] **Multiple Windows**: Test tab counting across multiple browser windows
-
-### **Incognito Mode Testing** 🕵️
-
-#### **Setup Incognito Support**
-1. Go to `chrome://extensions/`
-2. Find "Your Sincere Tab Keeper"
-3. Click "Details"
-4. Toggle "Allow in incognito" ON
-
-#### **Test 14: Incognito Functionality**
-- [ ] **Incognito Window**: Open incognito window (`Ctrl+Shift+N`)
-- [ ] **Tab Limiting**: Should work same as normal browsing
-- [ ] **Cross-Window Counting**: Should count tabs across normal and incognito
-- [ ] **Statistics**: Should track incognito usage in overall stats
-- [ ] **Settings Sync**: Should use same settings as normal mode
 
 ## 🛠️ **Troubleshooting Common Issues**
 
@@ -202,10 +182,9 @@ For efficient testing, follow this priority order:
 8. **Error handling** - Robustness
 
 ### **Low Priority (Nice to Have)**
-9. **Incognito support** - Extended functionality
-10. **Edge case handling** - Polish
-11. **Performance optimization** - User experience
-12. **Visual polish** - Aesthetics
+9. **Edge case handling** - Polish
+10. **Performance optimization** - User experience
+11. **Visual polish** - Aesthetics
 
 ## 🎉 **Success Indicators**
 
@@ -217,35 +196,6 @@ For efficient testing, follow this priority order:
 ✅ **Intuitive Interface**: Users can easily understand and control settings
 ✅ **Performance**: No noticeable impact on browser speed or responsiveness
 
-### **User Experience Goals Met When:**
-- Users naturally adapt their browsing behavior
-- The maze game feels rewarding rather than punitive
-- Statistics motivate continued mindful browsing
-- Interface feels polished and professional
-- Extension works invisibly until needed
-
-## 📝 **Testing Documentation**
-
-### **Record Your Results**
-Create a testing log with:
-- Date and Chrome version tested
-- Which tests passed/failed
-- Any bugs or issues discovered
-- Performance observations
-- User experience feedback
-
-### **Bug Report Template**
-When reporting issues:
-```
-**Bug Description**: Brief description of the problem
-**Steps to Reproduce**: Exact steps that cause the issue
-**Expected Behavior**: What should happen
-**Actual Behavior**: What actually happens
-**Browser Version**: Chrome version number
-**Extension Version**: 1.0.0
-**Console Errors**: Any JavaScript errors from console
-```
-
 ## 🚀 **Ready for Production**
 
 ### **Pre-Submission Checklist**
@@ -255,24 +205,3 @@ When reporting issues:
 - [ ] Incognito mode functions properly (if enabled)
 - [ ] Performance impact is minimal
 - [ ] User interface is polished and intuitive
-
-### **Post-Testing Steps**
-1. **Document Issues**: Record any bugs found during testing
-2. **User Feedback**: Get feedback from beta testers if possible
-3. **Performance Review**: Ensure no significant browser slowdown
-4. **Final Polish**: Address any UI/UX issues discovered
-5. **Store Preparation**: Review store assets in `store-assets/` folder
-
-## 📚 **Additional Resources**
-
-- **Chrome Extension Documentation**: https://developer.chrome.com/docs/extensions/
-- **Debugging Extensions**: Use `chrome://extensions/` → Details → Inspect views
-- **Performance Monitoring**: Chrome Task Manager (`Shift+Esc`)
-- **Storage Inspection**: Chrome DevTools → Application → Storage
-
----
-
-**Happy Testing! 🧪**
-
-This extension represents a unique approach to tab management that prioritizes mindful browsing over rigid restrictions. Thorough testing ensures users have a delightful experience that genuinely helps them build better digital habits.
-

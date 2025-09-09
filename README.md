@@ -1,51 +1,28 @@
 # Your Sincere Tab Keeper
 
-A Chrome extension that limits open tabs to a user-defined cap (1 ≤ C ≤ 10). When the user exceeds this limit, the new tab is replaced with a playful maze. The user must solve the maze to load the intended URL.
+A Chrome extension that limits open tabs to a user-defined cap. When the user exceeds this limit, the new tab is replaced with a maze. The user must solve the maze to load the intended URL.
 
 ## Goal
 
 Help users reflect on why they hoard tabs and encourage mindful tab usage through playful friction, forming better habits in a fun but firm way.
 
-## Key Features
+## Development Quick Start
 
-- **Tab Limit Enforcement**: User-defined tab limit with maze game when exceeded
-- **Maze Game**: Chrome Dino aesthetic with progressive difficulty
-- **Limit Update Flow**: Solve a maze to change your tab limit
-- **Stats & Insights**: Track your tab usage patterns
-- **No Escape Hatches**: Only uninstalling disables enforcement
+### Load from the source
+Since this extension is built with just vanilla JavaScript, you can simply load it as the unpacked extension with Chrome Developer Mode enabled.
+When loaded this way, debugging logs and several debug utilities will be available in the web page console and the background service worker console.
 
-## Development
-
-This extension is built with:
-- Vite + Vanilla JavaScript
-- Chrome Extension Manifest V3
-- Canvas-based maze game
-
-### Setup
-
+### Build the production version
 ```bash
 npm install
 npm run build
 ```
+By doing so, the production version will be available in the `dist` directory. 
 
-### Build
+The packed zip for submitting to the chrome store is created by running `npm run pack`.
 
-```bash
-npm run build
-```
-
-## Installation
-
-1. Build the extension or download from Chrome Web Store
-2. Load unpacked extension in Chrome Developer Mode
-3. Set your initial tab limit (1-10)
-4. Start your mindful browsing journey!
-
-## Philosophy
-
-> A quirky, loyal assistant helping you live your best tab life — one maze at a time.
+Please refer to [the development doc](docs/development.md) for further details.
 
 ## License
 
-MIT License - see LICENSE file for details.
-
+MIT License - see [LICENSE file](LICENSE.md) for details.
