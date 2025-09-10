@@ -1,6 +1,6 @@
 # Your Sincere Tab Keeper
 
-<img width="612" height="742" alt="CleanShot 2025-09-10 at 09 20 56@2x" src="https://github.com/user-attachments/assets/04d07d8d-8841-41a2-b417-f69aaa2b0179" />
+<img width="640" height="400" alt="ystm-maze-1280-800" src="https://github.com/user-attachments/assets/66880bfa-d7ce-4e61-9aca-20782a7b86b7" />
 
 A Chrome extension that limits open tabs to a user-defined cap. When the user exceeds this limit, the new tab is replaced with a maze. The user must solve the maze to load the intended URL. The goal is to help users reflect on why they hoard tabs and encourage mindful tab usage through playful friction, forming better habits in a fun but firm way.
 
