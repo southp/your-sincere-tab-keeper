@@ -8,15 +8,9 @@
   "permissions": [
     "tabs",
     "storage",
-    "activeTab",
-    "scripting",
-    "notifications",
     "webNavigation"
   ],
   
-  "host_permissions": [
-    "<all_urls>"
-  ],
   
   "background": {
     "service_worker": "src/background.js",
