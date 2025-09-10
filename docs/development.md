@@ -57,7 +57,7 @@ your-sincere-tab-keeper/
 ## Important Path Considerations
 
 **For Development (Unpacked Extension):**
-- HTML files are in `src/` directory relative to manifest
+- All source files are in `src/` directory relative to manifest
 - JavaScript code uses `chrome.runtime.getURL('src/filename.html')`
 - This allows loading unpacked extension from project root
 
