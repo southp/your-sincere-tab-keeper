@@ -3,7 +3,7 @@
  * A challenging maze game with Chrome Dino aesthetic
  */
 
-import { initializeI18n, getDifficultySettings } from './ui-utils.js';
+import { initializeI18n, getDifficultySettings, getI18nMessage } from './ui-utils.js';
 import { Logger } from './debug.js';
 import { isDevelopment } from './env.js';
 import { WALL } from './maze/maze-model.js';
@@ -47,6 +47,9 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // Initialize UI system
   initializeUI();
+
+  // Set up message listener for conscious closure notifications
+  setupMessageListener();
 
   // Initialize session management and check completion status
   const sessionInfo = await initializeSession();
@@ -93,6 +96,88 @@ document.addEventListener('DOMContentLoaded', async () => {
 // setupEventListeners function moved to maze-input.js
 
 // Event listeners are now handled by the game controller
+
+/**
+ * Setup message listener for conscious closure notifications
+ */
+function setupMessageListener() {
+  chrome.runtime.onMessage.addListener((message, _sender, _sendResponse) => {
+    if (message.type === 'CONSCIOUS_CLOSURE_DETECTED') {
+      mazeLogger.log('🎉 Received conscious closure notification:', message.data);
+      handleConsciousClosureDetected(message.data);
+    }
+  });
+}
+
+/**
+ * Handle conscious closure detection
+ */
+function handleConsciousClosureDetected(_data) {
+  try {
+    mazeLogger.log('🚀 Processing conscious closure - showing celebration dialog');
+
+    // Update tab title to indicate unblocking
+    document.title = getI18nMessage('consciousClosureTabTitle');
+
+    // Show celebration dialog using existing maze completion UI
+    showConsciousClosureDialog();
+
+    // Start redirect countdown
+    setTimeout(async () => {
+      await sendConsciousClosureCompletedMessage();
+    }, 5000); // 5 second delay to match existing completion flow
+
+  } catch (error) {
+    mazeLogger.error('Error handling conscious closure detection:', error);
+  }
+}
+
+/**
+ * Show conscious closure celebration dialog using existing UI
+ */
+function showConsciousClosureDialog() {
+  // Reuse the existing overlay structure
+  const mazeOverlay = document.getElementById('mazeOverlay');
+  const overlayContent = document.querySelector('#mazeOverlay .overlay-content');
+
+  if (!mazeOverlay || !overlayContent) {
+    mazeLogger.error('Maze overlay elements not found for conscious closure dialog');
+    return;
+  }
+
+  // Use existing completion dialog structure with conscious closure messages
+  overlayContent.innerHTML = `
+    <div class="success-icon">🎯</div>
+    <h3>${getI18nMessage('consciousClosureTitle')}</h3>
+    <p class="completion-message">${getI18nMessage('consciousClosureMessage')}</p>
+    <div class="loading-spinner"></div>
+  `;
+
+  mazeOverlay.style.display = 'flex';
+  mazeLogger.log('✅ Conscious closure celebration dialog displayed');
+}
+
+/**
+ * Send conscious closure completion message to background
+ */
+async function sendConsciousClosureCompletedMessage() {
+  try {
+    mazeLogger.log('Sending conscious closure completion message...');
+
+    await chrome.runtime.sendMessage({
+      type: 'CONSCIOUS_CLOSURE_COMPLETED',
+      data: {
+        action: getSessionAction(),
+        timestamp: Date.now()
+      }
+    });
+
+    mazeLogger.log('✅ Conscious closure completion message sent successfully');
+
+  } catch (error) {
+    mazeLogger.error('Error sending conscious closure completion message:', error);
+  }
+}
 
 /**
  * Setup maze debugging utilities for development environment

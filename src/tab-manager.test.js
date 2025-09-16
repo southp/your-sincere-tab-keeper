@@ -1449,4 +1449,288 @@ describe('TabManager', () => {
       });
     });
   });
+
+  describe('conscious closure functionality', () => {
+    beforeEach(() => {
+      // Set up basic state for conscious closure tests
+      tabManager.tabLimit = 5;
+      tabManager.mazeTabId = 123;
+      tabManager.blockedUrls.set(123, 'https://example.com');
+
+      // Mock utility functions to properly identify maze tabs
+      isMazeTab.mockImplementation((tab) => {
+        return tab.url && tab.url.includes('maze.html');
+      });
+      isSpecialTab.mockReturnValue(false);
+    });
+
+    describe('checkForConsciousClosure', () => {
+      test('should return conscious closure data when tab count drops below limit', async () => {
+        // Arrange: 3 regular tabs (below limit of 5)
+        mockChrome.tabs.query.mockResolvedValue([
+          { id: 1, url: 'https://tab1.com' },
+          { id: 2, url: 'https://tab2.com' },
+          { id: 3, url: 'https://tab3.com' },
+          { id: 123, url: chrome.runtime.getURL('src/maze.html') }
+        ]);
+
+        // Mock maze session data to return limitExceeded action (default case)
+        getMazeSessionData.mockResolvedValue({
+          action: 'limitExceeded',
+          difficulty: 2
+        });
+
+        // Act
+        const result = await tabManager.checkForConsciousClosure();
+
+        // Assert
+        expect(result).toEqual({
+          mazeTabId: 123,
+          currentCount: 3,
+          limit: 5
+        });
+      });
+
+      test('should return null when tab count is at or above limit', async () => {
+        // Arrange: 5 regular tabs (at limit)
+        mockChrome.tabs.query.mockResolvedValue([
+          { id: 1, url: 'https://tab1.com' },
+          { id: 2, url: 'https://tab2.com' },
+          { id: 3, url: 'https://tab3.com' },
+          { id: 4, url: 'https://tab4.com' },
+          { id: 5, url: 'https://tab5.com' },
+          { id: 123, url: chrome.runtime.getURL('src/maze.html') }
+        ]);
+
+        // Mock maze session data
+        getMazeSessionData.mockResolvedValue({
+          action: 'limitExceeded',
+          difficulty: 2
+        });
+
+        // Act
+        const result = await tabManager.checkForConsciousClosure();
+
+        // Assert
+        expect(result).toBeNull();
+      });
+
+      test('should return null when no maze tab is active', async () => {
+        // Arrange: No maze tab
+        tabManager.mazeTabId = null;
+        mockChrome.tabs.query.mockResolvedValue([
+          { id: 1, url: 'https://tab1.com' },
+          { id: 2, url: 'https://tab2.com' }
+        ]);
+
+        // Act
+        const result = await tabManager.checkForConsciousClosure();
+
+        // Assert
+        expect(result).toBeNull();
+      });
+
+      test('should return null for updateLimit maze sessions', async () => {
+        // Arrange: 3 regular tabs (below limit) but updateLimit session
+        mockChrome.tabs.query.mockResolvedValue([
+          { id: 1, url: 'https://tab1.com' },
+          { id: 2, url: 'https://tab2.com' },
+          { id: 3, url: 'https://tab3.com' },
+          { id: 123, url: chrome.runtime.getURL('src/maze.html') }
+        ]);
+
+        // Mock maze session data to return updateLimit action
+        getMazeSessionData.mockResolvedValue({
+          action: 'updateLimit',
+          difficulty: 3
+        });
+
+        // Act
+        const result = await tabManager.checkForConsciousClosure();
+
+        // Assert
+        expect(result).toBeNull();
+        expect(getMazeSessionData).toHaveBeenCalled();
+      });
+
+      test('should work for regular limitExceeded maze sessions', async () => {
+        // Arrange: 3 regular tabs (below limit) with regular limitExceeded session
+        mockChrome.tabs.query.mockResolvedValue([
+          { id: 1, url: 'https://tab1.com' },
+          { id: 2, url: 'https://tab2.com' },
+          { id: 3, url: 'https://tab3.com' },
+          { id: 123, url: chrome.runtime.getURL('src/maze.html') }
+        ]);
+
+        // Mock maze session data to return limitExceeded action
+        getMazeSessionData.mockResolvedValue({
+          action: 'limitExceeded',
+          difficulty: 2
+        });
+
+        // Act
+        const result = await tabManager.checkForConsciousClosure();
+
+        // Assert
+        expect(result).toEqual({
+          mazeTabId: 123,
+          currentCount: 3,
+          limit: 5
+        });
+        expect(getMazeSessionData).toHaveBeenCalled();
+      });
+
+      test('should return null when tab query fails', async () => {
+        // Arrange
+        tabManager.tabLimit = 0; // Set limit to 0 so that even 0 count doesn't trigger closure
+        mockChrome.tabs.query.mockRejectedValue(new Error('Tab query failed'));
+
+        // Act
+        const result = await tabManager.checkForConsciousClosure();
+
+        // Assert
+        expect(result).toBeNull();
+      });
+    });
+
+    describe('handleConsciousClosure', () => {
+      test('should handle conscious closure without incrementing statistics', async () => {
+        // Arrange
+        const tabId = 123;
+        const data = { action: 'limitExceeded' };
+
+        mockChrome.tabs.get.mockResolvedValue({ id: tabId });
+        mockChrome.tabs.update.mockResolvedValue();
+
+        const initialDailyCount = tabManager.dailyMazesCompleted;
+
+        // Act
+        await tabManager.handleConsciousClosure(tabId, data);
+
+        // Assert - Statistics should NOT be incremented
+        expect(tabManager.dailyMazesCompleted).toBe(initialDailyCount);
+
+        // But completion actions should happen
+        expect(tabManager.mazeTabId).toBeNull();
+        expect(tabManager.unblockedTabs.has(tabId)).toBe(true);
+        expect(tabManager.isMazeCompleted(tabId)).toBe(true);
+      });
+
+      test('should redirect to original URL on conscious closure', async () => {
+        // Arrange
+        const tabId = 123;
+        const originalUrl = 'https://important-work.com';
+
+        tabManager.blockedUrls.set(tabId, originalUrl);
+        mockChrome.tabs.get.mockResolvedValue({ id: tabId });
+        mockChrome.tabs.update.mockResolvedValue();
+
+        // Act
+        await tabManager.handleConsciousClosure(tabId, {});
+
+        // Assert
+        expect(mockChrome.tabs.update).toHaveBeenCalledWith(tabId, { url: originalUrl });
+      });
+
+      test('should redirect to new tab page if no original URL', async () => {
+        // Arrange
+        const tabId = 999; // Different tab ID without stored URL
+        mockChrome.tabs.get.mockResolvedValue({ id: tabId });
+        mockChrome.tabs.update.mockResolvedValue();
+
+        // Act
+        await tabManager.handleConsciousClosure(tabId, {});
+
+        // Assert
+        expect(mockChrome.tabs.update).toHaveBeenCalledWith(tabId, { url: 'chrome://newtab/' });
+      });
+
+      test('should handle non-existent tab gracefully', async () => {
+        // Arrange - Use the same tabId as the maze tab so cleanup happens
+        const tabId = 123; // Same as mazeTabId
+        mockChrome.tabs.get.mockRejectedValue(new Error('Tab not found'));
+
+        // Act & Assert
+        await expect(tabManager.handleConsciousClosure(tabId, {})).resolves.toBeUndefined();
+
+        // Should clean up state since tabId matches mazeTabId
+        expect(tabManager.mazeTabId).toBeNull();
+      });
+
+      test('should mark maze as completed to prevent re-entry', async () => {
+        // Arrange
+        const tabId = 123;
+        mockChrome.tabs.get.mockResolvedValue({ id: tabId });
+        mockChrome.tabs.update.mockResolvedValue();
+
+        // Act
+        await tabManager.handleConsciousClosure(tabId, {});
+
+        // Assert
+        expect(tabManager.isMazeCompleted(tabId)).toBe(true);
+      });
+    });
+
+    describe('edge cases', () => {
+      test('should handle multiple concurrent conscious closure attempts', async () => {
+        // Arrange
+        const tabId = 123;
+        mockChrome.tabs.get.mockResolvedValue({ id: tabId });
+        mockChrome.tabs.update.mockResolvedValue();
+
+        // Act
+        const promises = [
+          tabManager.handleConsciousClosure(tabId, {}),
+          tabManager.handleConsciousClosure(tabId, {}),
+          tabManager.handleConsciousClosure(tabId, {})
+        ];
+
+        // Assert
+        await expect(Promise.all(promises)).resolves.toBeDefined();
+        expect(tabManager.unblockedTabs.has(tabId)).toBe(true);
+      });
+
+      test('should detect conscious closure with single tab below limit', async () => {
+        // Arrange
+        tabManager.tabLimit = 3;
+        mockChrome.tabs.query.mockResolvedValue([
+          { id: 1, url: 'https://tab1.com' },
+          { id: 123, url: chrome.runtime.getURL('src/maze.html') }
+        ]);
+
+        // Mock maze session data
+        getMazeSessionData.mockResolvedValue({
+          action: 'limitExceeded',
+          difficulty: 1
+        });
+
+        // Act
+        const result = await tabManager.checkForConsciousClosure();
+
+        // Assert
+        expect(result).toEqual({
+          mazeTabId: 123,
+          currentCount: 1,
+          limit: 3
+        });
+      });
+
+      test('should work with existing unblocked tabs', async () => {
+        // Arrange
+        const tabId = 123;
+        const existingUnblockedTab = 456;
+
+        tabManager.unblockedTabs.add(existingUnblockedTab);
+        mockChrome.tabs.get.mockResolvedValue({ id: tabId });
+        mockChrome.tabs.update.mockResolvedValue();
+
+        // Act
+        await tabManager.handleConsciousClosure(tabId, {});
+
+        // Assert
+        expect(tabManager.unblockedTabs.has(existingUnblockedTab)).toBe(true);
+        expect(tabManager.unblockedTabs.has(tabId)).toBe(true);
+      });
+    });
+  });
 });
