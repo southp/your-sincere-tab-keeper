@@ -18,8 +18,7 @@ function formatDate(date) {
  */
 function generateRealisticTimestamps(startDate, endDate, totalBlocked) {
   const timestamps = [];
-  const millisecondsPerDay = 24 * 60 * 60 * 1000;
-  
+
   // Define realistic activity patterns (peak hours in day)
   const hourWeights = [
     0.1, 0.05, 0.02, 0.02, 0.02, 0.05, // 0-5: Low activity (night)
@@ -31,24 +30,24 @@ function generateRealisticTimestamps(startDate, endDate, totalBlocked) {
   // Generate approximately totalBlocked/4 timestamps (not every blocked attempt creates a timestamp)
   // Limit to maximum 100 to respect validation constraints
   const numTimestamps = Math.min(100, Math.max(10, Math.floor(totalBlocked / 4)));
-  
+
   for (let i = 0; i < numTimestamps; i++) {
     // Random day within period
     const randomMs = Math.random() * (endDate.getTime() - startDate.getTime());
     const baseTimestamp = startDate.getTime() + randomMs;
-    
+
     // Apply hour weighting for realistic time-of-day distribution
     const randomHour = selectWeightedHour(hourWeights);
     const randomMinute = Math.floor(Math.random() * 60);
     const randomSecond = Math.floor(Math.random() * 60);
-    
+
     // Create timestamp with realistic hour
     const date = new Date(baseTimestamp);
     date.setHours(randomHour, randomMinute, randomSecond, 0);
-    
+
     timestamps.push(date.getTime());
   }
-  
+
   // Sort timestamps chronologically
   return timestamps.sort((a, b) => a - b);
 }
@@ -59,14 +58,14 @@ function generateRealisticTimestamps(startDate, endDate, totalBlocked) {
 function selectWeightedHour(weights) {
   const totalWeight = weights.reduce((sum, weight) => sum + weight, 0);
   let random = Math.random() * totalWeight;
-  
+
   for (let hour = 0; hour < 24; hour++) {
     random -= weights[hour];
     if (random <= 0) {
       return hour;
     }
   }
-  
+
   return 14; // Default to 2 PM if something goes wrong
 }
 
@@ -212,7 +211,7 @@ function generateExtremeData() {
     data.dailyMazes[dateKey] = scenario.mazes;
     data.dailyTabLimits[dateKey] = scenario.tabLimit;
     data.dailyBlockedAttempts[dateKey] = scenario.blocked;
-    
+
     totalMazes += scenario.mazes;
     totalBlocked += scenario.blocked;
   });
