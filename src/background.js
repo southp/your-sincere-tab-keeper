@@ -102,36 +102,46 @@ chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
     tabManager.onTabLoadComplete(tabId);
   }
 
-  // If a tab gets a real URL after being created empty, check limits again
-  if (changeInfo.url && !isSpecialTab(tab) && !isMazeTab(tab)) {
-    generalLogger.log('Tab URL changed:', tabId, 'from empty to', changeInfo.url);
+  // Handle URL changes in tabs
+  if (changeInfo.url && !isSpecialTab(tab)) {
+    // Special case: If this is the maze tab trying to navigate away, restore it instead of showing blob
+    if (tabId === tabManager.mazeTabId && !isMazeTab(tab)) {
+      generalLogger.log('Maze tab attempting navigation to:', changeInfo.url, '- restoring maze');
+      await tabManager.restoreMazeTab(tabId, changeInfo.url);
+      return;
+    }
 
-    // Use TabManager to check how tab should be handled
-    const result = await tabManager.shouldAllowNewTab(tab);
+    // Regular case: Non-maze tab getting a URL
+    if (!isMazeTab(tab)) {
+      generalLogger.log('Tab URL changed:', tabId, 'from empty to', changeInfo.url);
 
-    switch (result.action) {
-      case 'allow':
-        // Tab is allowed, do nothing
-        break;
-      case 'redirect-to-maze':
-        generalLogger.log('Tab limit exceeded during URL change, blocking navigation');
-        await tabManager.handleTabLimitExceeded(tab);
-        break;
-      case 'show-notification':
-        // Show the playful blob page instead of closing the tab
-        try {
-          generalLogger.log('Showing playful blob for tab URL change:', tabId, '- maze already exists');
-          const blobUrl = chrome.runtime.getURL('src/blob.html');
-          await chrome.tabs.update(tabId, { url: blobUrl });
-        } catch (error) {
-          generalLogger.error('Failed to show blob page, closing tab:', tabId, error);
+      // Use TabManager to check how tab should be handled
+      const result = await tabManager.shouldAllowNewTab(tab);
+
+      switch (result.action) {
+        case 'allow':
+          // Tab is allowed, do nothing
+          break;
+        case 'redirect-to-maze':
+          generalLogger.log('Tab limit exceeded during URL change, blocking navigation');
+          await tabManager.handleTabLimitExceeded(tab);
+          break;
+        case 'show-notification':
+          // Show the playful blob page instead of closing the tab
           try {
-            await chrome.tabs.remove(tabId);
-          } catch (closeError) {
-            generalLogger.error('Failed to close tab after blob error:', closeError);
+            generalLogger.log('Showing playful blob for tab URL change:', tabId, '- maze already exists');
+            const blobUrl = chrome.runtime.getURL('src/blob.html');
+            await chrome.tabs.update(tabId, { url: blobUrl });
+          } catch (error) {
+            generalLogger.error('Failed to show blob page, closing tab:', tabId, error);
+            try {
+              await chrome.tabs.remove(tabId);
+            } catch (closeError) {
+              generalLogger.error('Failed to close tab after blob error:', closeError);
+            }
           }
-        }
-        break;
+          break;
+      }
     }
   }
 });

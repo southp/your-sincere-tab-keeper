@@ -105,6 +105,9 @@ function setupMessageListener() {
     if (message.type === 'CONSCIOUS_CLOSURE_DETECTED') {
       mazeLogger.log('🎉 Received conscious closure notification:', message.data);
       handleConsciousClosureDetected(message.data);
+    } else if (message.type === 'NAVIGATION_BLOCKED') {
+      mazeLogger.log('🚫 Received navigation blocked notification:', message.data);
+      handleNavigationBlocked(message.data);
     }
   });
 }
@@ -177,6 +180,96 @@ async function sendConsciousClosureCompletedMessage() {
   } catch (error) {
     mazeLogger.error('Error sending conscious closure completion message:', error);
   }
+}
+
+/**
+ * Handle navigation blocked notification
+ */
+function handleNavigationBlocked(data) {
+  try {
+    mazeLogger.log('🚫 Navigation blocked:', data);
+
+    // Update tab title to show feedback
+    const originalTitle = document.title;
+    document.title = '🚫 Navigation blocked - Complete maze first';
+
+    // Show temporary notification overlay
+    showNavigationBlockedNotification(data.blockedUrl);
+
+    // Restore original title after a few seconds
+    setTimeout(() => {
+      // Only restore if title hasn't been changed by something else
+      if (document.title === '🚫 Navigation blocked - Complete maze first') {
+        document.title = originalTitle;
+      }
+    }, 3000);
+
+  } catch (error) {
+    mazeLogger.error('Error handling navigation blocked:', error);
+  }
+}
+
+/**
+ * Show temporary notification about blocked navigation
+ */
+function showNavigationBlockedNotification(blockedUrl) {
+  // Create notification overlay
+  const notification = document.createElement('div');
+  notification.style.cssText = `
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: #ff6b6b;
+    color: white;
+    padding: 16px 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(255, 107, 107, 0.3);
+    z-index: 10000;
+    font-family: 'Segoe UI', sans-serif;
+    font-size: 14px;
+    max-width: 300px;
+    animation: slideIn 0.3s ease-out;
+  `;
+
+  const shortUrl = blockedUrl ? new URL(blockedUrl).hostname : 'that page';
+  notification.innerHTML = `
+    <div style="display: flex; align-items: center; gap: 8px;">
+      <span style="font-size: 18px;">🚫</span>
+      <div>
+        <div style="font-weight: bold;">Navigation blocked</div>
+        <div style="font-size: 12px; opacity: 0.9;">Complete the maze to visit ${shortUrl}</div>
+      </div>
+    </div>
+  `;
+
+  // Add animation keyframes to head
+  if (!document.getElementById('navigationBlockedStyles')) {
+    const style = document.createElement('style');
+    style.id = 'navigationBlockedStyles';
+    style.textContent = `
+      @keyframes slideIn {
+        from { transform: translateX(100%); opacity: 0; }
+        to { transform: translateX(0); opacity: 1; }
+      }
+      @keyframes slideOut {
+        from { transform: translateX(0); opacity: 1; }
+        to { transform: translateX(100%); opacity: 0; }
+      }
+    `;
+    document.head.appendChild(style);
+  }
+
+  document.body.appendChild(notification);
+
+  // Auto-remove after 4 seconds
+  setTimeout(() => {
+    notification.style.animation = 'slideOut 0.3s ease-in';
+    setTimeout(() => {
+      if (notification.parentNode) {
+        notification.parentNode.removeChild(notification);
+      }
+    }, 300);
+  }, 4000);
 }
 
 /**

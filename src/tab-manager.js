@@ -600,6 +600,56 @@ export class TabManager {
   }
 
   /**
+   * Restore maze tab when user tries to navigate away from it
+   * Stores the attempted URL and redirects back to the maze
+   */
+  async restoreMazeTab(tabId, attemptedUrl) {
+    try {
+      if (tabId !== this.mazeTabId) {
+        this.mazeLogger.error('Attempted to restore maze tab but tab ID mismatch:', tabId, 'vs', this.mazeTabId);
+        return false;
+      }
+
+      // Store the URL the user was trying to navigate to
+      if (attemptedUrl && attemptedUrl !== 'about:blank' && !attemptedUrl.startsWith('chrome-extension://')) {
+        this.blockedUrls.set(tabId, attemptedUrl);
+        this.tabLogger.log('Stored attempted navigation URL for maze tab:', attemptedUrl);
+      }
+
+      // Get the maze URL
+      const mazeUrl = chrome.runtime.getURL('src/maze.html');
+
+      // Temporarily update tab title to show feedback
+      await chrome.tabs.update(tabId, {
+        url: mazeUrl
+      });
+
+      // Send a message to the maze tab to show a brief notification about blocked navigation
+      setTimeout(async () => {
+        try {
+          await chrome.tabs.sendMessage(tabId, {
+            type: 'NAVIGATION_BLOCKED',
+            data: {
+              blockedUrl: attemptedUrl,
+              message: 'Please complete the maze before navigating'
+            }
+          });
+        } catch {
+          // Ignore if maze tab isn't ready to receive messages yet
+          this.mazeLogger.log('Could not send navigation blocked message (maze may still be loading)');
+        }
+      }, 1000);
+
+      this.mazeLogger.log('✅ Restored maze tab after blocked navigation attempt to:', attemptedUrl);
+      return true;
+
+    } catch (error) {
+      this.mazeLogger.error('Error restoring maze tab:', error);
+      return false;
+    }
+  }
+
+  /**
    * Create a maze tab or show blob page if maze already exists
    * Consolidates maze creation logic for both limit exceeded and limit updates
    */
