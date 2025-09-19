@@ -78,30 +78,33 @@
   </div>
 
   <!-- Update Limit Modal (shown when action=updateLimit) -->
-  <div id="updateLimitModal" class="modal" style="display: none;">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h2 data-i18n="updateLimitModalTitle">🎯 Update Your Tab Limit</h2>
-        <p data-i18n="updateLimitModalDescription">Great job solving the maze! Now choose your new tab limit:</p>
-      </div>
-      
-      <div class="limit-selector">
-        <div class="limit-options" id="limitOptions">
-          <!-- Buttons will be generated dynamically -->
-        </div>
-        <div class="limit-description">
-          <p id="modalLimitDescription">Balanced approach - controlled multitasking</p>
-        </div>
-      </div>
+  <div id="updateLimitModal" class="modal" role="dialog" aria-labelledby="modal-title" aria-describedby="modal-description" aria-hidden="true" style="display: none;">
+    <div class="modal-content" role="document">
+      <header class="modal-header">
+        <h2 id="modal-title" data-i18n="updateLimitModalTitle">🎯 Update Your Tab Limit</h2>
+        <p id="modal-description" data-i18n="updateLimitModalDescription">Great job solving the maze! Now choose your new tab limit:</p>
+      </header>
 
-      <div class="modal-actions">
-        <button id="confirmLimitBtn" class="primary-btn" data-i18n="setNewLimit">
-          Set New Limit
-        </button>
-        <button id="cancelLimitBtn" class="secondary-btn" data-i18n="keepCurrentLimit">
-          Keep Current Limit
-        </button>
-      </div>
+      <form class="modal-form" method="dialog">
+        <fieldset class="limit-selector">
+          <legend class="sr-only">Tab limit options</legend>
+          <div class="limit-options" id="limitOptions" role="radiogroup" aria-labelledby="modal-title">
+            <!-- Buttons will be generated dynamically -->
+          </div>
+          <div class="limit-description" aria-live="polite">
+            <p id="modalLimitDescription">Balanced approach - controlled multitasking</p>
+          </div>
+        </fieldset>
+
+        <div class="modal-actions">
+          <button type="submit" id="confirmLimitBtn" class="primary-btn" data-i18n="setNewLimit">
+            Set New Limit
+          </button>
+          <button type="button" id="cancelLimitBtn" class="secondary-btn" data-i18n="keepCurrentLimit">
+            Keep Current Limit
+          </button>
+        </div>
+      </form>
     </div>
   </div>
 

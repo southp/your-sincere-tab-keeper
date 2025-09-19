@@ -28,34 +28,35 @@
         </div>
       </div>
 
-      <div class="stats-preview">
-        <div class="stat-item">
+      <section class="stats-preview" aria-labelledby="stats-heading">
+        <h2 id="stats-heading" class="sr-only">Statistics Summary</h2>
+        <article class="stat-item">
           <span class="stat-number" id="mazesCompleted">0</span>
           <span class="stat-label" data-i18n="mazesSolved">Mazes Solved</span>
-        </div>
-        <div class="stat-item">
+        </article>
+        <article class="stat-item">
           <span class="stat-number" id="blockedAttempts">0</span>
           <span class="stat-label" data-i18n="tabsBlocked">Tabs Blocked</span>
-        </div>
-      </div>
+        </article>
+      </section>
 
-      <div class="actions">
+      <nav class="actions" aria-label="Main actions">
         <button id="updateLimitBtn" class="primary-btn">
-          <span class="btn-icon">🧩</span>
+          <span class="btn-icon" aria-hidden="true">🧩</span>
           <span data-i18n="updateTabLimit">Update Tab Limit</span>
         </button>
         <button id="viewStatsBtn" class="secondary-btn">
-          <span class="btn-icon">📊</span>
+          <span class="btn-icon" aria-hidden="true">📊</span>
           <span data-i18n="viewFullStats">View Full Stats</span>
         </button>
-      </div>
+      </nav>
 
-      <div class="maze-status" id="mazeStatus" style="display: none;">
+      <aside class="maze-status" id="mazeStatus" role="alert" aria-live="assertive" style="display: none;">
         <div class="maze-alert">
-          <span class="alert-icon">🎯</span>
+          <span class="alert-icon" aria-hidden="true">🎯</span>
           <span class="alert-text" data-i18n="youHaveAMazeToSolve">You have a maze to solve!</span>
         </div>
-      </div>
+      </aside>
     </main>
 
     <footer class="popup-footer">

@@ -445,6 +445,10 @@ function showImportConfirmation() {
   return new Promise((resolve) => {
     // Create modal overlay
     const overlay = document.createElement('div');
+    overlay.setAttribute('role', 'dialog');
+    overlay.setAttribute('aria-modal', 'true');
+    overlay.setAttribute('aria-labelledby', 'import-modal-title');
+    overlay.setAttribute('aria-describedby', 'import-modal-description');
     overlay.style.cssText = `
       position: fixed;
       top: 0;
@@ -460,6 +464,7 @@ function showImportConfirmation() {
 
     // Create modal content
     const modal = document.createElement('div');
+    modal.setAttribute('role', 'document');
     modal.style.cssText = `
       background: white;
       padding: 30px;
@@ -472,11 +477,11 @@ function showImportConfirmation() {
 
     // Create content
     modal.innerHTML = `
-      <div style="font-size: 48px; margin-bottom: 20px;">⚠️</div>
-      <h2 style="color: #e74c3c; margin-bottom: 15px;">${getI18nMessage('importDataWarningTitle')}</h2>
-      <p style="margin-bottom: 20px; line-height: 1.5; color: #666;">${getI18nMessage('importDataWarningMessage')}</p>
+      <div aria-hidden="true" style="font-size: 48px; margin-bottom: 20px;">⚠️</div>
+      <h2 id="import-modal-title" style="color: #e74c3c; margin-bottom: 15px;">${getI18nMessage('importDataWarningTitle')}</h2>
+      <p id="import-modal-description" style="margin-bottom: 20px; line-height: 1.5; color: #666;">${getI18nMessage('importDataWarningMessage')}</p>
       <div style="display: flex; gap: 15px; justify-content: center; margin-top: 25px;">
-        <button id="cancelImport" style="
+        <button id="cancelImport" type="button" style="
           padding: 12px 24px;
           background: #95a5a6;
           color: white;
@@ -486,7 +491,7 @@ function showImportConfirmation() {
           font-size: 14px;
           font-weight: 500;
         ">${getI18nMessage('cancelAction')}</button>
-        <button id="confirmImport" style="
+        <button id="confirmImport" type="button" style="
           padding: 12px 24px;
           background: #e74c3c;
           color: white;
@@ -544,6 +549,10 @@ function showTabClosureConfirmation(currentCount, newLimit, tabsToClose) {
   return new Promise((resolve) => {
     // Create modal overlay
     const overlay = document.createElement('div');
+    overlay.setAttribute('role', 'dialog');
+    overlay.setAttribute('aria-modal', 'true');
+    overlay.setAttribute('aria-labelledby', 'tab-closure-title');
+    overlay.setAttribute('aria-describedby', 'tab-closure-description');
     overlay.style.cssText = `
       position: fixed;
       top: 0;
@@ -560,6 +569,7 @@ function showTabClosureConfirmation(currentCount, newLimit, tabsToClose) {
 
     // Create modal content
     const modal = document.createElement('div');
+    modal.setAttribute('role', 'document');
     modal.style.cssText = `
       background: white;
       border-radius: 20px;
@@ -572,15 +582,15 @@ function showTabClosureConfirmation(currentCount, newLimit, tabsToClose) {
     `;
 
     modal.innerHTML = `
-      <div style="font-size: 3em; margin-bottom: 16px;">⚠️</div>
-      <h2 style="color: #333; margin-bottom: 16px; font-size: 1.5em;">${getI18nMessage('tooManyTabsOpen')}</h2>
-      <p style="color: #666; line-height: 1.6; margin-bottom: 24px; font-size: 1.1em;">
+      <div aria-hidden="true" style="font-size: 3em; margin-bottom: 16px;">⚠️</div>
+      <h2 id="tab-closure-title" style="color: #333; margin-bottom: 16px; font-size: 1.5em;">${getI18nMessage('tooManyTabsOpen')}</h2>
+      <p id="tab-closure-description" style="color: #666; line-height: 1.6; margin-bottom: 24px; font-size: 1.1em;">
         ${getI18nMessage('tabCountVsLimit', [`<strong>${currentCount} ${getI18nMessage('tabs')}</strong>`, `<strong>${newLimit} ${getI18nMessage('tabs')}</strong>`])}
         <br><br>
         ${getI18nMessage('keepRecentTabsClose', [`<strong>${newLimit} ${getI18nMessage('mostRecentTabs')}</strong>`, `<strong>${tabsToClose} ${getI18nMessage('tabs')}</strong>`])}
       </p>
       <div style="display: flex; gap: 12px; justify-content: center;">
-        <button id="confirmClose" style="
+        <button id="confirmClose" type="button" style="
           background: linear-gradient(45deg, #4ecdc4, #44a08d);
           color: white;
           border: none;
@@ -591,7 +601,7 @@ function showTabClosureConfirmation(currentCount, newLimit, tabsToClose) {
           cursor: pointer;
           transition: all 0.2s ease;
         ">${getI18nMessage('continueCloseTabs')}</button>
-        <button id="cancelClose" style="
+        <button id="cancelClose" type="button" style="
           background: #f8f9fa;
           color: #666;
           border: 2px solid #e9ecef;

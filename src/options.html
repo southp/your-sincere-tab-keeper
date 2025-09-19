@@ -62,17 +62,17 @@
         
         <div class="setting-item">
           <div class="setting-info">
-            <h3 data-i18n="tabLimitHeading">Tab Limit</h3>
+            <h3 id="tab-limit-heading" data-i18n="tabLimitHeading">Tab Limit</h3>
             <p data-i18n="tabLimitDescription">Current limit for open tabs</p>
           </div>
           <div class="setting-value">
-            <span class="current-limit" id="currentTabLimit">5</span>
+            <span class="current-limit" id="currentTabLimit" aria-labelledby="tab-limit-heading">5</span>
           </div>
         </div>
 
         <div class="setting-actions">
-          <button id="changeLimitBtn" class="secondary-btn">
-            <span class="btn-icon">🧩</span>
+          <button id="changeLimitBtn" class="secondary-btn" aria-describedby="tab-limit-heading">
+            <span class="btn-icon" aria-hidden="true">🧩</span>
             <span data-i18n="changeTabLimit">Change Tab Limit</span>
           </button>
         </div>
@@ -85,35 +85,35 @@
         <h2 data-i18n="yourTabJourney">📊 Your Tab Journey</h2>
         
         <div class="stats-grid">
-          <div class="stat-card">
+          <article class="stat-card">
             <div class="stat-number" id="totalMazesCompleted">0</div>
-            <div class="stat-label" data-i18n="totalMazesSolved">Total Mazes Solved</div>
-            <div class="stat-description" data-i18n="totalMazesDescription">Every maze brings you closer to mindful browsing</div>
-          </div>
+            <h3 class="stat-label" data-i18n="totalMazesSolved">Total Mazes Solved</h3>
+            <p class="stat-description" data-i18n="totalMazesDescription">Every maze brings you closer to mindful browsing</p>
+          </article>
 
-          <div class="stat-card">
+          <article class="stat-card">
             <div class="stat-number" id="totalBlockedAttempts">0</div>
-            <div class="stat-label" data-i18n="tabsBlocked">Tabs Blocked</div>
-            <div class="stat-description" data-i18n="tabsBlockedDescription">Moments of reflection before opening new tabs</div>
-          </div>
+            <h3 class="stat-label" data-i18n="tabsBlocked">Tabs Blocked</h3>
+            <p class="stat-description" data-i18n="tabsBlockedDescription">Moments of reflection before opening new tabs</p>
+          </article>
 
-          <div class="stat-card">
+          <article class="stat-card">
             <div class="stat-number" id="daysActive">0</div>
-            <div class="stat-label" data-i18n="daysActive">Days Active</div>
-            <div class="stat-description" data-i18n="daysActiveDescription">Building better habits one day at a time</div>
-          </div>
+            <h3 class="stat-label" data-i18n="daysActive">Days Active</h3>
+            <p class="stat-description" data-i18n="daysActiveDescription">Building better habits one day at a time</p>
+          </article>
 
-          <div class="stat-card">
+          <article class="stat-card">
             <div class="stat-number" id="currentStreak">0</div>
-            <div class="stat-label" data-i18n="todaysMazes">Today's Mazes</div>
-            <div class="stat-description" data-i18n="todaysMazesDescription">Mazes solved today</div>
-          </div>
+            <h3 class="stat-label" data-i18n="todaysMazes">Today's Mazes</h3>
+            <p class="stat-description" data-i18n="todaysMazesDescription">Mazes solved today</p>
+          </article>
 
-          <div class="stat-card">
+          <article class="stat-card">
             <div class="stat-number" id="peakActivityTime">--</div>
-            <div class="stat-label" data-i18n="peakActivityLabel">Peak Activity</div>
-            <div class="stat-description" data-i18n="peakActivityDescription">When you're most likely to hit your limit</div>
-          </div>
+            <h3 class="stat-label" data-i18n="peakActivityLabel">Peak Activity</h3>
+            <p class="stat-description" data-i18n="peakActivityDescription">When you're most likely to hit your limit</p>
+          </article>
         </div>
 
         <!-- Trend Graph -->

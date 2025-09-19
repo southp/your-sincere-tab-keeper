@@ -242,8 +242,8 @@
     <div class="particle"></div>
     <div class="particle"></div>
     
-    <div class="blob-container">
-        <div class="blob">
+    <main class="blob-container">
+        <div class="blob" role="img" aria-label="Animated blob character">
             <div class="blob-face">
                 <div class="eyes">
                     <div class="eye"></div>
@@ -252,24 +252,26 @@
                 <div class="mouth"></div>
             </div>
         </div>
-        
-        <div class="message">
-            <h1 data-i18n="whoaThere">Whoa there! <span class="emoji">🧩</span></h1>
+
+        <article class="message">
+            <header>
+                <h1 data-i18n="whoaThere">Whoa there! <span class="emoji" aria-hidden="true">🧩</span></h1>
+            </header>
             <p>
                 <span data-i18n="alreadyHaveAMaze">You already have a maze to solve!</span>
                 <br>
                 <strong data-i18n="focusOnCurrentMaze">Focus on that one first.</strong>
             </p>
-            
-            <div class="maze-hint">
+
+            <button class="maze-hint" aria-describedby="closeTimerMessage">
                 <span data-i18n="completeCurrentMazeFirst">Complete your current maze first!</span>
-            </div>
-            
-            <div class="close-timer">
+            </button>
+
+            <aside class="close-timer" aria-live="polite" aria-atomic="true">
                 <span id="closeTimerMessage">This tab will close in 6 seconds...</span>
-            </div>
-        </div>
-    </div>
+            </aside>
+        </article>
+    </main>
 
     <script type="module" src="blob.js"></script>
 </body>
