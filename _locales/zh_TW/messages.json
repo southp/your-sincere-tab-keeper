@@ -664,5 +664,14 @@
   },
   "completeCurrentMazeFirst": {
     "message": "請先完成你目前的迷宮！"
+  },
+  "consciousClosureTabTitle": {
+    "message": "🎉 分頁管理員 - 正在解鎖..."
+  },
+  "consciousClosureTitle": {
+    "message": "絕佳選擇！"
+  },
+  "consciousClosureMessage": {
+    "message": "你已關閉分頁至低於你的限制，這比解迷宮更好！"
   }
 }

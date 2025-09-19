@@ -704,5 +704,98 @@ export class TabManager {
     }
   }
 
+  /**
+   * Check for conscious closure when tabs are removed
+   * Returns null if no conscious closure, or data object if conscious closure detected
+   */
+  async checkForConsciousClosure() {
+    try {
+      // Only check if there's an active maze tab
+      if (!this.mazeTabId) {
+        return null;
+      }
+
+      // Check if this is an updateLimit maze - these should not be unblocked via conscious closure
+      const sessionData = await getMazeSessionData();
+
+      if (sessionData && sessionData.action === 'updateLimit') {
+        this.mazeLogger.log('🚫 Skipping conscious closure check - updateLimit maze must be solved');
+        return null;
+      }
+
+      const currentCount = await this.getCurrentTabCount();
+
+      if (currentCount < this.tabLimit) {
+        this.mazeLogger.log(`🎉 Conscious closure detected - tab count (${currentCount}) below limit (${this.tabLimit})`);
+
+        return {
+          mazeTabId: this.mazeTabId,
+          currentCount,
+          limit: this.tabLimit
+        };
+      }
+
+      return null;
+    } catch (error) {
+      this.mazeLogger.error('Error checking for conscious closure:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Handle conscious closure completion (tabs closed to get below limit)
+   * Similar to handleMazeCompleted but WITHOUT incrementing statistics
+   */
+  async handleConsciousClosure(tabId, data) {
+    this.mazeLogger.log('🎯 Conscious closure for tab:', tabId, 'data:', data);
+    try {
+      // Verify the tab still exists
+      let tab;
+      try {
+        tab = await chrome.tabs.get(tabId);
+        if (!tab) {
+          this.tabLogger.error('Tab', tabId, 'no longer exists');
+          return;
+        }
+      } catch (tabError) {
+        this.tabLogger.error('Failed to get tab', tabId, '- may have been closed:', tabError);
+        this.cleanupTabReferences(tabId);
+        return;
+      }
+
+      // Reset maze tab tracking
+      if (this.mazeTabId === tabId) {
+        this.mazeTabId = null;
+        this.mazeLogger.log('Reset maze tab tracking for conscious closure:', tabId);
+      }
+
+      // Mark this tab as permanently unblocked
+      this.unblockedTabs.add(tabId);
+      this.tabLogger.log('Marked conscious closure tab as permanently unblocked:', tabId);
+
+      // Mark maze as completed to prevent re-entry
+      this.markMazeAsCompleted(tabId);
+
+      // IMPORTANT: Do NOT increment statistics for conscious closure
+      // This is the key difference from handleMazeCompleted
+
+      // Get the original URL for redirect
+      const originalUrl = this.blockedUrls.get(tabId);
+      if (originalUrl) {
+        this.tabLogger.log('Redirecting conscious closure tab to:', originalUrl);
+        await chrome.tabs.update(tabId, { url: originalUrl });
+      } else {
+        this.tabLogger.warn('No original URL found for conscious closure tab');
+        await chrome.tabs.update(tabId, { url: 'chrome://newtab/' });
+      }
+
+      this.mazeLogger.log('✅ Conscious closure handled successfully (no stats increment)');
+
+    } catch (error) {
+      this.mazeLogger.error('Error in handleConsciousClosure:', error);
+      this.cleanupTabReferences(tabId);
+    }
+  }
+
 
 }

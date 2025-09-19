@@ -664,5 +664,14 @@
   },
   "completeCurrentMazeFirst": {
     "message": "Complete your current maze first!"
+  },
+  "consciousClosureTabTitle": {
+    "message": "🎉 Tab Keeper - Unblocking..."
+  },
+  "consciousClosureTitle": {
+    "message": "Excellent Choice!"
+  },
+  "consciousClosureMessage": {
+    "message": "You closed tabs to get below your limit. This conscious behavior is better than solving puzzles!"
   }
 }

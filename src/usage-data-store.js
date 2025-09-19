@@ -10,7 +10,7 @@ import { TAB_LIMITS } from './constants.js';
 import { Logger } from './debug.js';
 
 class UsageDataStore {
-  
+
   /**
    * Tab Keeper data schema definition
    * Used for both export filtering and import validation
@@ -485,9 +485,9 @@ class UsageDataStore {
     try {
       // Only export Tab Keeper schema properties (exclude debug properties)
       const tabKeeperKeys = UsageDataStore.getSchemaKeys();
-      
+
       const result = await this.storage.get(tabKeeperKeys);
-      
+
       // Filter out undefined values to keep export clean
       const cleanData = {};
       for (const [key, value] of Object.entries(result)) {
@@ -495,7 +495,7 @@ class UsageDataStore {
           cleanData[key] = value;
         }
       }
-      
+
       return {
         exportDate: new Date().toISOString(),
         data: cleanData

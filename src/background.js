@@ -157,6 +157,23 @@ chrome.tabs.onRemoved.addListener(async (tabId) => {
 
   tabManager.onTabRemoved(tabId);
 
+  // Check if tab closure brings count below limit (conscious closure)
+  const consciousClosureData = await tabManager.checkForConsciousClosure();
+  if (consciousClosureData) {
+    try {
+      await chrome.tabs.sendMessage(consciousClosureData.mazeTabId, {
+        type: 'CONSCIOUS_CLOSURE_DETECTED',
+        data: {
+          currentCount: consciousClosureData.currentCount,
+          limit: consciousClosureData.limit
+        }
+      });
+      generalLogger.log(`🎉 Notified maze tab ${consciousClosureData.mazeTabId} of conscious closure`);
+    } catch (error) {
+      generalLogger.error('Error notifying maze tab of conscious closure:', error);
+    }
+  }
+
   // Notify popup about tab count and maze status changes
   await notifyPopupUpdate();
 });
@@ -222,6 +239,14 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       tabManager.handleMazeCompleted(sender.tab.id, message.data)
         .then(() => notifyPopupUpdate())
         .catch(error => generalLogger.error('Error handling maze completion:', error));
+      break;
+    case 'CONSCIOUS_CLOSURE_COMPLETED':
+      tabManager.handleConsciousClosure(sender.tab.id, message.data)
+        .then(async () => {
+          await clearMazeSession();
+          return notifyPopupUpdate();
+        })
+        .catch(error => generalLogger.error('Error handling conscious closure completion:', error));
       break;
     case 'GET_BLOCKED_URL':
       // This functionality is now handled internally by TabManager

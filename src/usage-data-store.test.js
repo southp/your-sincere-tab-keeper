@@ -738,7 +738,7 @@ describe('UsageDataStore', () => {
 
         // Verify only Tab Keeper schema properties are requested
         expect(mockStorage.get).toHaveBeenCalledWith(UsageDataStore.getSchemaKeys());
-        
+
         // Verify export contains only the returned schema properties
         expect(result.data).toEqual({
           mazesCompleted: 100,
@@ -751,21 +751,21 @@ describe('UsageDataStore', () => {
         // Verify that the schema used for export keys matches the validation schema
         const schemaKeys = UsageDataStore.getSchemaKeys();
         const validationSchema = UsageDataStore.TAB_KEEPER_SCHEMA;
-        
+
         // All export keys should exist in validation schema
         schemaKeys.forEach(key => {
           expect(validationSchema[key]).toBeDefined();
         });
-        
+
         // All validation schema keys should be in export keys
         Object.keys(validationSchema).forEach(key => {
           expect(schemaKeys).toContain(key);
         });
-        
+
         // Schema should contain expected Tab Keeper properties
         expect(schemaKeys).toEqual(expect.arrayContaining([
           'mazesCompleted', 'blockedAttempts', 'tabLimit', 'installDate',
-          'dailyMazes', 'dailyTabLimits', 'dailyBlockedAttempts', 
+          'dailyMazes', 'dailyTabLimits', 'dailyBlockedAttempts',
           'limitHitTimestamps', 'importDate', 'originalExportDate'
         ]));
       });
