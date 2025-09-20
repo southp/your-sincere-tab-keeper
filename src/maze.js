@@ -7,6 +7,7 @@ import { initializeI18n, getDifficultySettings, getI18nMessage } from './ui-util
 import { Logger } from './debug.js';
 import { isDevelopment } from './env.js';
 import { WALL } from './maze/maze-model.js';
+import { showNotification } from './notification-utils.js';
 import { setDebugHighlightedPath, clearDebugHighlightedPath } from './maze/maze-renderer.js';
 import {
   getSessionAction,
@@ -193,8 +194,10 @@ function handleNavigationBlocked(data) {
     const originalTitle = document.title;
     document.title = '🚫 Navigation blocked - Complete maze first';
 
-    // Show temporary notification overlay
-    showNavigationBlockedNotification(data.blockedUrl);
+    // Show notification using shared notification system
+    const shortUrl = data.blockedUrl ? new URL(data.blockedUrl).hostname : 'that page';
+    const message = getI18nMessage('completeTheMazeToVisit', [shortUrl]);
+    showNotification(message, 'warning');
 
     // Restore original title after a few seconds
     setTimeout(() => {
@@ -209,68 +212,6 @@ function handleNavigationBlocked(data) {
   }
 }
 
-/**
- * Show temporary notification about blocked navigation
- */
-function showNavigationBlockedNotification(blockedUrl) {
-  // Create notification overlay
-  const notification = document.createElement('div');
-  notification.style.cssText = `
-    position: fixed;
-    top: 20px;
-    right: 20px;
-    background: #ff6b6b;
-    color: white;
-    padding: 16px 20px;
-    border-radius: 8px;
-    box-shadow: 0 4px 12px rgba(255, 107, 107, 0.3);
-    z-index: 10000;
-    font-family: 'Segoe UI', sans-serif;
-    font-size: 14px;
-    max-width: 300px;
-    animation: slideIn 0.3s ease-out;
-  `;
-
-  const shortUrl = blockedUrl ? new URL(blockedUrl).hostname : 'that page';
-  notification.innerHTML = `
-    <div style="display: flex; align-items: center; gap: 8px;">
-      <span style="font-size: 18px;">🚫</span>
-      <div>
-        <div style="font-weight: bold;">Navigation blocked</div>
-        <div style="font-size: 12px; opacity: 0.9;">Complete the maze to visit ${shortUrl}</div>
-      </div>
-    </div>
-  `;
-
-  // Add animation keyframes to head
-  if (!document.getElementById('navigationBlockedStyles')) {
-    const style = document.createElement('style');
-    style.id = 'navigationBlockedStyles';
-    style.textContent = `
-      @keyframes slideIn {
-        from { transform: translateX(100%); opacity: 0; }
-        to { transform: translateX(0); opacity: 1; }
-      }
-      @keyframes slideOut {
-        from { transform: translateX(0); opacity: 1; }
-        to { transform: translateX(100%); opacity: 0; }
-      }
-    `;
-    document.head.appendChild(style);
-  }
-
-  document.body.appendChild(notification);
-
-  // Auto-remove after 4 seconds
-  setTimeout(() => {
-    notification.style.animation = 'slideOut 0.3s ease-in';
-    setTimeout(() => {
-      if (notification.parentNode) {
-        notification.parentNode.removeChild(notification);
-      }
-    }, 300);
-  }, 4000);
-}
 
 /**
  * Setup maze debugging utilities for development environment
