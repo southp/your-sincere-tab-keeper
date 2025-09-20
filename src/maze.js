@@ -189,29 +189,11 @@ async function sendConsciousClosureCompletedMessage() {
 function handleNavigationBlocked(data) {
   try {
     mazeLogger.log('🚫 Navigation blocked:', data);
-
-    // Update tab title to show feedback
-    const originalTitle = document.title;
-    document.title = '🚫 Navigation blocked - Complete maze first';
-
-    // Show notification using shared notification system
-    const shortUrl = data.blockedUrl ? new URL(data.blockedUrl).hostname : 'that page';
-    const message = getI18nMessage('completeTheMazeToVisit', [shortUrl]);
-    showNotification(message, 'warning');
-
-    // Restore original title after a few seconds
-    setTimeout(() => {
-      // Only restore if title hasn't been changed by something else
-      if (document.title === '🚫 Navigation blocked - Complete maze first') {
-        document.title = originalTitle;
-      }
-    }, 3000);
-
+    showNotification(getI18nMessage('completeTheMazeToVisit'), 'warning');
   } catch (error) {
     mazeLogger.error('Error handling navigation blocked:', error);
   }
 }
-
 
 /**
  * Setup maze debugging utilities for development environment
