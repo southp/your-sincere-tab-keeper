@@ -28,6 +28,7 @@ export async function setupDebugUtilities(tabManager) {
 
   // Show initial help message
   setTimeout(() => {
+    // eslint-disable-next-line no-console
     console.log('🔧 Tab Keeper debugging utilities loaded! Type debugTabKeeper.help() for usage.');
   }, 1000);
 
@@ -150,9 +151,11 @@ function createDebugInterface(tabManager) {
 
     getAvailableLocales: () => {
       const locales = ['en', 'zh_TW'];
+      // eslint-disable-next-line no-console
       console.log('🌍 Available locales:');
       locales.forEach(locale => {
         const name = locale === 'en' ? 'English' : 'Traditional Chinese (zh_TW)';
+        // eslint-disable-next-line no-console
         console.log(`  ${locale} - ${name}`);
       });
       return locales;
@@ -178,6 +181,7 @@ function createDebugInterface(tabManager) {
 
     // Help function
     help: () => {
+      // eslint-disable-next-line no-console
       console.log(`
 🔧 Tab Keeper Debug Utilities
 ==============================
