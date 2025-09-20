@@ -673,5 +673,11 @@
   },
   "consciousClosureMessage": {
     "message": "You closed tabs to get below your limit. This conscious behavior is better than solving puzzles!"
+  },
+  "navigationBlocked": {
+    "message": "Navigation blocked."
+  },
+  "completeTheMazeToVisit": {
+    "message": "You need to complete the maze first!"
   }
 }

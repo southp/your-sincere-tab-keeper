@@ -7,6 +7,7 @@ import { initializeI18n, getDifficultySettings, getI18nMessage } from './ui-util
 import { Logger } from './debug.js';
 import { isDevelopment } from './env.js';
 import { WALL } from './maze/maze-model.js';
+import { showNotification } from './notification-utils.js';
 import { setDebugHighlightedPath, clearDebugHighlightedPath } from './maze/maze-renderer.js';
 import {
   getSessionAction,
@@ -105,6 +106,9 @@ function setupMessageListener() {
     if (message.type === 'CONSCIOUS_CLOSURE_DETECTED') {
       mazeLogger.log('🎉 Received conscious closure notification:', message.data);
       handleConsciousClosureDetected(message.data);
+    } else if (message.type === 'NAVIGATION_BLOCKED') {
+      mazeLogger.log('🚫 Received navigation blocked notification:', message.data);
+      handleNavigationBlocked(message.data);
     }
   });
 }
@@ -176,6 +180,18 @@ async function sendConsciousClosureCompletedMessage() {
 
   } catch (error) {
     mazeLogger.error('Error sending conscious closure completion message:', error);
+  }
+}
+
+/**
+ * Handle navigation blocked notification
+ */
+function handleNavigationBlocked(data) {
+  try {
+    mazeLogger.log('🚫 Navigation blocked:', data);
+    showNotification(getI18nMessage('completeTheMazeToVisit'), 'warning');
+  } catch (error) {
+    mazeLogger.error('Error handling navigation blocked:', error);
   }
 }
 

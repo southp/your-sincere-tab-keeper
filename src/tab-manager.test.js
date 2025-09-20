@@ -24,7 +24,8 @@ const mockChrome = {
     get: jest.fn(),
     update: jest.fn(),
     remove: jest.fn(),
-    create: jest.fn()
+    create: jest.fn(),
+    sendMessage: jest.fn()
   },
   windows: {
     get: jest.fn(),
@@ -915,6 +916,85 @@ describe('TabManager', () => {
     });
   });
 
+  describe('restoreMazeTab', () => {
+    beforeEach(() => {
+      tabManager.mazeTabId = 123;
+    });
+
+    test('should restore maze tab and store attempted URL', async () => {
+      const tabId = 123;
+      const attemptedUrl = 'https://example.com';
+
+      mockChrome.tabs.get.mockResolvedValue({ id: tabId });
+      mockChrome.tabs.update.mockResolvedValue();
+      mockChrome.tabs.sendMessage.mockResolvedValue();
+
+      const result = await tabManager.restoreMazeTab(tabId, attemptedUrl);
+
+      expect(result).toBe(true);
+      expect(tabManager.blockedUrls.get(tabId)).toBe(attemptedUrl);
+      expect(mockChrome.tabs.update).toHaveBeenCalledWith(tabId, {
+        url: chrome.runtime.getURL('src/maze.html')
+      });
+    });
+
+    test('should handle tab ID mismatch', async () => {
+      const wrongTabId = 456;
+      const attemptedUrl = 'https://example.com';
+
+      const result = await tabManager.restoreMazeTab(wrongTabId, attemptedUrl);
+
+      expect(result).toBe(false);
+      expect(mockChrome.tabs.update).not.toHaveBeenCalled();
+    });
+
+    test('should skip storing invalid URLs', async () => {
+      const tabId = 123;
+
+      mockChrome.tabs.update.mockResolvedValue();
+      mockChrome.tabs.sendMessage.mockResolvedValue();
+
+      // Test with about:blank
+      await tabManager.restoreMazeTab(tabId, 'about:blank');
+      expect(tabManager.blockedUrls.has(tabId)).toBe(false);
+
+      // Test with chrome-extension URL
+      await tabManager.restoreMazeTab(tabId, 'chrome-extension://abcd/test.html');
+      expect(tabManager.blockedUrls.has(tabId)).toBe(false);
+    });
+
+    test('should handle update errors gracefully', async () => {
+      const tabId = 123;
+      const attemptedUrl = 'https://example.com';
+
+      mockChrome.tabs.update.mockRejectedValue(new Error('Update failed'));
+
+      const result = await tabManager.restoreMazeTab(tabId, attemptedUrl);
+
+      expect(result).toBe(false);
+    });
+
+    test('should send navigation blocked message after delay', async () => {
+      const tabId = 123;
+      const attemptedUrl = 'https://example.com/page';
+
+      mockChrome.tabs.update.mockResolvedValue();
+      mockChrome.tabs.sendMessage.mockResolvedValue();
+
+      await tabManager.restoreMazeTab(tabId, attemptedUrl);
+
+      // Wait for the delayed message
+      await new Promise(resolve => setTimeout(resolve, 1100));
+
+      expect(mockChrome.tabs.sendMessage).toHaveBeenCalledWith(tabId, {
+        type: 'NAVIGATION_BLOCKED',
+        data: {
+          blockedUrl: attemptedUrl,
+          message: 'Please complete the maze before navigating'
+        }
+      });
+    });
+  });
 
   describe('onTabRemoved', () => {
     test('cleans up tab references', () => {

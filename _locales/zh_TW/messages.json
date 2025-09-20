@@ -673,5 +673,11 @@
   },
   "consciousClosureMessage": {
     "message": "你已關閉分頁至低於你的限制，這比解迷宮更好！"
+  },
+  "navigationBlocked": {
+    "message": "巡覽已被阻止"
+  },
+  "completeTheMazeToVisit": {
+    "message": "請先完成迷宮再走喔"
   }
 }
