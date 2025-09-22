@@ -1,6 +1,6 @@
 {
   "name": "your-sincere-tab-keeper",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "A Chrome extension that limits open tabs with playful maze games",
   "main": "src/background.js",
   "type": "module",
