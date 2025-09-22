@@ -837,13 +837,15 @@ describe('TabManager', () => {
       const dailyData = {
         dailyMazes: { '2025-08-25': 2 },
         dailyTabLimits: {},
-        dailyBlockedAttempts: {}
+        dailyBlockedAttempts: {},
+        dailyActivity: {}
       };
 
       mockChrome.storage.local.get
         .mockResolvedValueOnce(basicStats) // getStatistics call
         .mockResolvedValueOnce(dailyData)  // getDailyTrackingData call
-        .mockResolvedValueOnce({ dailyMazes: { '2025-08-25': 2 } }); // getTodayMazeCount call
+        .mockResolvedValueOnce({ dailyMazes: { '2025-08-25': 2 } }) // getTodayMazeCount call
+        .mockResolvedValueOnce({ dailyActivity: {} }); // getDaysActive call
 
       tabManager.tabLimit = 4;
 
@@ -856,9 +858,11 @@ describe('TabManager', () => {
         dailyMazesCompleted: 2,
         installDate: 1234567890,
         peakActivityHour: null, // No limit hit timestamps, so null
+        daysActive: 0,
         dailyMazes: { '2025-08-25': 2 },
         dailyTabLimits: {},
-        dailyBlockedAttempts: {}
+        dailyBlockedAttempts: {},
+        dailyActivity: {}
       });
 
       // Restore original Date

@@ -28,6 +28,7 @@ class UsageDataStore {
     dailyMazes: { type: 'object', optional: true, dateKeyed: true },
     dailyTabLimits: { type: 'object', optional: true, dateKeyed: true },
     dailyBlockedAttempts: { type: 'object', optional: true, dateKeyed: true },
+    dailyActivity: { type: 'object', optional: true, dateKeyed: true },
 
     // Analytics data (optional)
     limitHitTimestamps: { type: 'array', itemType: 'number', maxLength: 100, optional: true },
@@ -210,6 +211,7 @@ class UsageDataStore {
         'dailyMazes',
         'dailyTabLimits',
         'dailyBlockedAttempts',
+        'dailyActivity',
 
         // Activity tracking
         'limitHitTimestamps'
@@ -304,25 +306,62 @@ class UsageDataStore {
   }
 
   /**
+   * Record user activity for today (marks the day as active)
+   */
+  async recordTodayActivity() {
+    try {
+      const todayKey = this.getTodayKey();
+      const result = await this.storage.get(['dailyActivity']);
+      const dailyActivity = result.dailyActivity || {};
+
+      // Mark today as active (store timestamp for potential future use)
+      if (!dailyActivity[todayKey]) {
+        dailyActivity[todayKey] = Date.now();
+        await this.storage.set({ dailyActivity });
+        this.logger.log(`Recorded activity for ${todayKey}`);
+      }
+    } catch (error) {
+      this.logger.error('Failed to record today\'s activity:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get the total number of active days (days with recorded activity)
+   */
+  async getDaysActive() {
+    try {
+      const result = await this.storage.get(['dailyActivity']);
+      const dailyActivity = result.dailyActivity || {};
+      return Object.keys(dailyActivity).length;
+    } catch (error) {
+      this.logger.error('Failed to get days active count:', error);
+      return 0;
+    }
+  }
+
+  /**
    * Get all daily tracking data for trend analysis
    */
   async getDailyTrackingData() {
     try {
       const result = await this.storage.get([
-        'dailyMazes', 'dailyTabLimits', 'dailyBlockedAttempts'
+        'dailyMazes', 'dailyTabLimits', 'dailyBlockedAttempts', 'dailyActivity'
       ]);
 
       return {
         dailyMazes: result.dailyMazes || {},
         dailyTabLimits: result.dailyTabLimits || {},
-        dailyBlockedAttempts: result.dailyBlockedAttempts || {}
+        dailyBlockedAttempts: result.dailyBlockedAttempts || {},
+        dailyActivity: result.dailyActivity || {}
       };
     } catch (error) {
       this.logger.error('Failed to get daily tracking data:', error);
       return {
         dailyMazes: {},
         dailyTabLimits: {},
-        dailyBlockedAttempts: {}
+        dailyBlockedAttempts: {},
+        dailyActivity: {}
       };
     }
   }
@@ -332,17 +371,19 @@ class UsageDataStore {
    */
   async getExtendedStatistics() {
     try {
-      const [basicStats, dailyData, todayMazeCount, peakActivity] = await Promise.all([
+      const [basicStats, dailyData, todayMazeCount, peakActivity, daysActive] = await Promise.all([
         this.getStatistics(),
         this.getDailyTrackingData(),
         this.getTodayMazeCount(),
-        this.calculatePeakActivityHour()
+        this.calculatePeakActivityHour(),
+        this.getDaysActive()
       ]);
 
       return {
         ...basicStats,
         dailyMazesCompleted: todayMazeCount,
         peakActivityHour: peakActivity,
+        daysActive,
         ...dailyData
       };
     } catch (error) {
