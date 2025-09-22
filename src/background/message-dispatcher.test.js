@@ -3,7 +3,7 @@
  * These tests prevent regressions in async message handling that have broken multiple times
  */
 
-import { dispatchMessage, routeMessage } from './message-dispatcher.js';
+import { dispatchMessage } from './message-dispatcher.js';
 import * as messageHandlers from './message-handlers.js';
 import { notifyPopupUpdate } from './popup-notifications.js';
 

@@ -6,6 +6,7 @@
 import { Logger } from '../debug.js';
 import { usageDataStore } from '../usage-data-store.js';
 import { clearMazeSession } from '../maze/maze-session.js';
+import { onboardingState } from '../onboarding-state.js';
 
 const logger = new Logger('MESSAGE-HANDLERS');
 
@@ -36,6 +37,9 @@ export async function handleTabLimitUpdate(tabManager, limit) {
  */
 export async function handleCompleteOnboarding(tabManager, limit) {
   await tabManager.handleCompleteOnboarding(limit);
+  // Clear onboarding state so user won't see onboarding flow again
+  await onboardingState.clear();
+  logger.log('Onboarding completed and state cleared');
 }
 
 /**

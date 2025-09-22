@@ -5,14 +5,14 @@
 import * as popupNotifications from './popup-notifications.js';
 import { getMazeSessionData } from '../maze/maze-session.js';
 
+import { isSpecialTab, isMazeTab } from '../utils.js';
+
 // Mock dependencies
 jest.mock('../maze/maze-session.js');
 jest.mock('../utils.js', () => ({
   isSpecialTab: jest.fn(),
   isMazeTab: jest.fn()
 }));
-
-import { isSpecialTab, isMazeTab } from '../utils.js';
 
 // Mock Chrome APIs
 global.chrome = {
