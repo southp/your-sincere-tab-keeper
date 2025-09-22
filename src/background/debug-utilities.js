@@ -117,8 +117,27 @@ function createDebugInterface(tabManager) {
       await chrome.storage.local.set({ dailyMazes });
 
       logger.log(`🎮 Set daily maze count to ${count} for testing`);
-      logger.log(`💡 This will give you difficulty level: ${tabManager.calculateMazeDifficulty('limitExceeded')}`);
-      return count;
+    },
+
+    setDaysActive: async (days) => {
+      const store = usageDataStore();
+      const dailyActivity = {};
+
+      // Create fake activity entries for the specified number of days
+      for (let i = 0; i < days; i++) {
+        const date = new Date();
+        date.setDate(date.getDate() - i);
+        const dateKey = date.toISOString().split('T')[0]; // YYYY-MM-DD format
+        dailyActivity[dateKey] = Date.now() - (i * 24 * 60 * 60 * 1000); // Timestamp
+      }
+
+      await chrome.storage.local.set({ dailyActivity });
+      logger.log(`📅 Set days active to ${days} for testing`);
+    },
+
+    clearDaysActive: async () => {
+      await chrome.storage.local.remove(['dailyActivity']);
+      logger.log(`🧹 Cleared all activity data for testing`);
     },
 
     forceBlock: async (url) => {
@@ -201,6 +220,8 @@ State Management:
 Testing Helpers:
   debugTabKeeper.simulateTabLimit(n)   - Set tab limit for testing
   debugTabKeeper.setDailyMazeCount(n)  - Set daily maze count for testing difficulty levels
+  debugTabKeeper.setDaysActive(n)      - Set days active count for testing statistics
+  debugTabKeeper.clearDaysActive()     - Clear all activity data for testing
   debugTabKeeper.forceBlock(url)       - Check if URL would be blocked
 
 Component Testing:

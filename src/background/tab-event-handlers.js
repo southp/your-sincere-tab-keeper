@@ -6,6 +6,7 @@
 import { Logger } from '../debug.js';
 import { isSpecialTab, isMazeTab } from '../utils.js';
 import { clearMazeSession } from '../maze/maze-session.js';
+import { usageDataStore } from '../usage-data-store.js';
 
 const logger = new Logger('TAB-EVENT-HANDLERS');
 
@@ -14,6 +15,14 @@ const logger = new Logger('TAB-EVENT-HANDLERS');
  */
 export async function handleTabCreated(tabManager, tab) {
   logger.log('New tab created:', tab.id, tab.url);
+
+  // Record daily activity (only once per day)
+  try {
+    const store = usageDataStore();
+    await store.recordTodayActivity();
+  } catch (error) {
+    logger.warn('Failed to record daily activity:', error);
+  }
 
   // Use TabManager to check how tab should be handled
   const result = await tabManager.shouldAllowNewTab(tab);

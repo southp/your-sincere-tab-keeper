@@ -146,10 +146,8 @@ async function loadStatistics() {
       totalBlockedAttemptsEl.textContent = response.blockedAttempts || 0;
       currentStreakEl.textContent = response.dailyMazesCompleted || 0;
 
-      // Calculate days active
-      const installDate = response.installDate || Date.now();
-      const daysActive = Math.floor((Date.now() - installDate) / (1000 * 60 * 60 * 24));
-      daysActiveEl.textContent = Math.max(1, daysActive);
+      // Get tracked days active
+      daysActiveEl.textContent = response.daysActive || 0;
 
       // Handle peak activity time
       if (response.peakActivityHour) {

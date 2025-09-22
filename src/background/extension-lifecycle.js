@@ -5,6 +5,7 @@
 
 import { Logger } from '../debug.js';
 import { onboardingState } from '../onboarding-state.js';
+import { usageDataStore } from '../usage-data-store.js';
 
 const logger = new Logger('EXTENSION-LIFECYCLE');
 
@@ -14,6 +15,15 @@ const logger = new Logger('EXTENSION-LIFECYCLE');
 export async function initializeExtension(tabManager) {
   try {
     await tabManager.initialize();
+
+    // Record daily activity on extension startup
+    try {
+      const store = usageDataStore();
+      await store.recordTodayActivity();
+    } catch (error) {
+      logger.warn('Failed to record daily activity on startup:', error);
+    }
+
     logger.log('Service worker initialized successfully');
     return { success: true };
   } catch (error) {

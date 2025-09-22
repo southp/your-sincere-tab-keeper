@@ -257,6 +257,7 @@ describe('UsageDataStore', () => {
           'dailyMazes',
           'dailyTabLimits',
           'dailyBlockedAttempts',
+          'dailyActivity',
           'limitHitTimestamps'
         ]);
       });
@@ -466,14 +467,15 @@ describe('UsageDataStore', () => {
         const mockData = {
           dailyMazes: { '2024-03-15': 5 },
           dailyTabLimits: { '2024-03-15': 15 },
-          dailyBlockedAttempts: { '2024-03-15': 2 }
+          dailyBlockedAttempts: { '2024-03-15': 2 },
+          dailyActivity: {}
         };
         mockStorage.get.mockResolvedValue(mockData);
 
         const result = await store.getDailyTrackingData();
 
         expect(mockStorage.get).toHaveBeenCalledWith([
-          'dailyMazes', 'dailyTabLimits', 'dailyBlockedAttempts'
+          'dailyMazes', 'dailyTabLimits', 'dailyBlockedAttempts', 'dailyActivity'
         ]);
         expect(result).toEqual(mockData);
       });
@@ -486,7 +488,8 @@ describe('UsageDataStore', () => {
         expect(result).toEqual({
           dailyMazes: {},
           dailyTabLimits: {},
-          dailyBlockedAttempts: {}
+          dailyBlockedAttempts: {},
+          dailyActivity: {}
         });
       });
     });
@@ -793,14 +796,16 @@ describe('UsageDataStore', () => {
       const dailyData = {
         dailyMazes: { '2024-03-15': 5 },
         dailyTabLimits: { '2024-03-15': 15 },
-        dailyBlockedAttempts: { '2024-03-15': 2 }
+        dailyBlockedAttempts: { '2024-03-15': 2 },
+        dailyActivity: {}
       };
 
       // Setup mocks for all calls in getExtendedStatistics
       mockStorage.get
         .mockResolvedValueOnce(basicStats) // getStatistics call
         .mockResolvedValueOnce(dailyData)  // getDailyTrackingData call
-        .mockResolvedValueOnce({ dailyMazes: { '2024-03-15': 5 } }); // getTodayMazeCount call
+        .mockResolvedValueOnce({ dailyMazes: { '2024-03-15': 5 } }) // getTodayMazeCount call
+        .mockResolvedValueOnce({ dailyActivity: {} }); // getDaysActive call
 
       const result = await store.getExtendedStatistics();
 
@@ -808,6 +813,7 @@ describe('UsageDataStore', () => {
         ...basicStats,
         dailyMazesCompleted: 5,
         peakActivityHour: null, // No timestamps, so null
+        daysActive: 0,
         ...dailyData
       });
     });
