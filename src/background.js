@@ -87,19 +87,19 @@ chrome.webNavigation.onTabReplaced.addListener((details) => {
  * Handle messages from content scripts and pages
  */
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-  // Handle async message dispatch and return boolean synchronously for channel management
-  dispatchMessage(tabManager, message, sender, sendResponse)
-    .then(keepChannelOpen => {
-      // Channel management is already handled by dispatchMessage's return value
-      return keepChannelOpen;
-    })
-    .catch(error => {
+  // Handle async message dispatch
+  (async () => {
+    try {
+      await dispatchMessage(tabManager, message, sender, sendResponse);
+    } catch (error) {
       _logger.error('Message dispatch failed:', error);
       sendResponse({ error: error.message });
-    });
+    }
+  })();
 
-  // Return true synchronously to keep channel open for async response
-  return true;
+  // Only return true for messages that need async responses
+  const asyncMessages = ['GET_STATS', 'RESET_STATS', 'CHECK_MAZE_COMPLETED', 'CREATE_MAZE_TAB'];
+  return asyncMessages.includes(message.type);
 });
 
 // Message handling logic is now handled by message-dispatcher.js and message-handlers.js

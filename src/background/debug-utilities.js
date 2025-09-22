@@ -120,7 +120,6 @@ function createDebugInterface(tabManager) {
     },
 
     setDaysActive: async (days) => {
-      const store = usageDataStore();
       const dailyActivity = {};
 
       // Create fake activity entries for the specified number of days
@@ -137,7 +136,7 @@ function createDebugInterface(tabManager) {
 
     clearDaysActive: async () => {
       await chrome.storage.local.remove(['dailyActivity']);
-      logger.log(`🧹 Cleared all activity data for testing`);
+      logger.log('🧹 Cleared all activity data for testing');
     },
 
     forceBlock: async (url) => {
