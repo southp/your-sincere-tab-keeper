@@ -237,7 +237,7 @@
     "message": "今天"
   },
   "allTime": {
-    "message": "全部時間"
+    "message": "總計"
   },
   "controlsHint": {
     "message": "使用 ↑←↓→ 或 WASD 鍵移動"
@@ -278,7 +278,7 @@
     }
   },
   "excessTabsClosed": {
-    "message": "如果你開啟的分頁數量超過新限制，多餘的分頁已自動關閉以保留最新的分頁。"
+    "message": "如果你開啟的分頁數量超過新限制，多的分頁將被自動關閉。"
   },
   "ok": {
     "message": "確定"
