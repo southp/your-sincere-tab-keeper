@@ -52,11 +52,11 @@ async function routeMessage(tabManager, message, sender) {
 
     case 'UPDATE_TAB_LIMIT':
       await messageHandlers.handleTabLimitUpdate(tabManager, message.limit);
-      return { needsPopupUpdate: true };
+      return { needsPopupUpdate: true, response: { success: true } };
 
     case 'COMPLETE_ONBOARDING':
       await messageHandlers.handleCompleteOnboarding(tabManager, message.limit);
-      return { needsPopupUpdate: true };
+      return { needsPopupUpdate: true, response: { success: true } };
 
     case 'GET_STATS': {
       const statsResult = await messageHandlers.handleGetStats(tabManager);

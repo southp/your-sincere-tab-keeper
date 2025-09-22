@@ -3,7 +3,7 @@
  * These tests prevent regressions in async message handling that have broken multiple times
  */
 
-import { dispatchMessage, routeMessage } from './message-dispatcher.js';
+import { dispatchMessage } from './message-dispatcher.js';
 import * as messageHandlers from './message-handlers.js';
 import { notifyPopupUpdate } from './popup-notifications.js';
 
@@ -107,6 +107,28 @@ describe('Message Dispatcher', () => {
       expect(messageHandlers.handleMazeCompleted).toHaveBeenCalledWith(mockTabManager, 123, {});
       expect(notifyPopupUpdate).toHaveBeenCalledWith(mockTabManager);
       expect(result).toBe(false); // No response needed, channel can close
+    });
+
+    it('should handle UPDATE_TAB_LIMIT message and send response', async () => {
+      messageHandlers.handleTabLimitUpdate.mockResolvedValue();
+
+      const message = { type: 'UPDATE_TAB_LIMIT', limit: 5 };
+      const result = await dispatchMessage(mockTabManager, message, mockSender, mockSendResponse);
+
+      expect(messageHandlers.handleTabLimitUpdate).toHaveBeenCalledWith(mockTabManager, 5);
+      expect(mockSendResponse).toHaveBeenCalledWith({ success: true });
+      expect(result).toBe(false); // No channel open needed for this response
+    });
+
+    it('should handle COMPLETE_ONBOARDING message and send response', async () => {
+      messageHandlers.handleCompleteOnboarding.mockResolvedValue();
+
+      const message = { type: 'COMPLETE_ONBOARDING', limit: 3 };
+      const result = await dispatchMessage(mockTabManager, message, mockSender, mockSendResponse);
+
+      expect(messageHandlers.handleCompleteOnboarding).toHaveBeenCalledWith(mockTabManager, 3);
+      expect(mockSendResponse).toHaveBeenCalledWith({ success: true });
+      expect(result).toBe(false); // No channel open needed for this response
     });
 
     it('should handle unknown message types gracefully', async () => {

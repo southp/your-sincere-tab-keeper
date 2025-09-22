@@ -11,6 +11,13 @@ global.chrome = {
   },
   runtime: {
     getURL: jest.fn()
+  },
+  storage: {
+    local: {
+      set: jest.fn(),
+      get: jest.fn(),
+      remove: jest.fn()
+    }
   }
 };
 
@@ -23,7 +30,8 @@ describe('Extension Lifecycle', () => {
     };
 
     jest.clearAllMocks();
-    chrome.runtime.getURL.mockReturnValue('chrome-extension://test/src/options.html?onboarding=true');
+    chrome.runtime.getURL.mockReturnValue('chrome-extension://test/src/options.html');
+    chrome.storage.local.set.mockResolvedValue();
   });
 
   describe('initializeExtension', () => {
@@ -66,8 +74,11 @@ describe('Extension Lifecycle', () => {
 
       expect(result.success).toBe(true);
       expect(result.onboardingOpened).toBe(true);
+      expect(chrome.storage.local.set).toHaveBeenCalledWith({
+        '_onboarding_state': { isActive: true, startTime: expect.any(Number) }
+      });
       expect(chrome.tabs.create).toHaveBeenCalledWith({
-        url: 'chrome-extension://test/src/options.html?onboarding=true'
+        url: 'chrome-extension://test/src/options.html'
       });
     });
 
@@ -82,16 +93,16 @@ describe('Extension Lifecycle', () => {
       expect(chrome.tabs.create).not.toHaveBeenCalled();
     });
 
-    it('should handle onboarding creation failure', async () => {
+    it('should handle onboarding setup failure', async () => {
       mockTabManager.initialize.mockResolvedValue();
-      chrome.tabs.create.mockRejectedValue(new Error('Tab creation failed'));
+      chrome.storage.local.set.mockRejectedValue(new Error('Storage failed'));
 
       const details = { reason: 'install' };
       const result = await extensionLifecycle.handleExtensionInstalled(mockTabManager, details);
 
       expect(result.success).toBe(true);
       expect(result.onboardingOpened).toBe(false);
-      expect(result.onboardingError).toBe('Tab creation failed');
+      expect(result.onboardingError).toBe('Storage failed');
     });
   });
 });

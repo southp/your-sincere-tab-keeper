@@ -9,6 +9,7 @@ import { Logger } from './debug.js';
 import { usageDataStore } from './usage-data-store.js';
 import { isSpecialTab, isMazeTab } from './utils.js';
 import { showNotification } from './notification-utils.js';
+import { onboardingState } from './onboarding-state.js';
 import './trend-graph.js';
 
 const optionsLogger = new Logger('OPTIONS');
@@ -78,9 +79,8 @@ function updateRangeText() {
 /**
  * Check if this is the first time opening options (onboarding)
  */
-function checkOnboardingStatus() {
-  const urlParams = new URLSearchParams(window.location.search);
-  const isOnboarding = urlParams.get('onboarding') === 'true';
+async function checkOnboardingStatus() {
+  const isOnboarding = await onboardingState.isActive();
 
   if (isOnboarding) {
     // Show only onboarding section, hide everything else

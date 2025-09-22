@@ -4,6 +4,7 @@
  */
 
 import { Logger } from '../debug.js';
+import { onboardingState } from '../onboarding-state.js';
 
 const logger = new Logger('EXTENSION-LIFECYCLE');
 
@@ -36,14 +37,17 @@ export async function handleExtensionInstalled(tabManager, details) {
 
   if (details.reason === 'install') {
     try {
-      // Show onboarding page for first-time users
+      // Set onboarding state for first-time users
+      await onboardingState.setActive();
+
+      // Open options page (onboarding state will be detected by the page)
       await chrome.tabs.create({
-        url: chrome.runtime.getURL('src/options.html?onboarding=true')
+        url: chrome.runtime.getURL('src/options.html')
       });
-      logger.log('Opened onboarding page for new installation');
+      logger.log('Set onboarding state and opened options page for new installation');
       return { ...initResult, onboardingOpened: true };
     } catch (error) {
-      logger.error('Failed to open onboarding page:', error);
+      logger.error('Failed to setup onboarding:', error);
       return { ...initResult, onboardingOpened: false, onboardingError: error.message };
     }
   }
