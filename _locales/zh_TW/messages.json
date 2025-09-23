@@ -84,7 +84,7 @@
     "message": "🎉 歡迎使用你誠摯的分頁管理員！"
   },
   "welcomeIntro": {
-    "message": "感謝你安裝你誠摯的分頁管理員！這個擴充功能透過限制開啟的分頁數量來幫助你建立更好的瀏覽習慣。"
+    "message": "感謝使用「你誠摯的分頁管理員」，這個擴充功能透過限制開啟的分頁數量來幫助你建立更好的瀏覽習慣。"
   },
   "howItWorksHeading": {
     "message": "運作方式："
@@ -99,7 +99,7 @@
     "message": "📈 追蹤你的進度並建立專心的瀏覽習慣"
   },
   "howItWorks4": {
-    "message": "🚫 沒有逃避選項 - 只有解除安裝才能停用限制"
+    "message": "🚫 破釜沈舟 - 只有解除安裝才能解除限制"
   },
   "chooseLimitHeading": {
     "message": "選擇你的初始分頁限制："
@@ -168,7 +168,7 @@
     "message": "我們的理念"
   },
   "philosophyText": {
-    "message": "我們相信小小的阻力能帶來大大的改變。透過在你超過分頁限制時加入的迷宮遊戲，我們幫助你暫停並考慮是否真的需要那個新分頁。"
+    "message": "我們相信小小的阻力能帶來大大的改變，透過在你超過分頁限制時加入的迷宮遊戲，我們幫助你暫停並考慮是否真的需要那個新分頁。"
   },
   "keyFeaturesHeading": {
     "message": "主要功能"
@@ -213,7 +213,7 @@
     "message": "解決這個迷宮以更新你的分頁限制！"
   },
   "mazeTitle": {
-    "message": "你的誠摯分頁管理員 - 迷宮挑戰"
+    "message": "你誠摯的分頁管理員 - 迷宮挑戰"
   },
   "solveMazeToOpen": {
     "message": "解決這個迷宮以開啟你的新分頁！"
@@ -474,19 +474,19 @@
     "message": "資料匯入成功！頁面將重新載入以顯示更新的統計。"
   },
   "dataImportFailed": {
-    "message": "匯入資料失敗。請檢查檔案格式後再試。"
+    "message": "匯入資料失敗，請檢查檔案格式後再試。"
   },
   "dataImportInvalidJSON": {
-    "message": "無效的 JSON 檔案。請選擇有效的分頁管理員匯出檔案。"
+    "message": "無效的 JSON 檔案，請選擇有效的分頁管理員匯出檔案。"
   },
   "dataImportInvalidFormat": {
-    "message": "無效的檔案格式。這似乎不是分頁管理員匯出檔案。"
+    "message": "無效的檔案格式，這似乎不是分頁管理員匯出檔案。"
   },
   "dataImportMissingData": {
-    "message": "無效的匯出檔案。缺少必要的資料區段。"
+    "message": "無效的匯出檔案，缺少必要的資料區段。"
   },
   "dataImportMissingExportDate": {
-    "message": "無效的匯出檔案。缺少匯出日期資訊。"
+    "message": "無效的匯出檔案，缺少匯出日期資訊。"
   },
   "dataImportValidationFailed": {
     "message": "檔案驗證失敗"
@@ -573,7 +573,7 @@
     "message": "迷宮已完成！"
   },
   "mazeCompletedDescription": {
-    "message": "您已經解決了這個迷宮。請使用瀏覽器的導覽功能繼續瀏覽。"
+    "message": "您已經解決了這個迷宮，請使用瀏覽器的導覽功能繼續瀏覽。"
   },
   "tip1Title": {
     "message": "兩分鐘法則"
@@ -585,19 +585,19 @@
     "message": "一個分頁，一項任務"
   },
   "tip2Message": {
-    "message": "專注於完成一項任務後再開啟另一個分頁。您的大腦在單一任務處理時工作得更好。"
+    "message": "專注於完成一項任務後再開啟另一個分頁，您的大腦在單一任務處理時工作得更好。"
   },
   "tip3Title": {
     "message": "收藏而非囤積"
   },
   "tip3Message": {
-    "message": "有趣的文章可以加入書籤稍後閱讀。您不需要「以防萬一」而保持20個分頁開啟。"
+    "message": "有趣的文章可以加入書籤稍後閱讀，您不需要「以防萬一」而保持20個分頁開啟。"
   },
   "tip4Title": {
     "message": "分頁審計"
   },
   "tip4Message": {
-    "message": "每小時問問自己：「這些分頁中，我現在實際在使用哪一個？」關閉其餘的。"
+    "message": "問問自己：「我現在的首要之物是什麼？」，接著關閉無關的分頁。"
   },
   "tip5Title": {
     "message": "瀏覽時間盒"
@@ -621,7 +621,7 @@
     "message": "質量勝過數量"
   },
   "tip8Message": {
-    "message": "三個專注的分頁比三十個分心的分頁完成更多事情。請謹慎選擇。"
+    "message": "三個專注的分頁比三十個分心的分頁完成更多事情，請謹慎選擇。"
   },
   "tip9Title": {
     "message": "數位極簡主義"
@@ -636,7 +636,7 @@
     "message": "深度工作發生在無干擾的環境中。更少的分頁 = 更多完成的目標。"
   },
   "failedToUpdateTabLimit": {
-    "message": "更新分頁限制失敗。請再試一次。"
+    "message": "更新分頁限制失敗，請再試一次。"
   },
   "currentLimitSelected": {
     "message": "已選擇目前限制"
